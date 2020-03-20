@@ -2,10 +2,6 @@
 
 > Development tasks for mask
 
-
-
-
-
 ## run (maskfile_command)
 
 > Build and run mask in development mode
@@ -120,3 +116,11 @@ fi
 ~~~bash
 cargo clippy
 ~~~
+
+## echo//\_default (name) (optional?)
+> Echo something
+
+```sh
+echo "Hello $name! Optional arg is $optional"
+echo "Task complete."
+```
