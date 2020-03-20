@@ -79,7 +79,7 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
                 }
                 // Options level 2 is the flag config
                 else if list_level == 2 {
-                    let mut config_split = text.splitn(2, ":");
+                    let mut config_split = text.splitn(2, ':');
                     let param = config_split.next().unwrap_or("").trim();
                     let val = config_split.next().unwrap_or("").trim();
                     match param {
@@ -95,7 +95,7 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
                         }
                         // Parse out the short and long flag names
                         "flags" => {
-                            let short_and_long_flags: Vec<&str> = val.splitn(2, " ").collect();
+                            let short_and_long_flags: Vec<&str> = val.splitn(2, ' ').collect();
                             for flag in short_and_long_flags {
                                 // Must be a long flag name
                                 if flag.starts_with("--") {
@@ -103,7 +103,7 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
                                     current_option_flag.long = name;
                                 }
                                 // Must be a short flag name
-                                else if flag.starts_with("-") {
+                                else if flag.starts_with('-') {
                                     // Get the single char
                                     let name = flag.get(1..2).unwrap_or("");
                                     current_option_flag.short = name.to_string();
@@ -135,13 +135,12 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
     root_command.clone()
 }
 
-fn create_markdown_parser<'a>(maskfile_contents: &'a String) -> Parser<'a> {
+fn create_markdown_parser(maskfile_contents: &str) -> Parser {
     // Set up options and parser. Strikethroughs are not part of the CommonMark standard
     // and we therefore must enable it explicitly.
     let mut options = Options::empty();
     options.insert(Options::ENABLE_STRIKETHROUGH);
-    let parser = Parser::new_ext(&maskfile_contents, options);
-    parser
+    Parser::new_ext(&maskfile_contents, options)
 }
 
 fn treeify_commands(commands: Vec<Command>) -> Vec<Command> {
@@ -190,15 +189,14 @@ fn parse_heading_to_cmd(heading_level: i32, text: String) -> (String, String, Ve
         // Takes a subcommand name like this:
         // "#### db flush postgres (required_arg_name)"
         // and returns "postgres (required_arg_name)" as the actual name
-        text.clone()
-            .split(" ")
+        text.split(' ')
             .collect::<Vec<&str>>()
             // Get subcommand after the parent command name
             .split_at(heading_level as usize - 2)
             .1
             .join(" ")
     } else {
-        text.clone()
+        text
     };
 
     // Find any required arguments. They look like this: (required_arg_name)
@@ -206,7 +204,7 @@ fn parse_heading_to_cmd(heading_level: i32, text: String) -> (String, String, Ve
     let (name, args) = name_and_args.split_at(1);
 
     let name = name.join(" ");
-    let mut name_and_alias = name.trim().splitn(2, "//").into_iter();
+    let mut name_and_alias = name.trim().splitn(2, "//");
     let name = match name_and_alias.next() {
         Some(n) => String::from(n),
         _ => "".to_string(),
@@ -221,14 +219,14 @@ fn parse_heading_to_cmd(heading_level: i32, text: String) -> (String, String, Ve
     // TODO: some how support infinite args? https://github.com/jakedeichert/mask/issues/4
     if !args.is_empty() {
         let args = args.join("");
-        let args: Vec<&str> = args.split(" ").collect();
+        let args: Vec<&str> = args.split(' ').collect();
         for arg in args.iter() {
-            if arg.ends_with("?") {
-                let mut arg = arg.to_string();
+            if arg.ends_with('?') {
+                let mut arg = (*arg).to_string();
                 arg.pop();
                 out_args.push(Arg::new(arg, false));
             } else {
-                out_args.push(Arg::new(arg.to_string(), true));
+                out_args.push(Arg::new((*arg).to_string(), true));
             }
         }
     }

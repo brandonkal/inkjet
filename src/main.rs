@@ -29,10 +29,11 @@ fn main() {
         .expect("SubcommandRequired failed to work");
 
     match execute_command(chosen_cmd, maskfile_path) {
-        Ok(status) => match status.code() {
-            Some(code) => std::process::exit(code),
-            None => return,
-        },
+        Ok(status) => {
+            if let Some(code) = status.code() {
+                std::process::exit(code)
+            }
+        }
         Err(err) => {
             eprintln!("{} {}", "ERROR:".red(), err);
             std::process::exit(1)
@@ -75,19 +76,14 @@ fn custom_maskfile_path_arg<'a, 'b>() -> Arg<'a, 'b> {
     // This is needed to prevent clap from complaining about the custom flag check
     // within find_maskfile(). It should be removed once clap 3.x is released.
     // See https://github.com/clap-rs/clap/issues/748
-    let custom_maskfile_path = Arg::with_name("maskfile")
+    Arg::with_name("maskfile")
         .help("Path to a different maskfile you want to use")
         .long("maskfile")
         .takes_value(true)
-        .multiple(false);
-
-    custom_maskfile_path
+        .multiple(false)
 }
 
-fn build_subcommands<'a, 'b>(
-    mut cli_app: App<'a, 'b>,
-    subcommands: &'a Vec<Command>,
-) -> App<'a, 'b> {
+fn build_subcommands<'a, 'b>(mut cli_app: App<'a, 'b>, subcommands: &'a [Command]) -> App<'a, 'b> {
     for c in subcommands {
         let mut subcmd = SubCommand::with_name(&c.name)
             .about(c.desc.as_ref())
@@ -129,7 +125,7 @@ fn build_subcommands<'a, 'b>(
     cli_app
 }
 
-fn find_command<'a>(matches: &ArgMatches, subcommands: &Vec<Command>) -> Option<Command> {
+fn find_command(matches: &ArgMatches, subcommands: &[Command]) -> Option<Command> {
     let mut command = None;
 
     // The child subcommand that was used
@@ -139,13 +135,12 @@ fn find_command<'a>(matches: &ArgMatches, subcommands: &Vec<Command>) -> Option<
                 if c.name == subcommand_name {
                     // Check if a subcommand was called, otherwise return this command
                     command = find_command(matches, &c.subcommands)
-                        .or(Some(c.clone()).map(|c| get_command_options(c, &matches)));
+                        .or_else(|| Some(c.clone()).map(|c| get_command_options(c, &matches)));
                 }
             }
         }
     }
-
-    return command;
+    command
 }
 
 fn get_command_options(mut cmd: Command, matches: &ArgMatches) -> Command {
@@ -180,12 +175,11 @@ fn get_command_options(mut cmd: Command, matches: &ArgMatches) -> Command {
         } else {
             // Check if the boolean flag is present and set to "true".
             // It's a string since it's set as an environment variable.
-            let val = if matches.is_present(flag.name.clone()) {
+            if matches.is_present(flag.name.clone()) {
                 "true".to_string()
             } else {
                 "".to_string()
-            };
-            val
+            }
         };
     }
 
