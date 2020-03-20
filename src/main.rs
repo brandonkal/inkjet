@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::env;
 use std::path::Path;
 
@@ -8,15 +9,41 @@ use mask::command::Command;
 use mask::executor::execute_command;
 
 fn main() {
+    let color = env::var_os("NO_COLOR").is_some();
+    let color_setting = if color {
+        AppSettings::ColoredHelp
+    } else {
+        AppSettings::ColorNever
+    };
     let cli_app = App::new(crate_name!())
         .setting(AppSettings::VersionlessSubcommands)
         .setting(AppSettings::AllowNegativeNumbers)
         .setting(AppSettings::SubcommandRequired)
-        .setting(AppSettings::ColoredHelp)
+        .setting(color_setting)
+        // TODO: respect NO_COLOR environment variable
+        // TEMP: disable while debug
+        // .setting(AppSettings::DisableHelpSubcommand)
+        // .setting(AppSettings::DisableHelpFlags)
         .version(crate_version!())
-        .arg(custom_maskfile_path_arg());
+        .arg(custom_maskfile_path_arg())
+        .arg_from_usage("-p --print 'Print the command code and exit'");
 
-    let (maskfile, maskfile_path) = find_maskfile();
+    // let global_cli = App::new(crate_name!())
+    //     .setting(AppSettings::DisableHelpSubcommand)
+    //     .setting(AppSettings::DisableHelpFlags)
+    //     .setting(AppSettings::AllowExternalSubcommands)
+    //     .settings(AppSettings::)
+    //     .setting(AppSettings::ColorNever)
+    //     .arg(custom_maskfile_path_arg())
+    //     .arg_from_usage("-i --interactive 'Execute each command in the document sequentially prompting for arguments'")
+    //     .arg_from_usage("-p --print 'Print the command code and exit'");
+
+    // // Initial parse for global flags
+    // let global_matches = global_cli.get_matches_from_safe(env::args());
+    // println!("{:?}", global_matches);
+    let (opts, args) = pre_parse(env::args().collect());
+
+    let maskfile = find_maskfile(&opts.maskfile_path);
     if maskfile.is_err() {
         // If the maskfile can't be found, at least parse for --version or --help
         cli_app.get_matches();
@@ -24,11 +51,11 @@ fn main() {
     }
 
     let root_command = mask::parser::build_command_structure(maskfile.unwrap());
-    let matches = build_subcommands(cli_app, &root_command.subcommands).get_matches();
+    let matches = build_subcommands(cli_app, &root_command.subcommands).get_matches_from(args);
     let chosen_cmd = find_command(&matches, &root_command.subcommands)
         .expect("SubcommandRequired failed to work");
 
-    match execute_command(chosen_cmd, maskfile_path) {
+    match execute_command(chosen_cmd, opts.maskfile_path) {
         Ok(status) => {
             if let Some(code) = status.code() {
                 std::process::exit(code)
@@ -41,35 +68,83 @@ fn main() {
     }
 }
 
-fn find_maskfile() -> (Result<String, String>, String) {
-    let args: Vec<String> = env::args().collect();
+/// Creates vector of strings, Vec<String>
+macro_rules! svec {
+    ($($x:expr),*) => (vec![$($x.to_string()),*]);
+}
+/// Creates HashSet<String> from string literals
+macro_rules! sset {
+  ($($x:expr),*) => {{
+    let _v = svec![$($x.to_string()),*];
+    let hash_set: HashSet<String> = _v.iter().cloned().collect();
+    hash_set
+  }}
+}
 
-    let maybe_maskfile = args.get(1);
-    let maybe_path = args.get(2);
+#[derive(Default)]
+struct CustomOpts {
+    interactive: bool,
+    print: bool,
+    maskfile_path: String,
+}
 
-    // Check for a custom --maskfile arg
-    let maskfile_path = match (maybe_maskfile, maybe_path) {
-        (Some(a), Some(path)) if a == "--maskfile" => Path::new(path),
-        _ => Path::new("./maskfile.md"),
-    };
+// We must parse flags first to handle global flags and implicit defaults
+fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
+    let mut opts = CustomOpts::default();
+    let early_exit_modifiers = sset!["-h", "--help", "-V", "--version"];
+    // Loop through all args and parse
+    let mut maskfile_arg_found = false;
+    let mut maskfile_index = 1000;
+    for i in 0..args.len() {
+        let arg = &args[i];
+        if i == maskfile_index {
+            opts.maskfile_path = canonical_path(arg);
+        } else if arg == "-i" || arg == "--interactive" {
+            opts.interactive = true;
+        } else if arg == "--maskfile" {
+            maskfile_arg_found = true;
+            if let Some(idx) = arg.find('=') {
+                opts.maskfile_path = canonical_path(&arg[(idx + 1)..]);
+            } else {
+                maskfile_index = i + 1
+            }
+        } else if arg == "--print" {
+            opts.print = true;
+        } else if !arg.starts_with('-') || early_exit_modifiers.contains(arg) {
+            break; // no more parsing to do as a subcommand has been called
+        } else {
+            // This may be a flag for the default command.
+            args.insert(i, "_default".to_string());
+            break;
+        }
+    }
+    if !maskfile_arg_found {
+        opts.maskfile_path = canonical_path("./maskfile.md");
+    }
+    (opts, args)
+}
 
-    let maskfile = mask::loader::read_maskfile(maskfile_path);
+// converts a given path str to a canonical path String
+fn canonical_path(p: &str) -> String {
+    Path::new(p).to_str().unwrap().to_string()
+}
+
+fn find_maskfile(maskfile_path: &str) -> Result<String, String> {
+    let maskfile = mask::loader::read_maskfile(&maskfile_path);
 
     if maskfile.is_err() {
-        if let Some(p) = maskfile_path.to_str() {
-            // Check if this is a custom maskfile
-            if p != "./maskfile.md" {
-                // Exit with an error it's not found
-                eprintln!("{} specified maskfile not found", "ERROR:".red());
-                std::process::exit(1);
-            } else {
-                // Just log a warning and let the process continue
-                println!("{} no maskfile.md found", "WARNING:".yellow());
-            }
+        // Check if this is a custom maskfile
+        if maskfile_path != "./maskfile.md" {
+            // Exit with an error it's not found
+            eprintln!("{} specified maskfile not found", "ERROR:".red());
+            std::process::exit(1);
+        } else {
+            // Just log a warning and let the process continue
+            println!("{} no maskfile.md found", "WARNING:".yellow());
         }
     }
 
-    (maskfile, maskfile_path.to_str().unwrap().to_string())
+    maskfile
 }
 
 fn custom_maskfile_path_arg<'a, 'b>() -> Arg<'a, 'b> {

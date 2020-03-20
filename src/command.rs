@@ -42,7 +42,7 @@ impl Command {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Script {
     // The executor to run the source with
     pub executor: String, // shell, node, ruby, python, etc...
@@ -80,7 +80,7 @@ impl Arg {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct OptionFlag {
     pub name: String,
     pub desc: String,
