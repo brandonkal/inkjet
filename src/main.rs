@@ -9,7 +9,7 @@ use mask::command::Command;
 use mask::executor::execute_command;
 
 fn main() {
-    let color = env::var_os("NO_COLOR").is_some();
+    let color = env::var_os("NO_COLOR").is_none();
     let color_setting = if color {
         AppSettings::ColoredHelp
     } else {
@@ -20,27 +20,11 @@ fn main() {
         .setting(AppSettings::AllowNegativeNumbers)
         .setting(AppSettings::SubcommandRequired)
         .setting(color_setting)
-        // TODO: respect NO_COLOR environment variable
-        // TEMP: disable while debug
-        // .setting(AppSettings::DisableHelpSubcommand)
-        // .setting(AppSettings::DisableHelpFlags)
         .version(crate_version!())
         .arg(custom_maskfile_path_arg())
+        .arg_from_usage("-i --interactive 'Execute each command in the document sequentially prompting for arguments'")
         .arg_from_usage("-p --print 'Print the command code and exit'");
 
-    // let global_cli = App::new(crate_name!())
-    //     .setting(AppSettings::DisableHelpSubcommand)
-    //     .setting(AppSettings::DisableHelpFlags)
-    //     .setting(AppSettings::AllowExternalSubcommands)
-    //     .settings(AppSettings::)
-    //     .setting(AppSettings::ColorNever)
-    //     .arg(custom_maskfile_path_arg())
-    //     .arg_from_usage("-i --interactive 'Execute each command in the document sequentially prompting for arguments'")
-    //     .arg_from_usage("-p --print 'Print the command code and exit'");
-
-    // // Initial parse for global flags
-    // let global_matches = global_cli.get_matches_from_safe(env::args());
-    // println!("{:?}", global_matches);
     let (opts, args) = pre_parse(env::args().collect());
 
     let maskfile = find_maskfile(&opts.maskfile_path);
@@ -51,11 +35,12 @@ fn main() {
     }
 
     let root_command = mask::parser::build_command_structure(maskfile.unwrap());
-    let matches = build_subcommands(cli_app, &root_command.subcommands).get_matches_from(args);
+    let matches = build_subcommands(cli_app, color_setting, &opts, &root_command.subcommands)
+        .get_matches_from(args);
     let chosen_cmd = find_command(&matches, &root_command.subcommands)
         .expect("SubcommandRequired failed to work");
 
-    match execute_command(chosen_cmd, opts.maskfile_path) {
+    match execute_command(chosen_cmd, opts.maskfile_path, opts.print, color) {
         Ok(status) => {
             if let Some(code) = status.code() {
                 std::process::exit(code)
@@ -81,7 +66,7 @@ macro_rules! sset {
   }}
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 struct CustomOpts {
     interactive: bool,
     print: bool,
@@ -95,7 +80,10 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     // Loop through all args and parse
     let mut maskfile_arg_found = false;
     let mut maskfile_index = 1000;
-    for i in 0..args.len() {
+    if args.len() == 1 {
+        args.insert(1, "_default".to_string());
+    }
+    for i in 1..args.len() {
         let arg = &args[i];
         if i == maskfile_index {
             opts.maskfile_path = canonical_path(arg);
@@ -158,14 +146,19 @@ fn custom_maskfile_path_arg<'a, 'b>() -> Arg<'a, 'b> {
         .multiple(false)
 }
 
-fn build_subcommands<'a, 'b>(mut cli_app: App<'a, 'b>, subcommands: &'a [Command]) -> App<'a, 'b> {
+fn build_subcommands<'a, 'b>(
+    mut cli_app: App<'a, 'b>,
+    color_setting: AppSettings,
+    opts: &CustomOpts,
+    subcommands: &'a [Command],
+) -> App<'a, 'b> {
     for c in subcommands {
         let mut subcmd = SubCommand::with_name(&c.name)
             .about(c.desc.as_ref())
-            .setting(AppSettings::ColoredHelp)
+            .setting(color_setting)
             .setting(AppSettings::AllowNegativeNumbers);
         if !c.subcommands.is_empty() {
-            subcmd = build_subcommands(subcmd, &c.subcommands);
+            subcmd = build_subcommands(subcmd, color_setting, opts, &c.subcommands);
             // If this parent command has no script source, require a subcommand.
             if c.script.source == "" {
                 subcmd = subcmd.setting(AppSettings::SubcommandRequired);
@@ -175,7 +168,8 @@ fn build_subcommands<'a, 'b>(mut cli_app: App<'a, 'b>, subcommands: &'a [Command
         // Add all required and optional arguments
         for a in &c.args {
             let arg = Arg::with_name(&a.name);
-            subcmd = subcmd.arg(arg.required(a.required));
+            // If we are printing, we can't have required args
+            subcmd = subcmd.arg(arg.required(if opts.print { false } else { a.required }));
         }
 
         // Add all optional flags
@@ -221,7 +215,11 @@ fn find_command(matches: &ArgMatches, subcommands: &[Command]) -> Option<Command
 fn get_command_options(mut cmd: Command, matches: &ArgMatches) -> Command {
     // Check all required args
     for arg in &mut cmd.args {
-        arg.val = matches.value_of(arg.name.clone()).unwrap().to_string();
+        arg.val = match matches.value_of(arg.name.clone()) {
+            Some(v) => v,
+            _ => "",
+        }
+        .to_string();
     }
 
     // Check all optional flags

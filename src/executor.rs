@@ -1,6 +1,6 @@
+use colored::*;
 use std::fs::canonicalize;
-use std::io::Result;
-use std::io::{Error, ErrorKind};
+use std::io::{Error, ErrorKind, Result, Write};
 use std::path::{Path, PathBuf};
 use std::process;
 use std::process::ExitStatus;
@@ -9,7 +9,12 @@ use clap::crate_name;
 
 use crate::command::Command;
 
-pub fn execute_command(cmd: Command, maskfile_path: String) -> Result<ExitStatus> {
+pub fn execute_command(
+    cmd: Command,
+    maskfile_path: String,
+    print: bool,
+    color: bool,
+) -> Result<ExitStatus> {
     if cmd.script.source == "" {
         let msg = "Command has no script.";
         return Err(Error::new(ErrorKind::Other, msg));
@@ -20,11 +25,37 @@ pub fn execute_command(cmd: Command, maskfile_path: String) -> Result<ExitStatus
         return Err(Error::new(ErrorKind::Other, msg));
     }
 
-    let mut child = prepare_command(&cmd);
-    child = add_utility_variables(child, maskfile_path);
-    child = add_flag_variables(child, &cmd);
-
-    child.spawn()?.wait()
+    if print {
+        if !color {
+            print!("{}", cmd.script.source);
+            process::exit(0);
+        }
+        let mut bat_cmd = match process::Command::new("bat")
+            .args(&["--plain", "--language", &cmd.script.executor])
+            .stdin(process::Stdio::piped())
+            .spawn()
+        {
+            Ok(mut child) => {
+                let mut child_stdin = child.stdin.take().unwrap();
+                child_stdin.write_all(cmd.script.source.as_bytes())?;
+                child
+            }
+            Err(e) => {
+                if ErrorKind::NotFound == e.kind() {
+                    print!("{}", cmd.script.source);
+                    process::exit(0);
+                }
+                eprintln!("{} {}", "ERROR:".red(), e);
+                process::exit(1);
+            }
+        };
+        bat_cmd.wait()
+    } else {
+        let mut child = prepare_command(&cmd);
+        child = add_utility_variables(child, maskfile_path);
+        child = add_flag_variables(child, &cmd);
+        child.spawn()?.wait()
+    }
 }
 
 fn prepare_command(cmd: &Command) -> process::Command {
