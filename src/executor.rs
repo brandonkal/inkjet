@@ -84,6 +84,12 @@ fn prepare_command(cmd: &Command) -> process::Command {
             child.arg("-r").arg(source);
             child
         }
+        "ts" | "typescript" => {
+            let mut child = process::Command::new("deno");
+            // TODO: handle write to disk and call
+            child.arg("run").arg(source);
+            child
+        }
         // Any other executor that supports -c (sh, bash, zsh, fish, dash, etc...)
         _ => {
             let mut child = process::Command::new(executor);
