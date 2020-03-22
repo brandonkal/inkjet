@@ -1,3 +1,5 @@
+use colored::*;
+
 use pulldown_cmark::{
     Event::{Code, End, InlineHtml, Start, Text},
     Options, Parser, Tag,
@@ -15,7 +17,7 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
     let mut text = "".to_string();
     let mut list_level = 0;
 
-    for event in parser {
+    for (event, _range) in parser.into_offset_iter() {
         match event {
             Start(tag) => {
                 match tag {
@@ -58,7 +60,6 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
                 Tag::List(_) => {
                     // Don't go lower than zero (for cases where it's a non-OPTIONS list)
                     list_level = std::cmp::max(list_level - 1, 0);
-
                     // Must be finished parsing the current option
                     if list_level == 1 {
                         // Add the current one to the list and start a new one
@@ -75,7 +76,56 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
 
                 // Options level 1 is the flag name
                 if list_level == 1 {
-                    current_option_flag.name = text.clone();
+                    if text.contains(':') {
+                        // Shorthand syntax
+                        let mut flag_split = text.splitn(2, ':');
+                        if flag_split.next().unwrap_or("").trim() == "flags" {
+                            let val = flag_split.next().unwrap_or("").trim();
+                            let mut desc_words = String::with_capacity(val.len());
+                            for word in val.split_whitespace() {
+                                if word.starts_with("--") {
+                                    let name = word.split("--").collect::<Vec<&str>>().join("");
+                                    current_option_flag.long = name.clone();
+                                    current_option_flag.name = name;
+
+                                // Must be a short flag name
+                                } else if word.starts_with('-') {
+                                    // Get the single char
+                                    let name = word.get(1..2).unwrap_or("");
+                                    current_option_flag.short = name.to_string();
+                                } else if word.starts_with('|') && word.ends_with('|') {
+                                    let mut kind = word.to_owned();
+                                    kind.pop();
+                                    kind.remove(0);
+                                    match kind.as_str() {
+                                        "string" => {
+                                            current_option_flag.takes_value = true;
+                                        }
+                                        "number" => {
+                                            current_option_flag.takes_value = true;
+                                            current_option_flag.validate_as_number = true;
+                                        }
+                                        "bool" | "boolean" => {}
+                                        t => {
+                                            eprintln!("{} Invalid flag type '{}' Expected string | number | bool.", "ERROR:".red(), t);
+                                        }
+                                    }
+                                } else {
+                                    desc_words.push(' ');
+                                    desc_words.push_str(word)
+                                }
+                            }
+                            current_option_flag.desc = desc_words.trim().to_string();
+                        }
+
+                        // Add the current one to the list and start a new one
+                        current_command
+                            .option_flags
+                            .push(current_option_flag.clone());
+                        current_option_flag = OptionFlag::new();
+                    } else {
+                        current_option_flag.name = text.clone();
+                    }
                 }
                 // Options level 2 is the flag config
                 else if list_level == 2 {
