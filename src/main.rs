@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::env;
+use std::fs;
 use std::path::Path;
 
 use clap::{crate_name, crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
@@ -27,7 +28,7 @@ fn main() {
 
     let (opts, args) = pre_parse(env::args().collect());
 
-    let maskfile = find_maskfile(&opts.maskfile_path);
+    let (maskfile, maskfile_path) = find_maskfile(&opts.maskfile_path);
     if maskfile.is_err() {
         // If the maskfile can't be found, at least parse for --version or --help
         cli_app.get_matches();
@@ -40,7 +41,7 @@ fn main() {
     let chosen_cmd = find_command(&matches, &root_command.subcommands)
         .expect("SubcommandRequired failed to work");
 
-    match execute_command(chosen_cmd, opts.maskfile_path, opts.print, color) {
+    match execute_command(chosen_cmd, maskfile_path, opts.print, color) {
         Ok(status) => {
             if let Some(code) = status.code() {
                 std::process::exit(code)
@@ -83,6 +84,11 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     if args.len() == 1 {
         args.insert(1, "_default".to_string());
     }
+    // If the first argument is a markdown file or '-' assume it is a maskfile arg
+    // This allows us to use it as an interpretter without specifying '--maskfile'
+    if args.len() > 1 && args[1] == "-" || args[1].ends_with(".md") {
+        args.insert(1, "--maskfile".to_string());
+    }
     for i in 1..args.len() {
         let arg = &args[i];
         if i == maskfile_index {
@@ -100,6 +106,8 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
             opts.print = true;
         } else if !arg.starts_with('-') || early_exit_modifiers.contains(arg) {
             break; // no more parsing to do as a subcommand has been called
+        } else if arg == "-" {
+            continue; // stdin file input
         } else {
             // This may be a flag for the default command.
             args.insert(i, "_default".to_string());
@@ -117,7 +125,7 @@ fn canonical_path(p: &str) -> String {
     Path::new(p).to_str().unwrap().to_string()
 }
 
-fn find_maskfile(maskfile_path: &str) -> Result<String, String> {
+fn find_maskfile(maskfile_path: &str) -> (Result<String, String>, String) {
     let maskfile = mask::loader::read_maskfile(&maskfile_path);
 
     if maskfile.is_err() {
@@ -131,8 +139,14 @@ fn find_maskfile(maskfile_path: &str) -> Result<String, String> {
             println!("{} no maskfile.md found", "WARNING:".yellow());
         }
     }
+    // Find the absolute path to the maskfile
+    let absolute_path = fs::canonicalize(&maskfile_path)
+        .expect("canonicalize maskfile path failed")
+        .to_str()
+        .unwrap()
+        .to_string();
 
-    maskfile
+    (maskfile, absolute_path)
 }
 
 fn custom_maskfile_path_arg<'a, 'b>() -> Arg<'a, 'b> {

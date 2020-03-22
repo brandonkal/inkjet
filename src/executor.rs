@@ -1,7 +1,6 @@
 use colored::*;
-use std::fs::canonicalize;
 use std::io::{Error, ErrorKind, Result, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process;
 use std::process::ExitStatus;
 
@@ -101,26 +100,19 @@ fn prepare_command(cmd: &Command) -> process::Command {
 
 // Add some useful environment variables that scripts can use
 fn add_utility_variables(mut child: process::Command, maskfile_path: String) -> process::Command {
-    let maskfile_path = PathBuf::from(maskfile_path);
-
-    // Find the absolute path to the maskfile
-    let absolute_path = canonicalize(&maskfile_path)
-        .expect("canonicalize maskfile path failed")
-        .to_str()
-        .unwrap()
-        .to_string();
-    let absolute_path = Path::new(&absolute_path);
-    let absolute_path_str = absolute_path.to_str().unwrap();
-
     // Find the absolute path to the maskfile's parent directory
-    let parent_dir = absolute_path.parent().unwrap().to_str().unwrap();
+    let parent_dir = Path::new(&maskfile_path)
+        .parent()
+        .unwrap()
+        .to_str()
+        .unwrap();
 
     // This allows us to call "$MASK command" instead of "mask --maskfile <path> command"
     // inside scripts so that they can be location-agnostic (not care where they are
     // called from). This is useful for global maskfiles especially.
     child.env(
         "MASK",
-        format!("{} --maskfile {}", crate_name!(), absolute_path_str),
+        format!("{} --maskfile {}", crate_name!(), maskfile_path),
     );
     // This allows us to refer to the directory the maskfile lives in which can be handy
     // for loading relative files to it.
