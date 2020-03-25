@@ -1,15 +1,26 @@
-# Tasks
+#!/home/brandon/mask/target/release/mask
 
 > Development tasks for mask
 
-## echo (name) (optional?)
+## echo (name) (optional=default)
 > Echo something
 
 **OPTIONS**
 * file
     * flags: -f --file
-    * type: string
-    * desc: Only run tests from a specific filename
+    * type: number
+    * desc: Echo description
+
+```sh
+echo "Hello $name! Optional arg is $optional. File is $file"
+echo "Task complete."
+```
+
+## short
+> Echo something
+
+**OPTIONS**
+* flags: -f --file |string| Only run tests from a specific filename
 
 ```sh
 echo "Hello $name! Optional arg is $optional. File is $file"
