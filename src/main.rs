@@ -2,6 +2,10 @@ use std::collections::HashSet;
 use std::env;
 use std::fs;
 use std::path::Path;
+use std::process;
+extern crate dialoguer;
+use dialoguer::theme::ColoredTheme;
+use dialoguer::{Input, KeyPrompt};
 
 use clap::{crate_name, crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
 use colored::*;
@@ -40,6 +44,50 @@ fn main() {
         .get_matches_from(args);
     let chosen_cmd = find_command(&matches, &root_command.subcommands)
         .expect("SubcommandRequired failed to work");
+
+    // Handle interactive prompt
+    if opts.interactive {
+        // TODO: print current step with mdcat
+        loop {
+            let rv = KeyPrompt::with_theme(&ColoredTheme::default())
+                .with_text(&format!("Execute step {}?", chosen_cmd.name))
+                .items(&['y', 'n', 'p'])
+                .default(0)
+                .interact()
+                .unwrap();
+            if rv == 'y' {
+                println!("yes selected");
+                break;
+            } else if rv == 'p' {
+                match execute_command(chosen_cmd.clone(), maskfile_path.clone(), true, color) {
+                    Ok(_) => {
+                        println!(); // empty space
+                        continue;
+                    }
+                    Err(err) => {
+                        eprintln!("{} {}", "ERROR:".red(), err);
+                        std::process::exit(1)
+                    }
+                }
+            } else {
+                // TODO: handle skip logic
+                println!("Skipping command {}", chosen_cmd.name);
+                break;
+            }
+        }
+        for arg in chosen_cmd.args {
+            let rv: String = Input::with_theme(&ColoredTheme::default())
+                .with_prompt(&format!(
+                    "{}: Enter value for {}",
+                    chosen_cmd.name, arg.name
+                ))
+                .interact()
+                .unwrap();
+            println!("{}", rv)
+        }
+        println!("{}", chosen_cmd.name);
+        process::exit(0);
+    }
 
     match execute_command(chosen_cmd, maskfile_path, opts.print, color) {
         Ok(status) => {
