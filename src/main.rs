@@ -1,11 +1,10 @@
+use dialoguer::theme::ColoredTheme;
+use dialoguer::{Confirmation, Input, KeyPrompt};
+use mask::view;
 use std::collections::HashSet;
 use std::env;
 use std::fs;
 use std::path::Path;
-use std::process;
-extern crate dialoguer;
-use dialoguer::theme::ColoredTheme;
-use dialoguer::{Confirmation, Input, KeyPrompt};
 
 use clap::{crate_name, crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
 use colored::*;
@@ -38,14 +37,17 @@ fn main() {
         cli_app.get_matches();
         return;
     }
+    let mdtxt = maskfile.unwrap();
 
-    let root_command = mask::parser::build_command_structure(maskfile.unwrap());
+    let root_command = mask::parser::build_command_structure(mdtxt.clone());
     let matches = build_subcommands(cli_app, color_setting, &opts, &root_command.subcommands)
         .get_matches_from(args);
     let mut chosen_cmd = find_command(&matches, &root_command.subcommands)
         .expect("SubcommandRequired failed to work");
 
     if opts.interactive {
+        let p = view::Printer::new(color, false, &maskfile_path);
+        p.print_markdown(&mdtxt);
         chosen_cmd = interactive_params(chosen_cmd, &maskfile_path, color);
     }
 

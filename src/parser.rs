@@ -1,7 +1,8 @@
 use colored::*;
 
+use pulldown_cmark::CodeBlockKind::Fenced;
 use pulldown_cmark::{
-    Event::{Code, End, InlineHtml, Start, Text},
+    Event::{Code, End, Html, Start, Text},
     Options, Parser, Tag,
 };
 
@@ -21,7 +22,7 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
         match event {
             Start(tag) => {
                 match tag {
-                    Tag::Header(heading_level) => {
+                    Tag::Heading(heading_level) => {
                         // Add the last command before starting a new one.
                         // Don't add the first command during the first iteration.
                         if heading_level > 1 {
@@ -29,9 +30,12 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
                         }
                         current_command = Command::new(heading_level as u8);
                     }
-                    Tag::CodeBlock(lang_code) => {
-                        current_command.script.executor = lang_code.to_string();
-                    }
+                    Tag::CodeBlock(cb) => match cb {
+                        Fenced(lang_code) => {
+                            current_command.script.executor = lang_code.to_string();
+                        }
+                        _ => {}
+                    },
                     Tag::List(_) => {
                         // We're in an options list if the current text above it is "OPTIONS"
                         if text == "OPTIONS" || list_level > 0 {
@@ -45,7 +49,7 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
                 text = "".to_string();
             }
             End(tag) => match tag {
-                Tag::Header(heading_level) => {
+                Tag::Heading(heading_level) => {
                     let (name, alias, args) = parse_heading_to_cmd(heading_level, text.clone());
                     current_command.name = name;
                     current_command.args = args;
@@ -164,7 +168,7 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
                     };
                 }
             }
-            InlineHtml(html) => {
+            Html(html) => {
                 text += &html.to_string();
             }
             Code(inline_code) => {
@@ -232,7 +236,7 @@ fn treeify_commands(commands: Vec<Command>) -> Vec<Command> {
     command_tree
 }
 
-fn parse_heading_to_cmd(heading_level: i32, text: String) -> (String, String, Vec<Arg>) {
+fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Vec<Arg>) {
     // Why heading_level > 2? Because level 1 is the root command title (unused)
     // and level 2 can't be a subcommand so no need to split.
     let name = if heading_level > 2 {
