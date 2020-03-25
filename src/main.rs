@@ -78,9 +78,13 @@ fn main() {
         for arg in chosen_cmd.args {
             let rv: String = Input::with_theme(&ColoredTheme::default())
                 .with_prompt(&format!(
-                    "{}: Enter value for {}",
-                    chosen_cmd.name, arg.name
+                    "{}: Enter value for {}{}",
+                    chosen_cmd.name,
+                    arg.name,
+                    if arg.required { " *" } else { "" },
                 ))
+                .allow_empty(!arg.required)
+                .default(arg.default)
                 .interact()
                 .unwrap();
             println!("{}", rv)
@@ -231,7 +235,11 @@ fn build_subcommands<'a, 'b>(
         for a in &c.args {
             let arg = Arg::with_name(&a.name);
             // If we are printing, we can't have required args
-            subcmd = subcmd.arg(arg.required(if opts.print { false } else { a.required }));
+            subcmd = subcmd.arg(arg.required(if opts.print || opts.interactive {
+                false
+            } else {
+                a.required
+            }));
         }
 
         // Add all optional flags
