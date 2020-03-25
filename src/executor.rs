@@ -10,7 +10,7 @@ use crate::command::Command;
 
 pub fn execute_command(
     cmd: Command,
-    maskfile_path: String,
+    maskfile_path: &str,
     print: bool,
     color: bool,
 ) -> Result<ExitStatus> {
@@ -99,7 +99,7 @@ fn prepare_command(cmd: &Command) -> process::Command {
 }
 
 // Add some useful environment variables that scripts can use
-fn add_utility_variables(mut child: process::Command, maskfile_path: String) -> process::Command {
+fn add_utility_variables(mut child: process::Command, maskfile_path: &str) -> process::Command {
     // Find the absolute path to the maskfile's parent directory
     let parent_dir = Path::new(&maskfile_path)
         .parent()

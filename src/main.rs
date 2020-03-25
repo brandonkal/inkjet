@@ -5,7 +5,7 @@ use std::path::Path;
 use std::process;
 extern crate dialoguer;
 use dialoguer::theme::ColoredTheme;
-use dialoguer::{Input, KeyPrompt};
+use dialoguer::{Confirmation, Input, KeyPrompt};
 
 use clap::{crate_name, crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
 use colored::*;
@@ -42,58 +42,14 @@ fn main() {
     let root_command = mask::parser::build_command_structure(maskfile.unwrap());
     let matches = build_subcommands(cli_app, color_setting, &opts, &root_command.subcommands)
         .get_matches_from(args);
-    let chosen_cmd = find_command(&matches, &root_command.subcommands)
+    let mut chosen_cmd = find_command(&matches, &root_command.subcommands)
         .expect("SubcommandRequired failed to work");
 
-    // Handle interactive prompt
     if opts.interactive {
-        // TODO: print current step with mdcat
-        loop {
-            let rv = KeyPrompt::with_theme(&ColoredTheme::default())
-                .with_text(&format!("Execute step {}?", chosen_cmd.name))
-                .items(&['y', 'n', 'p'])
-                .default(0)
-                .interact()
-                .unwrap();
-            if rv == 'y' {
-                println!("yes selected");
-                break;
-            } else if rv == 'p' {
-                match execute_command(chosen_cmd.clone(), maskfile_path.clone(), true, color) {
-                    Ok(_) => {
-                        println!(); // empty space
-                        continue;
-                    }
-                    Err(err) => {
-                        eprintln!("{} {}", "ERROR:".red(), err);
-                        std::process::exit(1)
-                    }
-                }
-            } else {
-                // TODO: handle skip logic
-                println!("Skipping command {}", chosen_cmd.name);
-                break;
-            }
-        }
-        for arg in chosen_cmd.args {
-            let rv: String = Input::with_theme(&ColoredTheme::default())
-                .with_prompt(&format!(
-                    "{}: Enter value for {}{}",
-                    chosen_cmd.name,
-                    arg.name,
-                    if arg.required { " *" } else { "" },
-                ))
-                .allow_empty(!arg.required)
-                .default(arg.default)
-                .interact()
-                .unwrap();
-            println!("{}", rv)
-        }
-        println!("{}", chosen_cmd.name);
-        process::exit(0);
+        chosen_cmd = interactive_params(chosen_cmd, &maskfile_path, color);
     }
 
-    match execute_command(chosen_cmd, maskfile_path, opts.print, color) {
+    match execute_command(chosen_cmd, &maskfile_path, opts.print, color) {
         Ok(status) => {
             if let Some(code) = status.code() {
                 std::process::exit(code)
@@ -104,6 +60,82 @@ fn main() {
             std::process::exit(1)
         }
     }
+}
+
+/// Prompt for missing parameters interactively.
+fn interactive_params(mut chosen_cmd: Command, maskfile_path: &str, color: bool) -> Command {
+    // TODO: print current step with mdcat
+    loop {
+        let rv = KeyPrompt::with_theme(&ColoredTheme::default())
+            .with_text(&format!("Execute step {}?", chosen_cmd.name))
+            .items(&['y', 'n', 'p'])
+            .default(0)
+            .interact()
+            .unwrap();
+        if rv == 'y' {
+            println!("yes selected");
+            break;
+        } else if rv == 'p' {
+            match execute_command(chosen_cmd.clone(), maskfile_path.clone(), true, color) {
+                Ok(_) => {
+                    println!(); // empty space
+                    continue;
+                }
+                Err(err) => {
+                    eprintln!("{} {}", "ERROR:".red(), err);
+                    std::process::exit(1)
+                }
+            }
+        } else {
+            // TODO: handle skip logic
+            println!("Skipping command {}", chosen_cmd.name);
+            break;
+        }
+    }
+    for arg in chosen_cmd.args.iter_mut() {
+        if arg.val == "" {
+            let rv: String = Input::with_theme(&ColoredTheme::default())
+                .with_prompt(&format!(
+                    "{}: Enter value for {}{}",
+                    chosen_cmd.name,
+                    arg.name,
+                    if arg.required { " *" } else { "" },
+                ))
+                .allow_empty(!arg.required)
+                .default(arg.default.clone())
+                .interact()
+                .unwrap();
+            arg.val = rv
+        }
+    }
+    for flag in chosen_cmd.option_flags.iter_mut() {
+        if !flag.takes_value {
+            let rv: bool = Confirmation::with_theme(&ColoredTheme::default())
+                .with_text(&format!("{}: Set {} option?", chosen_cmd.name, flag.name))
+                .default(false)
+                .interact()
+                .unwrap();
+            println!("{}", rv);
+        } else if flag.val == "" {
+            let mut rv: String;
+            loop {
+                let name = flag.name.clone();
+                rv = Input::with_theme(&ColoredTheme::default())
+                    .with_prompt(&format!("{}: Enter option for {}", chosen_cmd.name, name,))
+                    .allow_empty(true)
+                    .interact()
+                    .unwrap();
+                if is_invalid_number(flag.validate_as_number, &rv) {
+                    log_expect_number(&name);
+                    continue;
+                } else {
+                    break;
+                };
+            }
+            flag.val = rv
+        }
+    }
+    chosen_cmd
 }
 
 /// Creates vector of strings, Vec<String>
@@ -302,16 +334,9 @@ fn get_command_options(mut cmd: Command, matches: &ArgMatches) -> Command {
                 .unwrap()
                 .to_string();
 
-            if flag.validate_as_number && raw_value != "" {
-                // Try converting to an integer or float to validate it
-                if raw_value.parse::<isize>().is_err() && raw_value.parse::<f32>().is_err() {
-                    eprintln!(
-                        "{} flag `{}` expects a numerical value",
-                        "ERROR:".red(),
-                        flag.name
-                    );
-                    std::process::exit(1);
-                }
+            if is_invalid_number(flag.validate_as_number, &raw_value) {
+                log_expect_number(&flag.name);
+                std::process::exit(1);
             }
 
             raw_value
@@ -327,4 +352,20 @@ fn get_command_options(mut cmd: Command, matches: &ArgMatches) -> Command {
     }
 
     cmd
+}
+
+fn is_invalid_number(is_num: bool, raw_value: &str) -> bool {
+    if !is_num || raw_value == "" {
+        return false;
+    }
+    // Try converting to an integer or float to validate it
+    raw_value.parse::<isize>().is_err() && raw_value.parse::<f32>().is_err()
+}
+
+fn log_expect_number(name: &str) {
+    eprintln!(
+        "{} flag `{}` expects a numerical value",
+        "ERROR:".red(),
+        name
+    );
 }

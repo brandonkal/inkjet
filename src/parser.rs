@@ -276,7 +276,7 @@ fn parse_heading_to_cmd(heading_level: i32, text: String) -> (String, String, Ve
                 arg.pop();
                 out_args.push(Arg::new(arg, false, None));
             } else if arg.contains('=') {
-                let parts: Vec<&str> = arg.splitn(2, "=").collect();
+                let parts: Vec<&str> = arg.splitn(2, '=').collect();
                 out_args.push(Arg::new(
                     parts[0].to_string(),
                     false,
