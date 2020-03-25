@@ -8,6 +8,8 @@ pub struct Command {
     pub subcommands: Vec<Command>,
     pub args: Vec<Arg>,
     pub option_flags: Vec<OptionFlag>,
+    pub start: usize,
+    pub end: usize,
 }
 
 impl Command {
@@ -21,6 +23,8 @@ impl Command {
             subcommands: vec![],
             args: vec![],
             option_flags: vec![],
+            start: 0,
+            end: 0,
         }
     }
 

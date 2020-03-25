@@ -47,7 +47,13 @@ fn main() {
 
     if opts.interactive {
         let p = view::Printer::new(color, false, &maskfile_path);
-        p.print_markdown(&mdtxt);
+        let portion = &mdtxt[chosen_cmd.start..chosen_cmd.end];
+        let print_err = p.print_markdown(&portion);
+        if let Err(err) = print_err {
+            println!("ERROR: printing markdown: {}", err);
+            std::process::exit(1);
+        }
+        println!();
         chosen_cmd = interactive_params(chosen_cmd, &maskfile_path, color);
     }
 
@@ -78,7 +84,7 @@ fn interactive_params(mut chosen_cmd: Command, maskfile_path: &str, color: bool)
             println!("yes selected");
             break;
         } else if rv == 'p' {
-            match execute_command(chosen_cmd.clone(), maskfile_path.clone(), true, color) {
+            match execute_command(chosen_cmd.clone(), maskfile_path, true, color) {
                 Ok(_) => {
                     println!(); // empty space
                     continue;

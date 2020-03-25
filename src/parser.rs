@@ -18,7 +18,7 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
     let mut text = "".to_string();
     let mut list_level = 0;
 
-    for (event, _range) in parser.into_offset_iter() {
+    for (event, range) in parser.into_offset_iter() {
         match event {
             Start(tag) => {
                 match tag {
@@ -29,13 +29,14 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
                             commands.push(current_command.build());
                         }
                         current_command = Command::new(heading_level as u8);
+                        current_command.start = range.start;
                     }
-                    Tag::CodeBlock(cb) => match cb {
-                        Fenced(lang_code) => {
+                    Tag::CodeBlock(cb) => {
+                        if let Fenced(lang_code) = cb {
+                            current_command.end = range.start;
                             current_command.script.executor = lang_code.to_string();
                         }
-                        _ => {}
-                    },
+                    }
                     Tag::List(_) => {
                         // We're in an options list if the current text above it is "OPTIONS"
                         if text == "OPTIONS" || list_level > 0 {
