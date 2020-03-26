@@ -230,15 +230,16 @@ fn find_maskfile(maskfile_path: &str) -> (Result<String, String>, String) {
             // Just log a warning and let the process continue
             println!("{} no maskfile.md found", "WARNING:".yellow());
         }
+        (maskfile, "".to_string())
+    } else {
+        // Find the absolute path to the maskfile
+        let absolute_path = fs::canonicalize(&maskfile_path)
+            .expect("canonicalize maskfile path failed")
+            .to_str()
+            .unwrap()
+            .to_string();
+        (maskfile, absolute_path)
     }
-    // Find the absolute path to the maskfile
-    let absolute_path = fs::canonicalize(&maskfile_path)
-        .expect("canonicalize maskfile path failed")
-        .to_str()
-        .unwrap()
-        .to_string();
-
-    (maskfile, absolute_path)
 }
 
 fn custom_maskfile_path_arg<'a, 'b>() -> Arg<'a, 'b> {
