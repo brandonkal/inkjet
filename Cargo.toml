@@ -15,6 +15,11 @@ license = "MIT"
 name = "mask"
 path = "src/lib.rs"
 
+[profile.release]
+lto = true
+codegen-units = 1
+panic = 'abort'
+
 [dependencies]
 colored = "1.9.3"                                                       # https://github.com/mackwic/colored
 pulldown-cmark = { version = "0.7.0", default-features = false }          # https://github.com/raphlinus/pulldown-cmark
