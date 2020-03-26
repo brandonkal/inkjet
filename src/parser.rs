@@ -203,6 +203,7 @@ fn treeify_commands(commands: Vec<Command>) -> Vec<Command> {
     let mut current_command = commands.first().expect("command should exist").clone();
     let num_commands = commands.len();
 
+    #[allow(clippy::needless_range_loop, clippy::comparison_chain)]
     for i in 0..num_commands {
         let c = &commands[i];
         let is_last_cmd = i == num_commands - 1;
