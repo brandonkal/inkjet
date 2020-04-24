@@ -26,8 +26,10 @@ fn main() {
         .setting(color_setting)
         .version(crate_version!())
         .arg(custom_maskfile_path_arg())
-        .arg_from_usage("-i --interactive 'Execute each command in the document sequentially prompting for arguments'")
-        .arg_from_usage("-p --print 'Print the command code and exit'");
+        .arg_from_usage(
+            "-i --interactive 'Execute the command in the document prompting for arguments'",
+        )
+        .arg_from_usage("-p --preview 'Preview the command source and exit'");
 
     let (opts, args) = pre_parse(env::args().collect());
 
@@ -57,7 +59,7 @@ fn main() {
         chosen_cmd = interactive_params(chosen_cmd, &maskfile_path, color);
     }
 
-    match execute_command(chosen_cmd, &maskfile_path, opts.print, color) {
+    match execute_command(chosen_cmd, &maskfile_path, opts.preview, color) {
         Ok(status) => {
             if let Some(code) = status.code() {
                 std::process::exit(code)
@@ -162,7 +164,7 @@ macro_rules! sset {
 #[derive(Default, Debug)]
 struct CustomOpts {
     interactive: bool,
-    print: bool,
+    preview: bool,
     maskfile_path: String,
 }
 
@@ -194,8 +196,8 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
             } else {
                 maskfile_index = i + 1
             }
-        } else if arg == "--print" {
-            opts.print = true;
+        } else if arg == "--preview" || arg == "-p" {
+            opts.preview = true;
         } else if !arg.starts_with('-') || early_exit_modifiers.contains(arg) {
             break; // no more parsing to do as a subcommand has been called
         } else if arg == "-" {
@@ -276,7 +278,7 @@ fn build_subcommands<'a, 'b>(
         for a in &c.args {
             let arg = Arg::with_name(&a.name);
             // If we are printing, we can't have required args
-            subcmd = subcmd.arg(arg.required(if opts.print || opts.interactive {
+            subcmd = subcmd.arg(arg.required(if opts.preview || opts.interactive {
                 false
             } else {
                 a.required

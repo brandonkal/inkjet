@@ -11,7 +11,7 @@ use crate::command::Command;
 pub fn execute_command(
     cmd: Command,
     maskfile_path: &str,
-    print: bool,
+    preview: bool,
     color: bool,
 ) -> Result<ExitStatus> {
     if cmd.script.source == "" {
@@ -24,7 +24,7 @@ pub fn execute_command(
         return Err(Error::new(ErrorKind::Other, msg));
     }
 
-    if print {
+    if preview {
         if !color {
             print!("{}", cmd.script.source);
             process::exit(0);
@@ -86,7 +86,7 @@ fn prepare_command(cmd: &Command) -> process::Command {
         "ts" | "typescript" => {
             let mut child = process::Command::new("deno");
             // TODO: handle write to disk and call
-            child.arg("run").arg(source);
+            child.arg("eval").arg(source);
             child
         }
         // Any other executor that supports -c (sh, bash, zsh, fish, dash, etc...)
