@@ -83,7 +83,6 @@ fn interactive_params(mut chosen_cmd: Command, maskfile_path: &str, color: bool)
             .interact()
             .unwrap();
         if rv == 'y' {
-            println!("yes selected");
             break;
         } else if rv == 'p' {
             match execute_command(chosen_cmd.clone(), maskfile_path, true, color) {
@@ -97,9 +96,8 @@ fn interactive_params(mut chosen_cmd: Command, maskfile_path: &str, color: bool)
                 }
             }
         } else {
-            // TODO: handle skip logic
             println!("Skipping command {}", chosen_cmd.name);
-            break;
+            std::process::exit(0);
         }
     }
     for arg in chosen_cmd.args.iter_mut() {
@@ -120,6 +118,9 @@ fn interactive_params(mut chosen_cmd: Command, maskfile_path: &str, color: bool)
     }
     for flag in chosen_cmd.option_flags.iter_mut() {
         if !flag.takes_value {
+            if flag.name == "verbose" {
+                break;
+            }
             let rv: bool = Confirmation::with_theme(&ColoredTheme::default())
                 .with_text(&format!("{}: Set {} option?", chosen_cmd.name, flag.name))
                 .default(false)
