@@ -8,8 +8,6 @@ use pulldown_cmark::{
 
 use crate::command::{Arg, Command, OptionFlag};
 
-// Woof. This is ugly. I'm planning on giving this a rewrite at some point...
-// At least we have some decent tests in place.
 pub fn build_command_structure(maskfile_contents: String) -> Command {
     let parser = create_markdown_parser(&maskfile_contents);
     let mut commands = vec![];

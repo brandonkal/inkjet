@@ -74,7 +74,6 @@ fn main() {
 
 /// Prompt for missing parameters interactively.
 fn interactive_params(mut chosen_cmd: Command, maskfile_path: &str, color: bool) -> Command {
-    // TODO: print current step with mdcat
     loop {
         let rv = KeyPrompt::with_theme(&ColoredTheme::default())
             .with_text(&format!("Execute step {}?", chosen_cmd.name))
