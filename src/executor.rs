@@ -133,8 +133,7 @@ fn prepare_command(cmd: &Command, parent_dir: &str, tempfile: &mut String) -> pr
             }
             "ts" | "typescript" => {
                 let mut child = process::Command::new("deno");
-                // TODO: handle write to disk and call
-                child.arg("eval").arg(source);
+                child.arg("eval").arg("-T").arg(source);
                 child
             }
             // Any other executor that supports -c (sh, bash, zsh, fish, dash, etc...)
