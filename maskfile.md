@@ -58,7 +58,13 @@ fi
 cargo build --release
 ~~~
 
+## ping
 
+> Echo pong for ping tests
+
+```sh
+echo "pong"
+```
 
 ## link
 
@@ -68,7 +74,19 @@ cargo build --release
 cargo install --force --path .
 ~~~
 
+## go
 
+> Execute embedded Go scripts with yaegi
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("hello from go")
+}
+```
 
 ## test
 
@@ -132,6 +150,15 @@ else
 fi
 ~~~
 
+## shebang
+
+> Run a shebang as a script
+
+```
+#!/bin/sh
+echo "Hello World!"
+```
+
 
 
 ## lint//\_default
@@ -140,4 +167,13 @@ fi
 
 ~~~bash
 cargo clippy
+~~~
+
+## deno
+
+~~~ts
+import './test.tsx'
+const five: number = 5
+console.log(five);
+console.log(JSON.stringify(Deno.args));
 ~~~
