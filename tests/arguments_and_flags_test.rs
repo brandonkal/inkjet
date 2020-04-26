@@ -4,11 +4,11 @@ use colored::*;
 use predicates::str::contains;
 
 mod common;
-use common::MaskCommandExt;
+use common::InkjetCommandExt;
 
 #[test]
 fn positional_arguments() {
-    let (_temp, maskfile_path) = common::maskfile(
+    let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## test (file) (test_case)
 
@@ -20,7 +20,7 @@ echo "Testing $test_case in $file"
 "#,
     );
 
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .command("test")
         .arg("the_file")
         .arg("some_test_case")
@@ -28,7 +28,7 @@ echo "Testing $test_case in $file"
         .stdout(contains("Testing some_test_case in the_file"))
         .success();
 
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .command("test")
         .arg("some_test_case")
         .assert()
@@ -41,7 +41,7 @@ echo "Testing $test_case in $file"
 
 #[test]
 fn optional_flags() {
-    let (_temp, maskfile_path) = common::maskfile(
+    let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## serve
 
@@ -67,7 +67,7 @@ fi
 "#,
     );
 
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .command("serve")
         .arg("--port")
         .arg("1234")
@@ -76,7 +76,7 @@ fi
         .success();
 
     // verbose is always available
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .command("serve")
         .arg("--port")
         .arg("1234")
@@ -91,7 +91,7 @@ mod when_entering_negative_numbers {
 
     #[test]
     fn allows_entering_negative_numbers_as_values() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## add (a) (b)
 ~~~bash
@@ -100,7 +100,7 @@ echo $(($a + $b))
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .cli("add -1 -3")
             .assert()
             .stdout(contains("-4"))
@@ -109,7 +109,7 @@ echo $(($a + $b))
 
     #[test]
     fn allows_entering_negative_numbers_as_flag_values() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## add
 
@@ -127,7 +127,7 @@ echo $(($a + $b))
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .cli("add --a -33 --b 17")
             .assert()
             .stdout(contains("-16"))
@@ -140,7 +140,7 @@ mod numerical_option_flag {
 
     #[test]
     fn properly_validates_flag_with_type_number() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## integer
 
@@ -155,7 +155,7 @@ echo "Value: $val"
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .cli("integer --val 1111112222")
             .assert()
             .stdout(contains("Value: 1111112222"))
@@ -164,7 +164,7 @@ echo "Value: $val"
 
     #[test]
     fn properly_validates_negative_numbers() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## negative
 
@@ -179,7 +179,7 @@ echo "Value: $val"
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .cli("negative --val -123")
             .assert()
             .stdout(contains("Value: -123"))
@@ -188,7 +188,7 @@ echo "Value: $val"
 
     #[test]
     fn properly_validates_decimal_numbers() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## decimal
 
@@ -203,7 +203,7 @@ echo "Value: $val"
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .cli("decimal --val 123.3456789")
             .assert()
             .stdout(contains("Value: 123.3456789"))
@@ -212,7 +212,7 @@ echo "Value: $val"
 
     #[test]
     fn errors_when_value_is_not_a_number() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## notanumber
 
@@ -227,7 +227,7 @@ echo "This shouldn't render"
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .cli("notanumber --val a234")
             .assert()
             .stderr(contains(format!(
@@ -239,7 +239,7 @@ echo "This shouldn't render"
 
     #[test]
     fn ignores_the_option_if_not_supplied() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## nooption
 
@@ -254,7 +254,7 @@ echo "No arg this time"
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .cli("nooption")
             .assert()
             .stdout(contains("No arg this time"))
@@ -267,9 +267,9 @@ mod version_flag {
 
     #[test]
     fn shows_the_correct_version_for_the_root_command() {
-        let (_temp, maskfile_path) = common::maskfile("## foo");
+        let (_temp, inkfile_path) = common::inkfile("## foo");
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .command("--version")
             .assert()
             .stdout(contains(format!("{} {}", crate_name!(), crate_version!())))
@@ -278,12 +278,12 @@ mod version_flag {
 
     #[test]
     fn exits_with_error_when_subcommand_has_version_flag() {
-        let (_temp, maskfile_path) = common::maskfile("## foo");
+        let (_temp, inkfile_path) = common::inkfile("## foo");
 
         // The setting "VersionlessSubcommands" removes the version flags (-V, --version)
         // from subcommands. Only the root command has a version flag.
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .command("foo")
             .arg("--version")
             .assert()

@@ -8,8 +8,8 @@ use pulldown_cmark::{
 
 use crate::command::{Arg, Command, OptionFlag};
 
-pub fn build_command_structure(maskfile_contents: String) -> Command {
-    let parser = create_markdown_parser(&maskfile_contents);
+pub fn build_command_structure(inkfile_contents: String) -> Command {
+    let parser = create_markdown_parser(&inkfile_contents);
     let mut commands = vec![];
     let mut current_command = Command::new(1);
     let mut current_option_flag = OptionFlag::new();
@@ -188,12 +188,12 @@ pub fn build_command_structure(maskfile_contents: String) -> Command {
     root_command.clone()
 }
 
-fn create_markdown_parser(maskfile_contents: &str) -> Parser {
+fn create_markdown_parser(inkfile_contents: &str) -> Parser {
     // Set up options and parser. Strikethroughs are not part of the CommonMark standard
     // and we therefore must enable it explicitly.
     let mut options = Options::empty();
     options.insert(Options::ENABLE_STRIKETHROUGH);
-    Parser::new_ext(&maskfile_contents, options)
+    Parser::new_ext(&inkfile_contents, options)
 }
 
 fn treeify_commands(commands: Vec<Command>) -> Vec<Command> {
@@ -270,7 +270,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
 
     let mut out_args: Vec<Arg> = vec![];
 
-    // TODO: some how support infinite args? https://github.com/jakedeichert/mask/issues/4
+    // TODO: some how support infinite args? https://github.com/jakedeichert/inkjet/issues/4
     if !args.is_empty() {
         let args = args.join("");
         let args: Vec<&str> = args.split(' ').collect();
@@ -296,10 +296,10 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
 }
 
 #[cfg(test)]
-const TEST_MASKFILE: &str = r#"
+const TEST_INKJETFILE: &str = r#"
 # Document Title
 
-This is an example maskfile for the tests below.
+This is an example inkfile for the tests below.
 
 ## serve (port)
 
@@ -333,7 +333,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_serve_command_name() {
-        let tree = build_command_structure(TEST_MASKFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE.to_string());
         let serve_command = &tree
             .subcommands
             .iter()
@@ -344,7 +344,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_serve_command_description() {
-        let tree = build_command_structure(TEST_MASKFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE.to_string());
         let serve_command = &tree
             .subcommands
             .iter()
@@ -355,7 +355,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_serve_required_positional_arguments() {
-        let tree = build_command_structure(TEST_MASKFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE.to_string());
         let serve_command = &tree
             .subcommands
             .iter()
@@ -367,7 +367,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_serve_command_executor() {
-        let tree = build_command_structure(TEST_MASKFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE.to_string());
         let serve_command = &tree
             .subcommands
             .iter()
@@ -378,7 +378,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_serve_command_source_with_tildes() {
-        let tree = build_command_structure(TEST_MASKFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE.to_string());
         let serve_command = &tree
             .subcommands
             .iter()
@@ -392,7 +392,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_node_command_source_with_backticks() {
-        let tree = build_command_structure(TEST_MASKFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE.to_string());
         let node_command = &tree
             .subcommands
             .iter()
@@ -406,7 +406,7 @@ mod build_command_structure {
 
     #[test]
     fn adds_verbose_optional_flag_to_command_with_script() {
-        let tree = build_command_structure(TEST_MASKFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE.to_string());
         let node_command = tree
             .subcommands
             .iter()
@@ -427,7 +427,7 @@ mod build_command_structure {
 
     #[test]
     fn does_not_add_verbose_optional_flag_to_command_with_no_script() {
-        let tree = build_command_structure(TEST_MASKFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE.to_string());
         let no_script_command = tree
             .subcommands
             .iter()

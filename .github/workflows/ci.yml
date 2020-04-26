@@ -28,8 +28,8 @@ jobs:
         run: cargo fetch
       - name: Build in test mode
         run: cargo build --tests --frozen
-      - name: Make mask available globally for certain test suites that depend on it
-        run: cp ./target/debug/mask /usr/share/rust/.cargo/bin
+      - name: Make inkjet available globally for certain test suites that depend on it
+        run: cp ./target/debug/inkjet /usr/share/rust/.cargo/bin
       - name: Run tests
         run: cargo test --frozen
 

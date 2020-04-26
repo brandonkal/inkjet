@@ -2,22 +2,22 @@ use assert_cmd::prelude::*;
 use predicates::str::contains;
 
 mod common;
-use common::MaskCommandExt;
+use common::InkjetCommandExt;
 
-// NOTE: This test suite depends on the mask binary being available in the current shell
+// NOTE: This test suite depends on the inkjet binary being available in the current shell
 
-// Using current_dir(".github") to make sure the default maskfile.md can't be found
-mod env_var_mask {
+// Using current_dir(".github") to make sure the default inkjet.md can't be found
+mod env_var_inkjet {
     use super::*;
 
     #[test]
     fn works_from_any_dir() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## ci
 
 ~~~bash
-$MASK test
+$INKJET test
 ~~~
 
 ## test
@@ -28,7 +28,7 @@ echo "tests passed"
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .current_dir(".github")
             .command("ci")
             .assert()
@@ -38,50 +38,50 @@ echo "tests passed"
 
     #[test]
     fn set_to_the_correct_value() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## run
 
 ~~~bash
-echo "mask = $MASK"
+echo "inkjet = $INKJET"
 ~~~
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .current_dir(".github")
             .command("run")
             .assert()
-            // Absolute maskfile path starts with /
-            .stdout(contains("mask = mask --maskfile /"))
-            // And ends with maskfile.md
-            .stdout(contains("maskfile.md"))
+            // Absolute inkfile path starts with /
+            .stdout(contains("inkjet = inkjet --inkfile /"))
+            // And ends with inkjet.md
+            .stdout(contains("inkjet.md"))
             .success();
     }
 }
 
-// Using current_dir(".github") to make sure the default maskfile.md can't be found
-mod env_var_maskfile_dir {
+// Using current_dir(".github") to make sure the default inkjet.md can't be found
+mod env_var_inkfile_dir {
     use super::*;
 
     #[test]
     fn set_to_the_correct_value() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## run
 
 ~~~bash
-echo "maskfile_dir = $MASKFILE_DIR"
+echo "inkfile_dir = $INKJETFILE_DIR"
 ~~~
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .current_dir(".github")
             .command("run")
             .assert()
-            // Absolute maskfile path starts with /
-            .stdout(contains("maskfile_dir = /"))
+            // Absolute inkfile path starts with /
+            .stdout(contains("inkfile_dir = /"))
             .success();
     }
 }

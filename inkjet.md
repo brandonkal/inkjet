@@ -1,6 +1,6 @@
-#!/home/brandon/mask/target/release/mask
+#!/home/brandon/inkjet/target/release/inkjet
 
-> Development tasks for mask
+> Development tasks for inkjet
 
 ## echo (name) (optional=default)
 > Echo something
@@ -27,13 +27,13 @@ echo "Hello $name! Optional arg is $optional. File is $file"
 echo "Task complete."
 ```
 
-## run (maskfile_command)
+## run (inkfile_command)
 
-> Build and run mask in development mode
+> Build and run inkjet in development mode
 
-**NOTE:** This uses `cargo run` to build and run `mask` in development mode. You must have a `maskfile` in the current directory (this file) and must supply a valid command for that `maskfile` (`maskfile_command`) in order to test the changes you've made to `mask`. Since you can only test against this `maskfile` for now, you can add subcommands to the bottom and run against those instead of running one of the existing commands.
+**NOTE:** This uses `cargo run` to build and run `inkjet` in development mode. You must have a `inkfile` in the current directory (this file) and must supply a valid command for that `inkfile` (`inkfile_command`) in order to test the changes you've made to `inkjet`. Since you can only test against this `inkfile` for now, you can add subcommands to the bottom and run against those instead of running one of the existing commands.
 
-**EXAMPLE:** `mask run "test -h"` - outputs the help info of this `test` command
+**EXAMPLE:** `inkjet run "test -h"` - outputs the help info of this `test` command
 
 **OPTIONS**
 * watch
@@ -42,9 +42,9 @@ echo "Task complete."
 
 ~~~bash
 if [[ $watch == "true" ]]; then
-    watchexec --exts rs --restart "cargo run -- $maskfile_command"
+    watchexec --exts rs --restart "cargo run -- $inkfile_command"
 else
-    cargo run -- $maskfile_command
+    cargo run -- $inkfile_command
 fi
 ~~~
 
@@ -52,7 +52,7 @@ fi
 
 ## build
 
-> Build a release version of mask
+> Build a release version of inkjet
 
 ~~~bash
 cargo build --release
@@ -68,7 +68,7 @@ echo "pong"
 
 ## link
 
-> Build mask and replace your globally installed version with it for testing
+> Build inkjet and replace your globally installed version with it for testing
 
 ~~~bash
 cargo install --force --path .

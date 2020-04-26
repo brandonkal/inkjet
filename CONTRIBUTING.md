@@ -8,7 +8,7 @@
 
 Please file an issue for discussion of new features or bugs. If an existing issue already exists, please comment there instead if you have more details to provide.
 
-If you're logging a bug, please be as detailed as possible. It's highly recommended that you post a minimum `maskfile.md` that reproduces the problem so we can debug it more easily. Issues may be closed if you don't provide enough info.
+If you're logging a bug, please be as detailed as possible. It's highly recommended that you post a minimum `inkjet.md` that reproduces the problem so we can debug it more easily. Issues may be closed if you don't provide enough info.
 
 
 

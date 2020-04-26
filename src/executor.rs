@@ -20,7 +20,7 @@ fn hash_source(s: &str) -> String {
 
 pub fn execute_command(
     cmd: Command,
-    maskfile_path: &str,
+    inkfile_path: &str,
     preview: bool,
     color: bool,
 ) -> Result<ExitStatus> {
@@ -61,11 +61,11 @@ pub fn execute_command(
         // run_and_exit(bat_cmd);
         bat_cmd.wait()
     } else {
-        let parent_dir = get_parent_dir(&maskfile_path);
+        let parent_dir = get_parent_dir(&inkfile_path);
         println!("Starting prepare_command");
         let mut tempfile = String::new();
         let mut child = prepare_command(&cmd, &parent_dir, &mut tempfile);
-        child = add_utility_variables(child, maskfile_path);
+        child = add_utility_variables(child, inkfile_path);
         child = add_flag_variables(child, &cmd);
         let result = child
             .spawn()
@@ -151,9 +151,9 @@ fn prepare_command(cmd: &Command, parent_dir: &str, tempfile: &mut String) -> pr
     }
 }
 
-// Find the absolute path to the maskfile's parent directory
-fn get_parent_dir(maskfile_path: &str) -> String {
-    Path::new(&maskfile_path)
+// Find the absolute path to the inkfile's parent directory
+fn get_parent_dir(inkfile_path: &str) -> String {
+    Path::new(&inkfile_path)
         .parent()
         .unwrap()
         .to_str()
@@ -162,17 +162,17 @@ fn get_parent_dir(maskfile_path: &str) -> String {
 }
 
 // Add some useful environment variables that scripts can use
-fn add_utility_variables(mut child: process::Command, maskfile_path: &str) -> process::Command {
-    // This allows us to call "$MASK command" instead of "mask --maskfile <path> command"
+fn add_utility_variables(mut child: process::Command, inkfile_path: &str) -> process::Command {
+    // This allows us to call "$INKJET command" instead of "inkjet --inkfile <path> command"
     // inside scripts so that they can be location-agnostic (not care where they are
-    // called from). This is useful for global maskfiles especially.
+    // called from). This is useful for global inkfiles especially.
     child.env(
-        "MASK",
-        format!("{} --maskfile {}", crate_name!(), maskfile_path),
+        "INKJET",
+        format!("{} --inkfile {}", crate_name!(), inkfile_path),
     );
-    // This allows us to refer to the directory the maskfile lives in which can be handy
+    // This allows us to refer to the directory the inkfile lives in which can be handy
     // for loading relative files to it.
-    child.env("MASKFILE_DIR", get_parent_dir(maskfile_path));
+    child.env("INKJETFILE_DIR", get_parent_dir(inkfile_path));
 
     child
 }

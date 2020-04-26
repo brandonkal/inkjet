@@ -3,11 +3,11 @@ use colored::*;
 use predicates::str::contains;
 
 mod common;
-use common::MaskCommandExt;
+use common::InkjetCommandExt;
 
 #[test]
 fn positional_arguments() {
-    let (_temp, maskfile_path) = common::maskfile(
+    let (_temp, inkfile_path) = common::inkfile(
         r#"
 
 ## services
@@ -32,7 +32,7 @@ echo "Stopping service $service_name"
 "#,
     );
 
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .cli("services start my_fancy_service")
         .assert()
         .stdout(contains("Starting service my_fancy_service"))
@@ -41,19 +41,19 @@ echo "Stopping service $service_name"
 
 #[test]
 fn exits_with_error_when_missing_subcommand() {
-    let (_temp, maskfile_path) = common::maskfile(
+    let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## service
 ### service start
 "#,
     );
 
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .command("service")
         .assert()
         .code(1)
         .stderr(contains(
-            "error: 'mask service' requires a subcommand, but one was not provided",
+            "error: 'inkjet service' requires a subcommand, but one was not provided",
         ))
         .failure();
 }
@@ -63,7 +63,7 @@ mod when_command_has_no_source {
 
     #[test]
     fn exits_with_error_when_it_has_no_script_lang_code() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## start
 ~~~
@@ -72,7 +72,7 @@ echo "system, online"
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .command("start")
             .assert()
             .code(1)
@@ -85,13 +85,13 @@ echo "system, online"
 
     #[test]
     fn exits_with_error_when_it_has_no_subcommands() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## start
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .command("start")
             .assert()
             .code(1)

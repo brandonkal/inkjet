@@ -3,11 +3,11 @@ use colored::*;
 use predicates::str::contains;
 
 mod common;
-use common::MaskCommandExt;
+use common::InkjetCommandExt;
 
 #[test]
 fn errors_when_no_lang_code_is_specified() {
-    let (_temp, maskfile_path) = common::maskfile(
+    let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## missing
 ~~~
@@ -16,7 +16,7 @@ echo "this won't do anything..."
 "#,
     );
 
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .command("missing")
         .assert()
         .code(1)
@@ -29,7 +29,7 @@ echo "this won't do anything..."
 
 #[test]
 fn sh() {
-    let (_temp, maskfile_path) = common::maskfile(
+    let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## sh
 ~~~sh
@@ -38,7 +38,7 @@ echo Hello, $name!
 "#,
     );
 
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .command("sh")
         .env("name", "World")
         .assert()
@@ -48,7 +48,7 @@ echo Hello, $name!
 
 #[test]
 fn bash() {
-    let (_temp, maskfile_path) = common::maskfile(
+    let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## bash
 ~~~bash
@@ -57,7 +57,7 @@ echo Hello, $name!
 "#,
     );
 
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .command("bash")
         .env("name", "World")
         .assert()
@@ -67,7 +67,7 @@ echo Hello, $name!
 
 #[test]
 fn node() {
-    let (_temp, maskfile_path) = common::maskfile(
+    let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## node
 ~~~js
@@ -77,7 +77,7 @@ console.log(`Hello, ${name}!`);
 "#,
     );
 
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .command("node")
         .env("name", "World")
         .assert()
@@ -87,7 +87,7 @@ console.log(`Hello, ${name}!`);
 
 #[test]
 fn python() {
-    let (_temp, maskfile_path) = common::maskfile(
+    let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## python
 ~~~py
@@ -98,7 +98,7 @@ print("Hello, " + name + "!")
 "#,
     );
 
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .command("python")
         .env("name", "World")
         .assert()
@@ -108,7 +108,7 @@ print("Hello, " + name + "!")
 
 #[test]
 fn ruby() {
-    let (_temp, maskfile_path) = common::maskfile(
+    let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## ruby
 ~~~ruby
@@ -118,7 +118,7 @@ puts "Hello, #{name}!"
 "#,
     );
 
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .command("ruby")
         .env("name", "World")
         .assert()
@@ -128,7 +128,7 @@ puts "Hello, #{name}!"
 
 #[test]
 fn php() {
-    let (_temp, maskfile_path) = common::maskfile(
+    let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## php
 ~~~php
@@ -139,7 +139,7 @@ echo "Hello, " . $name . "!\n";
 "#,
     );
 
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .command("php")
         .env("name", "World")
         .assert()

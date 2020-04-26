@@ -1,6 +1,6 @@
 use dialoguer::theme::ColoredTheme;
 use dialoguer::{Confirmation, Input, KeyPrompt};
-use mask::view;
+use inkjet::view;
 use std::collections::HashSet;
 use std::env;
 use std::fs;
@@ -9,8 +9,8 @@ use std::path::Path;
 use clap::{crate_name, crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
 use colored::*;
 
-use mask::command::Command;
-use mask::executor::execute_command;
+use inkjet::command::Command;
+use inkjet::executor::execute_command;
 
 fn main() {
     let color = env::var_os("NO_COLOR").is_none();
@@ -25,7 +25,7 @@ fn main() {
         .setting(AppSettings::SubcommandRequired)
         .setting(color_setting)
         .version(crate_version!())
-        .arg(custom_maskfile_path_arg())
+        .arg(custom_inkfile_path_arg())
         .arg_from_usage(
             "-i --interactive 'Execute the command in the document prompting for arguments'",
         )
@@ -33,22 +33,22 @@ fn main() {
 
     let (opts, args) = pre_parse(env::args().collect());
 
-    let (maskfile, maskfile_path) = find_maskfile(&opts.maskfile_path);
-    if maskfile.is_err() {
-        // If the maskfile can't be found, at least parse for --version or --help
+    let (inkfile, inkfile_path) = find_inkfile(&opts.inkfile_path);
+    if inkfile.is_err() {
+        // If the inkfile can't be found, at least parse for --version or --help
         cli_app.get_matches();
         return;
     }
-    let mdtxt = maskfile.unwrap();
+    let mdtxt = inkfile.unwrap();
 
-    let root_command = mask::parser::build_command_structure(mdtxt.clone());
+    let root_command = inkjet::parser::build_command_structure(mdtxt.clone());
     let matches = build_subcommands(cli_app, color_setting, &opts, &root_command.subcommands)
         .get_matches_from(args);
     let mut chosen_cmd = find_command(&matches, &root_command.subcommands)
         .expect("SubcommandRequired failed to work");
 
     if opts.interactive {
-        let p = view::Printer::new(color, false, &maskfile_path);
+        let p = view::Printer::new(color, false, &inkfile_path);
         let portion = &mdtxt[chosen_cmd.start..chosen_cmd.end];
         let print_err = p.print_markdown(&portion);
         if let Err(err) = print_err {
@@ -56,10 +56,10 @@ fn main() {
             std::process::exit(1);
         }
         println!();
-        chosen_cmd = interactive_params(chosen_cmd, &maskfile_path, color);
+        chosen_cmd = interactive_params(chosen_cmd, &inkfile_path, color);
     }
 
-    match execute_command(chosen_cmd, &maskfile_path, opts.preview, color) {
+    match execute_command(chosen_cmd, &inkfile_path, opts.preview, color) {
         Ok(status) => {
             if let Some(code) = status.code() {
                 std::process::exit(code)
@@ -73,7 +73,7 @@ fn main() {
 }
 
 /// Prompt for missing parameters interactively.
-fn interactive_params(mut chosen_cmd: Command, maskfile_path: &str, color: bool) -> Command {
+fn interactive_params(mut chosen_cmd: Command, inkfile_path: &str, color: bool) -> Command {
     loop {
         let rv = KeyPrompt::with_theme(&ColoredTheme::default())
             .with_text(&format!("Execute step {}?", chosen_cmd.name))
@@ -84,7 +84,7 @@ fn interactive_params(mut chosen_cmd: Command, maskfile_path: &str, color: bool)
         if rv == 'y' {
             break;
         } else if rv == 'p' {
-            match execute_command(chosen_cmd.clone(), maskfile_path, true, color) {
+            match execute_command(chosen_cmd.clone(), inkfile_path, true, color) {
                 Ok(_) => {
                     println!(); // empty space
                     continue;
@@ -165,7 +165,7 @@ macro_rules! sset {
 struct CustomOpts {
     interactive: bool,
     preview: bool,
-    maskfile_path: String,
+    inkfile_path: String,
 }
 
 // We must parse flags first to handle global flags and implicit defaults
@@ -173,28 +173,28 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     let mut opts = CustomOpts::default();
     let early_exit_modifiers = sset!["-h", "--help", "-V", "--version"];
     // Loop through all args and parse
-    let mut maskfile_arg_found = false;
-    let mut maskfile_index = 1000;
+    let mut inkfile_arg_found = false;
+    let mut inkfile_index = 1000;
     if args.len() == 1 {
         args.insert(1, "_default".to_string());
     }
-    // If the first argument is a markdown file or '-' assume it is a maskfile arg
-    // This allows us to use it as an interpretter without specifying '--maskfile'
+    // If the first argument is a markdown file or '-' assume it is a inkfile arg
+    // This allows us to use it as an interpretter without specifying '--inkfile'
     if args.len() > 1 && args[1] == "-" || args[1].ends_with(".md") {
-        args.insert(1, "--maskfile".to_string());
+        args.insert(1, "--inkfile".to_string());
     }
     for i in 1..args.len() {
         let arg = &args[i];
-        if i == maskfile_index {
-            opts.maskfile_path = canonical_path(arg);
+        if i == inkfile_index {
+            opts.inkfile_path = canonical_path(arg);
         } else if arg == "-i" || arg == "--interactive" {
             opts.interactive = true;
-        } else if arg == "--maskfile" {
-            maskfile_arg_found = true;
+        } else if arg == "--inkfile" {
+            inkfile_arg_found = true;
             if let Some(idx) = arg.find('=') {
-                opts.maskfile_path = canonical_path(&arg[(idx + 1)..]);
+                opts.inkfile_path = canonical_path(&arg[(idx + 1)..]);
             } else {
-                maskfile_index = i + 1
+                inkfile_index = i + 1
             }
         } else if arg == "--preview" || arg == "-p" {
             opts.preview = true;
@@ -208,8 +208,8 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
             break;
         }
     }
-    if !maskfile_arg_found {
-        opts.maskfile_path = canonical_path("./maskfile.md");
+    if !inkfile_arg_found {
+        opts.inkfile_path = canonical_path("./inkjet.md");
     }
     (opts, args)
 }
@@ -219,38 +219,38 @@ fn canonical_path(p: &str) -> String {
     Path::new(p).to_str().unwrap().to_string()
 }
 
-fn find_maskfile(maskfile_path: &str) -> (Result<String, String>, String) {
-    let (maskfile, the_path) = mask::loader::read_maskfile(&maskfile_path);
+fn find_inkfile(inkfile_path: &str) -> (Result<String, String>, String) {
+    let (inkfile, the_path) = inkjet::loader::read_inkfile(&inkfile_path);
 
-    if maskfile.is_err() {
-        // Check if this is a custom maskfile
-        if maskfile_path != "./maskfile.md" {
+    if inkfile.is_err() {
+        // Check if this is a custom inkfile
+        if inkfile_path != "./inkjet.md" {
             // Exit with an error it's not found
-            eprintln!("{} specified maskfile not found", "ERROR:".red());
+            eprintln!("{} specified inkfile not found", "ERROR:".red());
             std::process::exit(1);
         } else {
             // Just log a warning and let the process continue
-            println!("{} no maskfile.md found", "WARNING:".yellow());
+            println!("{} no inkjet.md found", "WARNING:".yellow());
         }
-        (maskfile, "".to_string())
+        (inkfile, "".to_string())
     } else {
-        // Find the absolute path to the maskfile
+        // Find the absolute path to the inkfile
         let absolute_path = fs::canonicalize(&the_path)
-            .expect("canonicalize maskfile path failed")
+            .expect("canonicalize inkfile path failed")
             .to_str()
             .unwrap()
             .to_string();
-        (maskfile, absolute_path)
+        (inkfile, absolute_path)
     }
 }
 
-fn custom_maskfile_path_arg<'a, 'b>() -> Arg<'a, 'b> {
+fn custom_inkfile_path_arg<'a, 'b>() -> Arg<'a, 'b> {
     // This is needed to prevent clap from complaining about the custom flag check
-    // within find_maskfile(). It should be removed once clap 3.x is released.
+    // within find_inkfile(). It should be removed once clap 3.x is released.
     // See https://github.com/clap-rs/clap/issues/748
-    Arg::with_name("maskfile")
-        .help("Path to a different maskfile you want to use")
-        .long("maskfile")
+    Arg::with_name("inkfile")
+        .help("Path to a different inkfile you want to use")
+        .long("inkfile")
         .takes_value(true)
         .multiple(false)
 }

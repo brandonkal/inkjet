@@ -6,11 +6,11 @@ use colored::*;
 use predicates::str::contains;
 
 mod common;
-use common::MaskCommandExt;
+use common::InkjetCommandExt;
 
 #[test]
-fn specifying_a_maskfile_in_a_different_dir() {
-    let (_temp, maskfile_path) = common::maskfile(
+fn specifying_a_inkfile_in_a_different_dir() {
+    let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## foo
 
@@ -18,32 +18,32 @@ fn specifying_a_maskfile_in_a_different_dir() {
 "#,
     );
 
-    common::run_mask(&maskfile_path)
+    common::run_inkjet(&inkfile_path)
         .arg("--help")
         .assert()
         .stdout(contains("USAGE:"))
         .success();
 }
 
-// Using current_dir(".github") to make sure the default maskfile.md can't be found
-mod when_no_maskfile_found_in_current_directory {
+// Using current_dir(".github") to make sure the default inkjet.md can't be found
+mod when_no_inkfile_found_in_current_directory {
     use super::*;
 
     #[test]
-    fn logs_warning_about_missing_maskfile() {
-        common::run_mask(&PathBuf::from("./maskfile.md"))
+    fn logs_warning_about_missing_inkfile() {
+        common::run_inkjet(&PathBuf::from("./inkjet.md"))
             .current_dir(".github")
             .command("-V")
             .assert()
             .stdout(contains(format!(
-                "{} no maskfile.md found",
+                "{} no inkjet.md found",
                 "WARNING:".yellow()
             )));
     }
 
     #[test]
     fn exits_without_error_for_help() {
-        common::run_mask(&PathBuf::from("./maskfile.md"))
+        common::run_inkjet(&PathBuf::from("./inkjet.md"))
             .current_dir(".github")
             .command("--help")
             .assert()
@@ -53,7 +53,7 @@ mod when_no_maskfile_found_in_current_directory {
 
     #[test]
     fn exits_without_error_for_version() {
-        common::run_mask(&PathBuf::from("./maskfile.md"))
+        common::run_inkjet(&PathBuf::from("./inkjet.md"))
             .current_dir(".github")
             .command("--version")
             .assert()
@@ -63,7 +63,7 @@ mod when_no_maskfile_found_in_current_directory {
 
     #[test]
     fn exits_with_error_for_any_other_command() {
-        common::run_mask(&PathBuf::from("./maskfile.md"))
+        common::run_inkjet(&PathBuf::from("./inkjet.md"))
             .current_dir(".github")
             .command("nothing")
             .assert()
@@ -73,17 +73,17 @@ mod when_no_maskfile_found_in_current_directory {
     }
 }
 
-mod when_custom_specified_maskfile_not_found {
+mod when_custom_specified_inkfile_not_found {
     use super::*;
 
     #[test]
     fn exits_with_error_for_help() {
-        common::run_mask(&PathBuf::from("./nonexistent.md"))
+        common::run_inkjet(&PathBuf::from("./nonexistent.md"))
             .command("--help")
             .assert()
             .code(1)
             .stderr(contains(format!(
-                "{} specified maskfile not found",
+                "{} specified inkfile not found",
                 "ERROR:".red()
             )))
             .failure();
@@ -91,12 +91,12 @@ mod when_custom_specified_maskfile_not_found {
 
     #[test]
     fn exits_with_error_for_version() {
-        common::run_mask(&PathBuf::from("./nonexistent.md"))
+        common::run_inkjet(&PathBuf::from("./nonexistent.md"))
             .command("--version")
             .assert()
             .code(1)
             .stderr(contains(format!(
-                "{} specified maskfile not found",
+                "{} specified inkfile not found",
                 "ERROR:".red()
             )))
             .failure();
@@ -104,12 +104,12 @@ mod when_custom_specified_maskfile_not_found {
 
     #[test]
     fn exits_with_error_for_any_other_command() {
-        common::run_mask(&PathBuf::from("./nonexistent.md"))
+        common::run_inkjet(&PathBuf::from("./nonexistent.md"))
             .command("what")
             .assert()
             .code(1)
             .stderr(contains(format!(
-                "{} specified maskfile not found",
+                "{} specified inkfile not found",
                 "ERROR:".red()
             )))
             .failure();
@@ -121,7 +121,7 @@ mod exits_with_the_child_process_status_code {
 
     #[test]
     fn exits_with_success() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## success
 
@@ -131,7 +131,7 @@ exit 0
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .command("success")
             .assert()
             .code(0)
@@ -140,7 +140,7 @@ exit 0
 
     #[test]
     fn exits_with_error1() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## failure
 
@@ -150,7 +150,7 @@ exit 1
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .command("failure")
             .assert()
             .code(1)
@@ -159,7 +159,7 @@ exit 1
 
     #[test]
     fn exits_with_error2() {
-        let (_temp, maskfile_path) = common::maskfile(
+        let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## failure
 
@@ -169,7 +169,7 @@ exit 2
 "#,
         );
 
-        common::run_mask(&maskfile_path)
+        common::run_inkjet(&inkfile_path)
             .command("failure")
             .assert()
             .code(2)

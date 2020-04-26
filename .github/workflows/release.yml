@@ -19,10 +19,10 @@ jobs:
         run: |
           VERSION_TAG=$(jq --raw-output '.release.tag_name' "$GITHUB_EVENT_PATH")
           TARGET=x86_64-unknown-linux-gnu
-          NAME=mask-$VERSION_TAG-$TARGET
+          NAME=inkjet-$VERSION_TAG-$TARGET
           mkdir $NAME
-          mv ./target/$TARGET/release/mask ./$NAME/mask
-          chmod +x ./$NAME/mask
+          mv ./target/$TARGET/release/inkjet ./$NAME/inkjet
+          chmod +x ./$NAME/inkjet
           zip -r $NAME.zip $NAME
       - name: Attach the binary to the release
         uses: ./.github/actions/attach-release-assets
@@ -51,10 +51,10 @@ jobs:
         run: |
           VERSION_TAG=$(jq --raw-output '.release.tag_name' "$GITHUB_EVENT_PATH")
           TARGET=x86_64-apple-darwin
-          NAME=mask-$VERSION_TAG-$TARGET
+          NAME=inkjet-$VERSION_TAG-$TARGET
           mkdir $NAME
-          mv ./target/$TARGET/release/mask ./$NAME/mask
-          chmod +x ./$NAME/mask
+          mv ./target/$TARGET/release/inkjet ./$NAME/inkjet
+          chmod +x ./$NAME/inkjet
           zip -r $NAME.zip $NAME
       # NOTE: cannot use the attach-release-assets action because macOS doesn't support docker-based actions.
       # Luckily we can just run the bash script directly.

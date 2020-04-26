@@ -3,12 +3,12 @@ use assert_fs::prelude::*;
 use std::path::PathBuf;
 use std::process::Command;
 
-pub trait MaskCommandExt {
+pub trait InkjetCommandExt {
     fn command(&mut self, c: &'static str) -> &mut Command;
     fn cli(&mut self, arguments: &'static str) -> &mut Command;
 }
 
-impl MaskCommandExt for Command {
+impl InkjetCommandExt for Command {
     fn command(&mut self, c: &'static str) -> &mut Command {
         self.arg(c);
         self
@@ -23,21 +23,21 @@ impl MaskCommandExt for Command {
     }
 }
 
-pub fn maskfile(content: &'static str) -> (assert_fs::TempDir, PathBuf) {
+pub fn inkfile(content: &'static str) -> (assert_fs::TempDir, PathBuf) {
     let temp = assert_fs::TempDir::new().unwrap();
-    let maskfile = temp.child("maskfile.md");
+    let inkfile = temp.child("inkjet.md");
 
-    maskfile.write_str(content).unwrap();
+    inkfile.write_str(content).unwrap();
 
-    let maskfile_path = maskfile.path().to_path_buf();
+    let inkfile_path = inkfile.path().to_path_buf();
 
-    (temp, maskfile_path)
+    (temp, inkfile_path)
 }
 
-pub fn run_mask(maskfile: &PathBuf) -> Command {
-    let mut mask = Command::cargo_bin(crate_name!()).expect("Was not able to find binary");
+pub fn run_inkjet(inkfile: &PathBuf) -> Command {
+    let mut inkjet = Command::cargo_bin(crate_name!()).expect("Was not able to find binary");
 
-    mask.arg("--maskfile").arg(maskfile);
+    inkjet.arg("--inkfile").arg(inkfile);
 
-    mask
+    inkjet
 }

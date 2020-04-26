@@ -7,16 +7,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in library 'mask'",
+      "name": "Debug unit tests in library 'inkjet'",
       "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--lib",
-          "--package=mask"
-        ],
+        "args": ["test", "--no-run", "--lib", "--package=inkjet"],
         "filter": {
-          "name": "mask",
+          "name": "inkjet",
           "kind": "lib"
         }
       },
@@ -26,15 +21,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'mask'",
+      "name": "Debug executable 'inkjet'",
       "cargo": {
-        "args": [
-          "build",
-          "--bin=mask",
-          "--package=mask"
-        ],
+        "args": ["build", "--bin=inkjet", "--package=inkjet"],
         "filter": {
-          "name": "mask",
+          "name": "inkjet",
           "kind": "bin"
         }
       },
@@ -44,16 +35,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in executable 'mask'",
+      "name": "Debug unit tests in executable 'inkjet'",
       "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--bin=mask",
-          "--package=mask"
-        ],
+        "args": ["test", "--no-run", "--bin=inkjet", "--package=inkjet"],
         "filter": {
-          "name": "mask",
+          "name": "inkjet",
           "kind": "bin"
         }
       },
@@ -69,7 +55,7 @@
           "test",
           "--no-run",
           "--test=subcommands_test",
-          "--package=mask"
+          "--package=inkjet"
         ],
         "filter": {
           "name": "subcommands_test",
@@ -88,7 +74,7 @@
           "test",
           "--no-run",
           "--test=supported_runtimes_test",
-          "--package=mask"
+          "--package=inkjet"
         ],
         "filter": {
           "name": "supported_runtimes_test",
@@ -107,7 +93,7 @@
           "test",
           "--no-run",
           "--test=integration_test",
-          "--package=mask"
+          "--package=inkjet"
         ],
         "filter": {
           "name": "integration_test",
@@ -126,7 +112,7 @@
           "test",
           "--no-run",
           "--test=env_vars_test",
-          "--package=mask"
+          "--package=inkjet"
         ],
         "filter": {
           "name": "env_vars_test",
@@ -145,7 +131,7 @@
           "test",
           "--no-run",
           "--test=arguments_and_flags_test",
-          "--package=mask"
+          "--package=inkjet"
         ],
         "filter": {
           "name": "arguments_and_flags_test",

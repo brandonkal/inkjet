@@ -1,8 +1,8 @@
 use std::fs::File;
 use std::io::prelude::*;
 
-pub fn read_maskfile(maskfile: &str) -> (Result<String, String>, String) {
-    let mut filename = String::from(maskfile);
+pub fn read_inkfile(inkfile: &str) -> (Result<String, String>, String) {
+    let mut filename = String::from(inkfile);
     if filename == "" {
         let p = std::env::current_dir().unwrap();
         for ancestor in p.ancestors() {
@@ -22,47 +22,47 @@ pub fn read_maskfile(maskfile: &str) -> (Result<String, String>, String) {
     if file.is_err() {
         return (Err(format!("failed to open {}", filename)), filename);
     }
-    let maskfile_contents = read_and_return(file);
-    (Ok(maskfile_contents), filename)
+    let inkfile_contents = read_and_return(file);
+    (Ok(inkfile_contents), filename)
 }
 
 fn read_and_return(file: Result<std::fs::File, std::io::Error>) -> String {
     let mut file = file.unwrap();
-    let mut maskfile_contents = String::new();
-    file.read_to_string(&mut maskfile_contents)
+    let mut inkfile_contents = String::new();
+    file.read_to_string(&mut inkfile_contents)
         .expect("expected file contents");
-    maskfile_contents
+    inkfile_contents
 }
 
 #[cfg(test)]
-mod read_maskfile {
+mod read_inkfile {
     use super::*;
 
     #[test]
-    fn reads_root_maskfile() {
-        let (maskfile, _) = read_maskfile("./maskfile.md");
+    fn reads_root_inkfile() {
+        let (inkfile, _) = read_inkfile("./inkjet.md");
 
-        assert!(maskfile.is_ok(), "maskfile was ok");
+        assert!(inkfile.is_ok(), "inkfile was ok");
 
-        let contents = maskfile.unwrap();
+        let contents = inkfile.unwrap();
 
-        // Basic test to make sure the maskfile.md contents are at least right
-        let expected_root_description = "> Development tasks for mask";
+        // Basic test to make sure the inkjet.md contents are at least right
+        let expected_root_description = "> Development tasks for inkjet";
         assert!(
             contents.contains(expected_root_description),
-            "description wasn't found in maskfile contents"
+            "description wasn't found in inkfile contents"
         );
     }
 
     #[test]
-    fn errors_for_non_existent_maskfile() {
-        let (maskfile, _) = read_maskfile("src/maskfile.md");
+    fn errors_for_non_existent_inkfile() {
+        let (inkfile, _) = read_inkfile("src/inkjet.md");
 
-        assert!(maskfile.is_err(), "maskfile was err");
+        assert!(inkfile.is_err(), "inkfile was err");
 
-        let err = maskfile.unwrap_err();
+        let err = inkfile.unwrap_err();
 
-        let expected_err = "failed to open maskfile.md";
+        let expected_err = "failed to open inkjet.md";
         assert_eq!(err, expected_err, "error message was wrong");
     }
 }

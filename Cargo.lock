@@ -636,6 +636,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "inkjet"
+version = "0.7.1"
+dependencies = [
+ "assert_cmd 0.12.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "assert_fs 0.13.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "colored 1.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "dialoguer 0.5.0 (git+https://github.com/brandonkal/dialoguer)",
+ "mdcat 0.15.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "predicates 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pulldown-cmark 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syntect 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "iovec"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -709,21 +724,6 @@ dependencies = [
 name = "lzw"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "mask"
-version = "0.7.1"
-dependencies = [
- "assert_cmd 0.12.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "assert_fs 0.13.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "colored 1.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "dialoguer 0.5.0 (git+https://github.com/brandonkal/dialoguer)",
- "mdcat 0.15.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "predicates 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "pulldown-cmark 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "syntect 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "matches"
