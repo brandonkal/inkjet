@@ -220,7 +220,7 @@ fn canonical_path(p: &str) -> String {
 }
 
 fn find_maskfile(maskfile_path: &str) -> (Result<String, String>, String) {
-    let maskfile = mask::loader::read_maskfile(&maskfile_path);
+    let (maskfile, the_path) = mask::loader::read_maskfile(&maskfile_path);
 
     if maskfile.is_err() {
         // Check if this is a custom maskfile
@@ -235,7 +235,7 @@ fn find_maskfile(maskfile_path: &str) -> (Result<String, String>, String) {
         (maskfile, "".to_string())
     } else {
         // Find the absolute path to the maskfile
-        let absolute_path = fs::canonicalize(&maskfile_path)
+        let absolute_path = fs::canonicalize(&the_path)
             .expect("canonicalize maskfile path failed")
             .to_str()
             .unwrap()

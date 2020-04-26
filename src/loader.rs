@@ -1,21 +1,37 @@
 use std::fs::File;
 use std::io::prelude::*;
 
-// TODO: try to find maskfile in current directory and maybe parent directories?
-// https://github.com/jakedeichert/mask/issues/7
-
-pub fn read_maskfile(maskfile: &str) -> Result<String, String> {
-    let file = File::open(maskfile);
-    if file.is_err() {
-        return Err("failed to open maskfile.md".to_string());
+pub fn read_maskfile(maskfile: &str) -> (Result<String, String>, String) {
+    let mut filename = String::from(maskfile);
+    if filename == "" {
+        let p = std::env::current_dir().unwrap();
+        for ancestor in p.ancestors() {
+            let check = ancestor.join("orders.md");
+            let file = File::open(&filename);
+            if file.is_ok() {
+                filename = String::from(check.to_str().unwrap());
+                return (Ok(read_and_return(file)), filename);
+            }
+        }
+        return (
+            Err("Could not locate an orders.md file".to_owned()),
+            filename,
+        );
     }
+    let file = File::open(&filename);
+    if file.is_err() {
+        return (Err(format!("failed to open {}", filename)), filename);
+    }
+    let maskfile_contents = read_and_return(file);
+    (Ok(maskfile_contents), filename)
+}
 
+fn read_and_return(file: Result<std::fs::File, std::io::Error>) -> String {
     let mut file = file.unwrap();
     let mut maskfile_contents = String::new();
     file.read_to_string(&mut maskfile_contents)
         .expect("expected file contents");
-
-    Ok(maskfile_contents)
+    maskfile_contents
 }
 
 #[cfg(test)]
@@ -24,7 +40,7 @@ mod read_maskfile {
 
     #[test]
     fn reads_root_maskfile() {
-        let maskfile = read_maskfile("./maskfile.md");
+        let (maskfile, _) = read_maskfile("./maskfile.md");
 
         assert!(maskfile.is_ok(), "maskfile was ok");
 
@@ -40,7 +56,7 @@ mod read_maskfile {
 
     #[test]
     fn errors_for_non_existent_maskfile() {
-        let maskfile = read_maskfile("src/maskfile.md");
+        let (maskfile, _) = read_maskfile("src/maskfile.md");
 
         assert!(maskfile.is_err(), "maskfile was err");
 
