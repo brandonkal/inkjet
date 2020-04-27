@@ -171,8 +171,24 @@ cargo clippy
 ## deno
 
 ```ts
-import './test.tsx';
+import './tests/imported.tsx';
 const five: number = 5;
 console.log(five);
 console.log(JSON.stringify(Deno.args));
+```
+
+## opts (name) (optional?)
+
+> Echo something
+
+**OPTIONS**
+
+- file
+  - flags: -f --file
+  - type: string
+  - desc: Only run tests from a specific filename
+
+```sh
+echo "Hello $name! Optional arg is $optional. File is $file"
+echo "Task complete."
 ```
