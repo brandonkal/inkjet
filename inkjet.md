@@ -3,13 +3,15 @@
 > Development tasks for inkjet
 
 ## echo (name) (optional=default)
+
 > Echo something
 
 **OPTIONS**
-* file
-    * flags: -f --file
-    * type: number
-    * desc: Echo description
+
+- file
+  - flags: -f --file
+  - type: number
+  - desc: Echo description
 
 ```sh
 echo "Hello $name! Optional arg is $optional. File is $file"
@@ -17,10 +19,12 @@ echo "Task complete."
 ```
 
 ## short
+
 > Echo something
 
 **OPTIONS**
-* flags: -f --file |string| Only run tests from a specific filename
+
+- flags: -f --file |string| Only run tests from a specific filename
 
 ```sh
 echo "Hello $name! Optional arg is $optional. File is $file"
@@ -36,27 +40,26 @@ echo "Task complete."
 **EXAMPLE:** `inkjet run "test -h"` - outputs the help info of this `test` command
 
 **OPTIONS**
-* watch
-    * flags: -w --watch
-    * desc: Rebuild on file change
 
-~~~bash
+- watch
+  - flags: -w --watch
+  - desc: Rebuild on file change
+
+```bash
 if [[ $watch == "true" ]]; then
     watchexec --exts rs --restart "cargo run -- $inkfile_command"
 else
     cargo run -- $inkfile_command
 fi
-~~~
-
-
+```
 
 ## build
 
 > Build a release version of inkjet
 
-~~~bash
+```bash
 cargo build --release
-~~~
+```
 
 ## ping
 
@@ -70,9 +73,9 @@ echo "pong"
 
 > Build inkjet and replace your globally installed version with it for testing
 
-~~~bash
+```bash
 cargo install --force --path .
-~~~
+```
 
 ## go
 
@@ -93,12 +96,13 @@ func main() {
 > Run all tests
 
 **OPTIONS**
-* file
-    * flags: -f --file
-    * type: string
-    * desc: Only run tests from a specific filename
 
-~~~bash
+- file
+  - flags: -f --file
+  - type: string
+  - desc: Only run tests from a specific filename
+
+```bash
 extra_args=""
 
 if [[ "$verbose" == "true" ]]; then
@@ -115,9 +119,7 @@ else
     cargo test --test $file $extra_args
 fi
 echo "Tests passed!"
-~~~
-
-
+```
 
 ## deps
 
@@ -127,28 +129,27 @@ echo "Tests passed!"
 
 > Update the cargo dependencies
 
-~~~bash
+```bash
 cargo update
-~~~
-
-
+```
 
 ## format
 
 > Format all source files
 
 **OPTIONS**
-* check
-    * flags: -c --check
-    * desc: Show which files are not formatted correctly
 
-~~~bash
+- check
+  - flags: -c --check
+  - desc: Show which files are not formatted correctly
+
+```bash
 if [[ $check == "true" ]]; then
     cargo fmt --all -- --check
 else
     cargo fmt
 fi
-~~~
+```
 
 ## shebang
 
@@ -159,21 +160,19 @@ fi
 echo "Hello World!"
 ```
 
-
-
 ## lint//\_default
 
 > Lint the project with clippy
 
-~~~bash
+```bash
 cargo clippy
-~~~
+```
 
 ## deno
 
-~~~ts
-import './test.tsx'
-const five: number = 5
+```ts
+import './test.tsx';
+const five: number = 5;
 console.log(five);
 console.log(JSON.stringify(Deno.args));
-~~~
+```
