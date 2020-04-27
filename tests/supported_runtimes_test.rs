@@ -1,5 +1,4 @@
 use assert_cmd::prelude::*;
-use colored::*;
 use predicates::str::contains;
 
 mod common;
@@ -20,10 +19,9 @@ echo "this won't do anything..."
         .command("missing")
         .assert()
         .code(1)
-        .stderr(contains(format!(
-            "{} Command script requires a lang code which determines which executor to use.",
-            "ERROR:".red()
-        )))
+        .stderr(contains(
+            "Command script requires a lang code which determines which executor to use.",
+        ))
         .failure();
 }
 
