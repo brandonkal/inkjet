@@ -637,7 +637,7 @@ dependencies = [
 
 [[package]]
 name = "inkjet"
-version = "0.7.1"
+version = "0.8.0"
 dependencies = [
  "assert_cmd 0.12.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "assert_fs 0.13.1 (registry+https://github.com/rust-lang/crates.io-index)",

@@ -1,6 +1,5 @@
 use dialoguer::theme::ColoredTheme;
 use dialoguer::{Confirmation, Input, KeyPrompt};
-use inkjet::view;
 use std::collections::HashSet;
 use std::env;
 use std::fs;
@@ -11,6 +10,7 @@ use colored::*;
 
 use inkjet::command::Command;
 use inkjet::executor::execute_command;
+use inkjet::view;
 
 fn main() {
     let color = env::var_os("NO_COLOR").is_none();

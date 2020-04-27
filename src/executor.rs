@@ -62,7 +62,6 @@ pub fn execute_command(
         bat_cmd.wait()
     } else {
         let parent_dir = get_parent_dir(&inkfile_path);
-        println!("Starting prepare_command");
         let mut tempfile = String::new();
         let mut child = prepare_command(&cmd, &parent_dir, &mut tempfile);
         child = add_utility_variables(child, inkfile_path);
@@ -77,7 +76,6 @@ pub fn execute_command(
                 process::exit(1);
             })
             .wait();
-        println!("Temp file after run {}", &tempfile);
         if tempfile != "" && std::fs::remove_file(&tempfile).is_err() {
             eprintln!("{} Failed to delete file {}", "ERROR:".red(), tempfile);
         }
@@ -88,9 +86,7 @@ pub fn execute_command(
 fn prepare_command(cmd: &Command, parent_dir: &str, tempfile: &mut String) -> process::Command {
     let executor = cmd.script.executor.clone();
     let source = cmd.script.source.trim();
-    // TODO: check if source starts with shebang magic num
     if source.starts_with("#!") || executor == "go" {
-        println!("Script has shebang");
         let hash = hash_source(source);
         // Handle Golang executor by default
         let data = if executor == "go" && !source.starts_with("#!") {
@@ -99,7 +95,6 @@ fn prepare_command(cmd: &Command, parent_dir: &str, tempfile: &mut String) -> pr
             String::from(source)
         };
         *tempfile = format!("{}/.order.{}", parent_dir, hash);
-        println!("{}", &tempfile);
         std::fs::write(&tempfile, data)
             .unwrap_or_else(|_| panic!("Unable to write file {}", &tempfile));
         let meta = std::fs::metadata(&tempfile).expect("Unable to read file permissions");

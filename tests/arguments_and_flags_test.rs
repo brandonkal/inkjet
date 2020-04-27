@@ -1,6 +1,5 @@
 use assert_cmd::prelude::*;
 use clap::{crate_name, crate_version};
-use colored::*;
 use predicates::str::contains;
 
 mod common;
@@ -230,10 +229,7 @@ echo "This shouldn't render"
         common::run_inkjet(&inkfile_path)
             .cli("notanumber --val a234")
             .assert()
-            .stderr(contains(format!(
-                "{} flag `val` expects a numerical value",
-                "ERROR:".red()
-            )))
+            .stderr(contains("flag `val` expects a numerical value"))
             .failure();
     }
 

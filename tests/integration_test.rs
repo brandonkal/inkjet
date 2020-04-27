@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use assert_cmd::prelude::*;
 use clap::{crate_name, crate_version};
-use colored::*;
 use predicates::str::contains;
 
 mod common;
@@ -35,10 +34,7 @@ mod when_no_inkfile_found_in_current_directory {
             .current_dir(".github")
             .command("-V")
             .assert()
-            .stdout(contains(format!(
-                "{} no inkjet.md found",
-                "WARNING:".yellow()
-            )));
+            .stdout(contains("no inkjet.md found"));
     }
 
     #[test]
@@ -82,10 +78,7 @@ mod when_custom_specified_inkfile_not_found {
             .command("--help")
             .assert()
             .code(1)
-            .stderr(contains(format!(
-                "{} specified inkfile not found",
-                "ERROR:".red()
-            )))
+            .stderr(contains("specified inkfile not found"))
             .failure();
     }
 
@@ -95,10 +88,7 @@ mod when_custom_specified_inkfile_not_found {
             .command("--version")
             .assert()
             .code(1)
-            .stderr(contains(format!(
-                "{} specified inkfile not found",
-                "ERROR:".red()
-            )))
+            .stderr(contains("specified inkfile not found"))
             .failure();
     }
 
@@ -108,10 +98,7 @@ mod when_custom_specified_inkfile_not_found {
             .command("what")
             .assert()
             .code(1)
-            .stderr(contains(format!(
-                "{} specified inkfile not found",
-                "ERROR:".red()
-            )))
+            .stderr(contains("specified inkfile not found"))
             .failure();
     }
 }

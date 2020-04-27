@@ -62,7 +62,7 @@ mod read_inkfile {
 
         let err = inkfile.unwrap_err();
 
-        let expected_err = "failed to open inkjet.md";
+        let expected_err = "failed to open src/inkjet.md";
         assert_eq!(err, expected_err, "error message was wrong");
     }
 }
