@@ -120,12 +120,16 @@ fn interactive_params(mut chosen_cmd: Command, inkfile_path: &str, color: bool) 
             if flag.name == "verbose" {
                 break;
             }
-            let rv: bool = Confirmation::with_theme(&ColoredTheme::default())
-                .with_text(&format!("{}: Set {} option?", chosen_cmd.name, flag.name))
-                .default(false)
-                .interact()
-                .unwrap();
-            println!("{}", rv);
+            if flag.val != "true" {
+                let rv: bool = Confirmation::with_theme(&ColoredTheme::default())
+                    .with_text(&format!("{}: Set {} option?", chosen_cmd.name, flag.name))
+                    .default(false)
+                    .interact()
+                    .unwrap();
+                if rv == true {
+                    flag.val = "true".to_string();
+                }
+            }
         } else if flag.val == "" {
             let mut rv: String;
             loop {

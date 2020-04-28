@@ -192,3 +192,20 @@ console.log(JSON.stringify(Deno.args));
 echo "Hello $name! Optional arg is $optional. File is $file"
 echo "Task complete."
 ```
+
+## interactive (one) (two) (three?)
+
+> Test interactive mode with three positional args and three flags
+
+Run this with and without specific options specified.
+
+**OPTIONS**
+
+- flags: -s --string |string| First option
+- flags: --bool Second option
+- flags: --number |number| Enter a number
+
+```sh
+echo "The values are one=$one two=$two three=$three"
+echo "The flag values are string=$string bool=$bool number=$number"
+```
