@@ -443,7 +443,7 @@ Inside of each script's execution environment, `inkjet` injects a few environmen
 
 This is useful when [running inkjet within a script](#running-inkjet-from-within-a-script). This variable allows us to call `$INKJET command` instead of `inkjet --inkfile <path> command` inside scripts so that they can be location-agnostic (not care where they are called from). This is especially handy for global inkfiles which you may call from anywhere.
 
-**`$INKJETFILE_DIR`**
+**`$INKJET_DIR`**
 
 This variable is an absolute path to the inkfile's parent directory. Having the parent directory available allows us to load files relative to the inkfile itself which can be useful when you have commands that depend on other external files.
 

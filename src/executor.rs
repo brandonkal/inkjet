@@ -167,7 +167,7 @@ fn add_utility_variables(mut child: process::Command, inkfile_path: &str) -> pro
     );
     // This allows us to refer to the directory the inkfile lives in which can be handy
     // for loading relative files to it.
-    child.env("INKJETFILE_DIR", get_parent_dir(inkfile_path));
+    child.env("INKJET_DIR", get_parent_dir(inkfile_path));
 
     child
 }

@@ -71,7 +71,7 @@ mod env_var_inkfile_dir {
 ## run
 
 ~~~bash
-echo "inkfile_dir = $INKJETFILE_DIR"
+echo "inkfile_dir = $INKJET_DIR"
 ~~~
 "#,
         );

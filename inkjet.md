@@ -1,4 +1,4 @@
-#!/home/brandon/inkjet/target/release/inkjet
+#!/usr/bin/env inkjet
 
 > Development tasks for inkjet
 
@@ -59,6 +59,9 @@ fi
 
 ```bash
 cargo build --release
+cd $INKJET_DIR/target/release
+strip inkjet
+tar -czf inkjet-linux.tar.gz inkjet
 ```
 
 ## ping
