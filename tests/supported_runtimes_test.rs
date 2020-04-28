@@ -20,7 +20,7 @@ echo "this won't do anything..."
         .assert()
         .code(1)
         .stderr(contains(
-            "Command script requires a lang code which determines which executor to use.",
+            "Command script requires a language code or shebang which determines which executor to use.",
         ))
         .failure();
 }
