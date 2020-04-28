@@ -59,10 +59,10 @@ fn main() {
         let portion = &mdtxt[chosen_cmd.start..chosen_cmd.end];
         let print_err = p.print_markdown(&portion);
         if let Err(err) = print_err {
-            println!("{} printing markdown: {}", "ERROR:".red(), err);
+            eprintln!("{} printing markdown: {}", "ERROR:".red(), err);
             std::process::exit(1);
         }
-        println!();
+        eprintln!();
         chosen_cmd = interactive_params(chosen_cmd, &inkfile_path, color);
     }
 
@@ -93,7 +93,7 @@ fn interactive_params(mut chosen_cmd: Command, inkfile_path: &str, color: bool) 
         } else if rv == 'p' {
             match execute_command(chosen_cmd.clone(), inkfile_path, true, color) {
                 Ok(_) => {
-                    println!(); // empty space
+                    eprintln!(); // empty space
                     continue;
                 }
                 Err(err) => {
@@ -102,7 +102,7 @@ fn interactive_params(mut chosen_cmd: Command, inkfile_path: &str, color: bool) 
                 }
             }
         } else {
-            println!("Skipping command {}", chosen_cmd.name);
+            eprintln!("Skipping command {}", chosen_cmd.name);
             std::process::exit(0);
         }
     }
@@ -240,7 +240,7 @@ fn find_inkfile(inkfile_path: &str) -> (Result<String, String>, String) {
             std::process::exit(1);
         } else {
             // Just log a warning and let the process continue
-            println!("{} no inkjet.md found", "WARNING:".yellow());
+            eprintln!("{} no inkjet.md found", "WARNING:".yellow());
         }
         (inkfile, "".to_string())
     } else {
