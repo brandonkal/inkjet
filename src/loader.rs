@@ -6,15 +6,15 @@ pub fn read_inkfile(inkfile: &str) -> (Result<String, String>, String) {
     if filename == "" {
         let p = std::env::current_dir().unwrap();
         for ancestor in p.ancestors() {
-            let check = ancestor.join("orders.md");
-            let file = File::open(&filename);
+            let check = ancestor.join("inkjet.md");
+            let file = File::open(&check);
             if file.is_ok() {
                 filename = String::from(check.to_str().unwrap());
                 return (Ok(read_and_return(file)), filename);
             }
         }
         return (
-            Err("Could not locate an orders.md file".to_owned()),
+            Err("Could not locate an inkjet.md file".to_owned()),
             filename,
         );
     }

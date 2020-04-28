@@ -177,7 +177,6 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     let mut opts = CustomOpts::default();
     let early_exit_modifiers = sset!["-h", "--help", "-V", "--version"];
     // Loop through all args and parse
-    let mut inkfile_arg_found = false;
     let mut inkfile_index = 1000;
     if args.len() == 1 {
         args.insert(1, "_default".to_string());
@@ -194,7 +193,6 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
         } else if arg == "-i" || arg == "--interactive" {
             opts.interactive = true;
         } else if arg == "--inkfile" {
-            inkfile_arg_found = true;
             if let Some(idx) = arg.find('=') {
                 opts.inkfile_path = canonical_path(&arg[(idx + 1)..]);
             } else {
@@ -212,9 +210,6 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
             break;
         }
     }
-    if !inkfile_arg_found {
-        opts.inkfile_path = canonical_path("./inkjet.md");
-    }
     (opts, args)
 }
 
@@ -230,7 +225,11 @@ fn find_inkfile(inkfile_path: &str) -> (Result<String, String>, String) {
         // Check if this is a custom inkfile
         if inkfile_path != "./inkjet.md" {
             // Exit with an error it's not found
-            eprintln!("{} specified inkfile not found", "ERROR:".red());
+            eprintln!(
+                "{} specified inkfile \"{}\" not found",
+                "ERROR:".red(),
+                inkfile_path
+            );
             std::process::exit(1);
         } else {
             // Just log a warning and let the process continue
