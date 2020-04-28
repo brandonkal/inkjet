@@ -447,11 +447,6 @@ This is useful when [running inkjet within a script](#running-inkjet-from-within
 
 This variable is an absolute path to the inkfile's parent directory. Having the parent directory available allows us to load files relative to the inkfile itself which can be useful when you have commands that depend on other external files.
 
-## Upcoming features
-
-- [ ] [Optional (non-required) positional arguments][2]
-- [ ] [Infinite positional args](https://github.com/jakedeichert/inkjet/issues/4)
-
 ## Use cases
 
 Here's some example scenarios where `inkjet` might be handy.
