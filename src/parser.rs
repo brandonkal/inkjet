@@ -270,7 +270,6 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
 
     let mut out_args: Vec<Arg> = vec![];
 
-    // TODO: some how support infinite args? https://github.com/jakedeichert/inkjet/issues/4
     if !args.is_empty() {
         let args = args.join("");
         let args: Vec<&str> = args.split(' ').collect();
