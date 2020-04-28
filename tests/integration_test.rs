@@ -78,7 +78,7 @@ mod when_custom_specified_inkfile_not_found {
             .command("--help")
             .assert()
             .code(1)
-            .stderr(contains("specified inkfile not found"))
+            .stderr(contains("specified inkfile \"./nonexistent.md\" not found"))
             .failure();
     }
 
@@ -88,7 +88,7 @@ mod when_custom_specified_inkfile_not_found {
             .command("--version")
             .assert()
             .code(1)
-            .stderr(contains("specified inkfile not found"))
+            .stderr(contains("specified inkfile \"./nonexistent.md\" not found"))
             .failure();
     }
 
@@ -98,7 +98,7 @@ mod when_custom_specified_inkfile_not_found {
             .command("what")
             .assert()
             .code(1)
-            .stderr(contains("specified inkfile not found"))
+            .stderr(contains("specified inkfile \"./nonexistent.md\" not found"))
             .failure();
     }
 }
