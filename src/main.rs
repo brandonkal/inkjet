@@ -19,12 +19,13 @@ fn main() {
     } else {
         AppSettings::ColorNever
     };
-    let cli_app = App::new(crate_name!())
+    let mut cli_app = App::new(crate_name!())
         .setting(AppSettings::VersionlessSubcommands)
         .setting(AppSettings::AllowNegativeNumbers)
         .setting(AppSettings::SubcommandRequired)
         .setting(color_setting)
         .version(crate_version!())
+        .about("Inkjet parser created by Brandon Kalinowski")
         .arg(custom_inkfile_path_arg())
         .arg_from_usage(
             "-i --interactive 'Execute the command in the document prompting for arguments'",
@@ -40,6 +41,12 @@ fn main() {
         return;
     }
     let mdtxt = inkfile.unwrap();
+    let about_txt = format!(
+        "Generated from the {} file.\nInkjet parser created by Brandon Kalinowski",
+        inkfile_path
+    );
+
+    cli_app = cli_app.about(about_txt.as_str());
 
     let root_command = inkjet::parser::build_command_structure(mdtxt.clone());
     let matches = build_subcommands(cli_app, color_setting, &opts, &root_command.subcommands)
@@ -52,7 +59,7 @@ fn main() {
         let portion = &mdtxt[chosen_cmd.start..chosen_cmd.end];
         let print_err = p.print_markdown(&portion);
         if let Err(err) = print_err {
-            println!("ERROR: printing markdown: {}", err);
+            println!("{} printing markdown: {}", "ERROR:".red(), err);
             std::process::exit(1);
         }
         println!();
