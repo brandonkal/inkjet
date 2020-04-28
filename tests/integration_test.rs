@@ -34,7 +34,7 @@ mod when_no_inkfile_found_in_current_directory {
             .current_dir(".github")
             .command("-V")
             .assert()
-            .stdout(contains("no inkjet.md found"));
+            .stderr(contains("no inkjet.md found"));
     }
 
     #[test]

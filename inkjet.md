@@ -61,7 +61,8 @@ fi
 cargo build --release
 cd $INKJET_DIR/target/release
 strip inkjet
-tar -czf inkjet-linux.tar.gz inkjet
+platform=`echo $(uname -s) | tr '[:upper:]' '[:lower:]'`
+tar -czf inkjet-${platform}.tar.gz inkjet
 ```
 
 ## ping

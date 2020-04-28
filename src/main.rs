@@ -133,7 +133,7 @@ fn interactive_params(mut chosen_cmd: Command, inkfile_path: &str, color: bool) 
                     .default(false)
                     .interact()
                     .unwrap();
-                if rv == true {
+                if rv {
                     flag.val = "true".to_string();
                 }
             }
