@@ -229,18 +229,17 @@ fn find_inkfile(inkfile_path: &str) -> (Result<String, String>, String) {
     let (inkfile, the_path) = inkjet::loader::read_inkfile(&inkfile_path);
 
     if inkfile.is_err() {
-        // Check if this is a custom inkfile
-        if inkfile_path != "./inkjet.md" {
-            // Exit with an error it's not found
+        if inkfile_path == "" || inkfile_path == "./inkjet.md" {
+            // Just log a warning and let the process continue
+            eprintln!("{} no inkjet.md found", "WARNING:".yellow());
+        } else {
+            // This is a custom inkfile. We exit with an error it's not found
             eprintln!(
                 "{} specified inkfile \"{}\" not found",
                 "ERROR:".red(),
                 inkfile_path
             );
             std::process::exit(1);
-        } else {
-            // Just log a warning and let the process continue
-            eprintln!("{} no inkjet.md found", "WARNING:".yellow());
         }
         (inkfile, "".to_string())
     } else {
