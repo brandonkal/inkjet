@@ -5,12 +5,12 @@ mod common;
 use common::InkjetCommandExt;
 
 #[test]
-fn errors_when_no_lang_code_is_specified() {
+fn executes_when_no_lang_code_is_specified() {
     let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## missing
 ~~~
-echo "this won't do anything..."
+echo "this will execute..."
 ~~~
 "#,
     );
@@ -18,11 +18,8 @@ echo "this won't do anything..."
     common::run_inkjet(&inkfile_path)
         .command("missing")
         .assert()
-        .code(1)
-        .stderr(contains(
-            "Command script requires a language code or shebang which determines which executor to use.",
-        ))
-        .failure();
+        .stdout(contains("this will execute..."))
+        .success();
 }
 
 #[test]

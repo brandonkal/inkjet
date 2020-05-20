@@ -61,7 +61,7 @@ mod when_command_has_no_source {
     use super::*;
 
     #[test]
-    fn exits_with_error_when_it_has_no_script_lang_code() {
+    fn uses_sh_when_it_has_no_script_lang_code() {
         let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## start
@@ -74,15 +74,12 @@ echo "system, online"
         common::run_inkjet(&inkfile_path)
             .command("start")
             .assert()
-            .code(1)
-            .stderr(contains(
-                "Command script requires a language code or shebang which determines which executor to use.",
-            ))
-            .failure();
+            .stdout(contains("system, online"))
+            .success();
     }
 
     #[test]
-    fn exits_with_error_when_it_has_no_subcommands() {
+    fn exits_with_error_when_it_has_no_script() {
         let (_temp, inkfile_path) = common::inkfile(
             r#"
 ## start
