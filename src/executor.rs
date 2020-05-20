@@ -19,7 +19,7 @@ fn hash_source(s: &str) -> String {
 }
 
 pub fn execute_command(
-    cmd: Command,
+    mut cmd: Command,
     inkfile_path: &str,
     preview: bool,
     color: bool,
@@ -30,8 +30,7 @@ pub fn execute_command(
     }
 
     if cmd.script.executor == "" && !cmd.script.source.trim().starts_with("#!") {
-        let msg = "Command script requires a language code or shebang which determines which executor to use.";
-        return Err(Error::new(ErrorKind::Other, msg));
+        cmd.script.executor = String::from("sh"); // default to default shell
     }
 
     if preview {

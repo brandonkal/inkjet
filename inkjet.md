@@ -13,7 +13,7 @@
   - type: number
   - desc: Echo description
 
-```sh
+```
 echo "Hello $name! Optional arg is $optional. File is $file"
 echo "Task complete."
 ```
