@@ -185,13 +185,15 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     let early_exit_modifiers = sset!["-h", "--help", "-V", "--version"];
     // Loop through all args and parse
     let mut inkfile_index = 1000;
-    if args.len() == 1 {
-        args.insert(1, "_default".to_string());
-    }
     // If the first argument is a markdown file or '-' assume it is a inkfile arg
     // This allows us to use it as an interpretter without specifying '--inkfile'
     if args.len() > 1 && args[1] == "-" || args[1].ends_with(".md") {
         args.insert(1, "--inkfile".to_string());
+    }
+    if args.len() == 1 {
+        args.insert(1, "default".to_string());
+    } else if args.len() == 2 && (args[1] == "-p" || args[1] == "--preview") {
+        args.insert(2, "default".to_string());
     }
     for i in 1..args.len() {
         let arg = &args[i];
@@ -213,7 +215,7 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
             continue; // stdin file input
         } else {
             // This may be a flag for the default command.
-            args.insert(i, "_default".to_string());
+            args.insert(i, "default".to_string());
             break;
         }
     }

@@ -18,6 +18,11 @@ fn hash_source(s: &str) -> String {
     format!("{:x}", hasher.finish())
 }
 
+// we append  `set -e` to these shells as a sensible default
+fn needs_set_e(s: &str) -> bool {
+    s == "sh" || s == "bash" || s == "" || s == "dash" || s == "zsh"
+}
+
 pub fn execute_command(
     mut cmd: Command,
     inkfile_path: &str,
@@ -45,7 +50,12 @@ pub fn execute_command(
         {
             Ok(mut child) => {
                 let mut child_stdin = child.stdin.take().unwrap();
-                child_stdin.write_all(cmd.script.source.as_bytes())?;
+                if needs_set_e(&cmd.script.executor) {
+                    let s = format!("set -e\n{}", cmd.script.source);
+                    child_stdin.write_all(s.as_bytes())?;
+                } else {
+                    child_stdin.write_all(cmd.script.source.as_bytes())?;
+                }
                 child
             }
             Err(e) => {
@@ -57,7 +67,6 @@ pub fn execute_command(
                 process::exit(1);
             }
         };
-        // run_and_exit(bat_cmd);
         bat_cmd.wait()
     } else {
         let parent_dir = get_parent_dir(&inkfile_path);
@@ -83,7 +92,7 @@ pub fn execute_command(
 }
 
 fn prepare_command(cmd: &Command, parent_dir: &str, tempfile: &mut String) -> process::Command {
-    let executor = cmd.script.executor.clone();
+    let mut executor = cmd.script.executor.clone();
     let source = cmd.script.source.trim();
     if source.starts_with("#!") || executor == "go" {
         let hash = hash_source(source);
@@ -130,12 +139,18 @@ fn prepare_command(cmd: &Command, parent_dir: &str, tempfile: &mut String) -> pr
                 child.arg("eval").arg("-T").arg(source);
                 child
             }
-            // Any other executor that supports -c (sh, bash, zsh, fish, dash, etc...)
-            "" => {
-                let mut child = process::Command::new("sh");
-                child.arg("-c").arg(source);
+            // If no language is specified, we use the default shell
+            "" | "sh" | "bash" | "zsh" | "dash" => {
+                if executor == "" {
+                    executor = "sh".to_owned()
+                }
+                let mut child = process::Command::new(executor);
+                let top = "set -e"; // a sane default for scripts
+                let src = format!("{}\n{}", top, source);
+                child.arg("-c").arg(src);
                 child
             }
+            // Any other executor that supports -c (sh, bash, zsh, fish, dash, etc...)
             _ => {
                 let mut child = process::Command::new(executor);
                 child.arg("-c").arg(source);
