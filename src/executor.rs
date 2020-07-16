@@ -194,13 +194,13 @@ fn add_flag_variables(mut child: process::Command, cmd: &Command) -> process::Co
         } else {
             arg.val.as_str()
         };
-        child.env(arg.name.clone(), val);
+        child.env(arg.name.replace("-", "_"), val);
     }
 
     // Add all optional flags as environment variables if they have a value
     for flag in &cmd.option_flags {
         if flag.val != "" {
-            child.env(flag.name.clone(), flag.val.clone());
+            child.env(flag.name.replace("-", "_"), flag.val.clone());
         }
     }
 

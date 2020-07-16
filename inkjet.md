@@ -25,9 +25,11 @@ echo "Task complete."
 **OPTIONS**
 
 - flags: -f --file |string| Only run tests from a specific filename
+- flags: -nc --no-check Test with dash replacement
 
 ```sh
 echo "Hello $name! Optional arg is $optional. File is $file"
+echo "${no_check:-false}"
 echo "Task complete."
 ```
 
