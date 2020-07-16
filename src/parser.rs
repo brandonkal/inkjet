@@ -49,10 +49,10 @@ pub fn build_command_structure(inkfile_contents: String) -> Command {
             }
             End(tag) => match tag {
                 Tag::Heading(heading_level) => {
-                    let (name, alias, args) = parse_heading_to_cmd(heading_level, text.clone());
+                    let (name, aliases, args) = parse_heading_to_cmd(heading_level, text.clone());
                     current_command.name = name;
                     current_command.args = args;
-                    current_command.alias = alias;
+                    current_command.aliases = aliases;
                 }
                 Tag::BlockQuote => {
                     current_command.desc = text.clone();

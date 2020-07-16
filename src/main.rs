@@ -309,8 +309,11 @@ fn build_subcommands<'a, 'b>(
         if c.name.starts_with('_') {
             subcmd = subcmd.setting(AppSettings::Hidden);
         }
-        if c.alias != "" {
-            subcmd = subcmd.visible_alias(c.alias.as_str());
+        if c.aliases != "" {
+            let parts = c.aliases.split("//");
+            for s in parts {
+                subcmd = subcmd.visible_alias(&*s);
+            }
         }
         cli_app = cli_app.subcommand(subcmd);
     }

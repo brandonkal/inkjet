@@ -9,7 +9,7 @@
 **OPTIONS**
 
 - file
-  - flags: -f --file
+  - flags: -n --num
   - type: number
   - desc: Echo description
 
@@ -164,7 +164,7 @@ fi
 echo "Hello World!"
 ```
 
-## lint//\_default
+## lint//default//check
 
 > Lint the project with clippy
 
@@ -175,10 +175,10 @@ cargo clippy
 ## deno
 
 ```ts
-import './tests/imported.tsx';
-const five: number = 5;
-console.log(five);
-console.log(JSON.stringify(Deno.args));
+import './tests/imported.tsx'
+const five: number = 5
+console.log(five)
+console.log(JSON.stringify(Deno.args))
 ```
 
 ## opts (name) (optional?)

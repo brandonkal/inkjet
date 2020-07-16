@@ -2,7 +2,7 @@
 pub struct Command {
     pub cmd_level: u8,
     pub name: String,
-    pub alias: String,
+    pub aliases: String,
     pub desc: String,
     pub script: Script,
     pub subcommands: Vec<Command>,
@@ -17,7 +17,7 @@ impl Command {
         Self {
             cmd_level,
             name: "".to_string(),
-            alias: "".to_string(),
+            aliases: "".to_string(),
             desc: "".to_string(),
             script: Script::new(),
             subcommands: vec![],
