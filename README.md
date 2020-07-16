@@ -65,7 +65,7 @@ You can also write documentation anywhere you want. Only certain types of markdo
 are parsed to determine the command structure.
 
 ```js
-console.log("running project's tests");
+console.log("running project's tests")
 ```
 ````
 
@@ -274,8 +274,8 @@ echo "Hello, $name!"
 Valid lang codes: js, javascript
 
 ```js
-const { name } = process.env;
-console.log(`Hello, ${name}!`);
+const { name } = process.env
+console.log(`Hello, ${name}!`)
 ```
 
 ## python (name)
@@ -487,11 +487,10 @@ If inkjet is useful to you, please consider auhoring one of these features.
 
 1. Import support. Using markdown links, we can import and combine several inkjet files together. For instance, you can link to your main `inkjet.md` file and define project-specific tasks and overrides in the project-specific `inkjet.md` file.
 2. Investigate dependency management. The one thing we lose migrating from Makefiles is dependency tracking. Most of my makefiles are filled with .PHONY, but having tasks specify their dependencies is still a welcome option.
-3.
 
 ## Author
 
-Brandon Kalinowski. This is based on the mask project by Jake Deichert.
+Brandon Kalinowski. This is based on the mask project by [Jake Deichert](https://github.com/jakedeichert).
 This started as a fork of that project and I've added many features such as aliases, interactive execution, preview mode, optional arguments.
 
 This is my first foray into the realm of Rust programming.
