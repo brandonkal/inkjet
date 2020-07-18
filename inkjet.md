@@ -72,6 +72,16 @@ tar -czf inkjet-${platform}.tar.gz inkjet
 > Echo pong for ping tests
 
 ```sh
+echo "blip"
+```
+
+## ping
+
+> Echo pong override for ping tests
+
+Later definitions override previous definitions.
+
+```sh
 echo "pong"
 ```
 
