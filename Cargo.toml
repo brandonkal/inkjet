@@ -1,6 +1,6 @@
 [package]
 name = "inkjet"
-version = "0.9.0"
+version = "0.10.0"
 description = "Make your markdown executable with inkjet, the interactive CLI task runner"
 authors = ["Brandon Kalinowski <brandon@brandonkalinowski.com>"]
 repository = "https://github.com/brandonkal/inkjet"
