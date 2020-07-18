@@ -18,6 +18,8 @@ We can replace Makefiles with inkjet.md files. Inkjet supports many languages, s
 
 With `inkjet` you can build interactive CLIs from your exising markdown. These CLIs can be as simple as a list of common tasks such as `test`, `build`, and `lint` or as complex applications with subcommands, flags, and options. All of this defined in a simple markdown file that is both a **human-readable document** and a **command definition**! Your code is documentation and your documentation is code. Because markdown is documentation focused, the format encourages descriptive text. This allows others to easily get started with your project's development setup by simply reading your `inkjet.md`.
 
+In its current state, inkjet works really well as a command runner for projects and sharing snippets as CLIs. In the fullness of time, I hope to expand inkjet to work as a general-purpose executable markdown tool.
+
 Here's the [inkjet.md](/inkjet.md) that `inkjet` itself uses as an example!
 
 To get started, follow the guide below or check out the more [advanced features](#features) `inkjet` has such as **positional args**, **optional flags**, **subcommands**, other **scripting runtimes** and more!
@@ -487,11 +489,13 @@ If inkjet is useful to you, please consider auhoring one of these features.
 
 1. Import support. Using markdown links, we can import and combine several inkjet files together. For instance, you can link to your main `inkjet.md` file and define project-specific tasks and overrides in the project-specific `inkjet.md` file.
 2. Investigate dependency management. The one thing we lose migrating from Makefiles is dependency tracking. Most of my makefiles are filled with .PHONY, but having tasks specify their dependencies is still a welcome option.
+3. Compile markdown file to bash or POSIX script a la mdsh.
+4. Ability to execute any markdown file that contains code blocks, stepping through each section.
 
 ## Author
 
 Brandon Kalinowski. This is based on the mask project by [Jake Deichert](https://github.com/jakedeichert).
-This started as a fork of that project and I've added many features such as aliases, interactive execution, preview mode, optional arguments.
+This started as a fork of that project and I've added many features such as aliases, interactive execution, preview mode, optional arguments, dash support, default shell with `set -e`, a fixed working directory by default, golang support, shebang support, and more.
 
 This is my first foray into the realm of Rust programming.
 
