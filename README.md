@@ -378,6 +378,15 @@ ARGS:
     <service_name>
 ```
 
+### Directives
+
+You can change how parsing occurs by including some special directives in the markdown file.
+
+#### inkjet_import: all
+
+It's often the case that large projects will have multiple `inkjet.md` files.
+For instance, each service may have its own `inkjet.md` file to define how to build and test that component. To enable the import feature, include the text directive `inkjet_import: all` somewhere within your main `inkjet.md` file. If inkjet discovers this directive in the text, it will run a shell command that finds all other `inkjet.md` files within the current folder and merge them together before parsing and building out the command tree. If the imported file has an h1 heading, its commands will appear as a subcommand of that heading. If only h2 and below headings are available in the imported file, those commands will become sibling commands for the parent. See [a merged example here](tests/merged-example.md).
+
 ### Running inkjet from within a script
 
 You can easily call `inkjet` within scripts if you need to chain commands together. However, if you plan on [running inkjet with a different inkfile](#running-inkjet-with-a-different-inkfile), you should consider using the `$INKJET` utility instead which allows your scripts to be location-agnostic.

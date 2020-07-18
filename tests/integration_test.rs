@@ -103,6 +103,43 @@ mod when_custom_specified_inkfile_not_found {
     }
 }
 
+mod builds_command_tree {
+    use super::*;
+
+    #[test]
+    fn works_with_merged_files() {
+        let (_temp, inkfile_path) = common::inkfile(
+            r#"
+#!/usr/bin/env inkjet
+
+> This is the main info
+
+# main
+
+## echo
+
+```
+echo "Hello"
+```
+
+# second
+
+## echo
+
+```
+echo "Second"
+```
+"#,
+        );
+        common::run_inkjet(&inkfile_path)
+            .command("--help")
+            .assert()
+            .stdout(contains("echo"))
+            .stdout(contains("second"))
+            .success();
+    }
+}
+
 mod exits_with_the_child_process_status_code {
     use super::*;
 

@@ -15,6 +15,7 @@ pub fn build_command_structure(inkfile_contents: String) -> Command {
     let mut current_option_flag = OptionFlag::new();
     let mut text = "".to_string();
     let mut list_level = 0;
+    let mut first_was_pushed = false;
 
     for (event, range) in parser.into_offset_iter() {
         match event {
@@ -23,7 +24,8 @@ pub fn build_command_structure(inkfile_contents: String) -> Command {
                     Tag::Heading(heading_level) => {
                         // Add the last command before starting a new one.
                         // Don't add the first command during the first iteration.
-                        if heading_level > 1 {
+                        if heading_level > 1 || first_was_pushed {
+                            first_was_pushed = true;
                             commands.push(current_command.build());
                         }
                         current_command = Command::new(heading_level as u8);
@@ -200,11 +202,23 @@ fn treeify_commands(commands: Vec<Command>) -> Vec<Command> {
     let mut command_tree = vec![];
     let mut current_command = commands.first().expect("command should exist").clone();
     let num_commands = commands.len();
+    let mut add = 0;
+    let mut allow_increment = false;
 
     #[allow(clippy::needless_range_loop, clippy::comparison_chain)]
     for i in 0..num_commands {
-        let c = &commands[i];
+        let mut c = commands[i].clone();
         let is_last_cmd = i == num_commands - 1;
+
+        // We allow virtually increasing the command level if multiple h1s are found with subcommands
+        // This enables us to cat multiple inkjet.md files together and have it function as a larger CLI
+        if c.cmd_level > 1 {
+            allow_increment = true;
+        }
+        if allow_increment && c.cmd_level == 1 {
+            add = 1;
+        }
+        c.cmd_level += add;
 
         // This must be a subcommand
         if c.cmd_level > current_command.cmd_level {
