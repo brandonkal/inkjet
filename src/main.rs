@@ -65,6 +65,8 @@ fn main() {
     let mut chosen_cmd = find_command(&matches, &root_command.subcommands)
         .expect("SubcommandRequired failed to work");
 
+    let fixed_pwd = !mdtxt.contains("inkjet_fixed_dir: false");
+
     if opts.interactive {
         let p = view::Printer::new(color, false, &inkfile_path);
         let portion = &mdtxt[chosen_cmd.start..chosen_cmd.end];
@@ -74,10 +76,10 @@ fn main() {
             std::process::exit(1);
         }
         eprintln!();
-        chosen_cmd = interactive_params(chosen_cmd, &inkfile_path, color);
+        chosen_cmd = interactive_params(chosen_cmd, &inkfile_path, color, fixed_pwd);
     }
 
-    match execute_command(chosen_cmd, &inkfile_path, opts.preview, color) {
+    match execute_command(chosen_cmd, &inkfile_path, opts.preview, color, fixed_pwd) {
         Ok(status) => {
             if let Some(code) = status.code() {
                 std::process::exit(code)
@@ -91,7 +93,12 @@ fn main() {
 }
 
 /// Prompt for missing parameters interactively.
-fn interactive_params(mut chosen_cmd: Command, inkfile_path: &str, color: bool) -> Command {
+fn interactive_params(
+    mut chosen_cmd: Command,
+    inkfile_path: &str,
+    color: bool,
+    fixed_dir: bool,
+) -> Command {
     loop {
         let rv = KeyPrompt::with_theme(&ColoredTheme::default())
             .with_text(&format!("Execute step {}?", chosen_cmd.name))
@@ -102,7 +109,7 @@ fn interactive_params(mut chosen_cmd: Command, inkfile_path: &str, color: bool) 
         if rv == 'y' {
             break;
         } else if rv == 'p' {
-            match execute_command(chosen_cmd.clone(), inkfile_path, true, color) {
+            match execute_command(chosen_cmd.clone(), inkfile_path, true, color, fixed_dir) {
                 Ok(_) => {
                     eprintln!(); // empty space
                     continue;

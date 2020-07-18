@@ -225,3 +225,15 @@ Run this with and without specific options specified.
 echo "The values are one=$one two=$two three=$three"
 echo "The flag values are string=$string bool=$bool number=$number"
 ```
+
+## fixed-directory
+
+If this directive is set to false, scripts will always execute as if called from the inkjet file's location.
+
+inkjet_fixed_dir: true
+
+> Test to ensure fixed directory works
+
+```
+ls .vscode
+```

@@ -44,6 +44,7 @@ pub fn execute_command(
     inkfile_path: &str,
     preview: bool,
     color: bool,
+    fixed_dir: bool,
 ) -> Result<ExitStatus> {
     if cmd.script.source == "" {
         let msg = "Command has no script.";
@@ -90,6 +91,9 @@ pub fn execute_command(
         let mut child = prepare_command(&cmd, &parent_dir, &mut tempfile);
         child = add_utility_variables(child, inkfile_path);
         child = add_flag_variables(child, &cmd);
+        if fixed_dir {
+            child.current_dir(parent_dir);
+        }
         let result = child
             .spawn()
             .unwrap_or_else(|err| {
