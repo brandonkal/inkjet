@@ -243,7 +243,7 @@ This is useful for blocks of code that need to shared for several tasks but shou
 Seperate a subcommand name with `//` to define an alias.
 
 ````markdown
-## lint//\_default
+## lint//default
 
 > Lint the project with clippy
 
