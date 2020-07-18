@@ -47,6 +47,10 @@ fn main() {
     if mdtxt.contains("inkjet_import:") {
         mdtxt = execute_merge_command();
     }
+    if opts.print_all {
+        print!("{}", mdtxt);
+        std::process::exit(0);
+    }
     // By default subcommands in the help output are listed in the same order
     // they are defined in the markdown file. Users can define this directive
     // for alphabetical sort.
@@ -56,7 +60,7 @@ fn main() {
 
     let root_command = inkjet::parser::build_command_structure(mdtxt.clone());
     let about_txt = format!(
-        "Generated from the {} file.\nInkjet parser created by Brandon Kalinowski\n\n{}",
+        "Generated from {}.\nInkjet parser created by Brandon Kalinowski\n\n{}",
         inkfile_path, root_command.desc
     );
     cli_app = cli_app.about(about_txt.trim());
@@ -195,12 +199,13 @@ struct CustomOpts {
     interactive: bool,
     preview: bool,
     inkfile_opt: String,
+    print_all: bool,
 }
 
 // We must parse flags first to handle global flags and implicit defaults
 fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     let mut opts = CustomOpts::default();
-    let early_exit_modifiers = sset!["-h", "--help", "-V", "--version"];
+    let early_exit_modifiers = sset!["-h", "--help", "-V", "--version", "--inkjet-print-all"];
     // Loop through all args and parse
     let mut inkfile_index = 1000;
     // If the first argument is a markdown file or '-' assume it is a inkfile arg
@@ -238,6 +243,9 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
         } else if arg == "--preview" || arg == "-p" {
             opts.preview = true;
         } else if !arg.starts_with('-') || early_exit_modifiers.contains(arg) {
+            if arg == "--inkjet-print-all" {
+                opts.print_all = true;
+            }
             break; // no more parsing to do as a subcommand has been called
         } else if arg == "-" {
             continue; // stdin file input
