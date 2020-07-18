@@ -12,6 +12,12 @@ pub struct Command {
     pub end: usize,
 }
 
+impl PartialEq for Command {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name && self.cmd_level == other.cmd_level
+    }
+}
+
 impl Command {
     pub fn new(cmd_level: u8) -> Self {
         Self {

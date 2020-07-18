@@ -184,10 +184,39 @@ pub fn build_command_structure(inkfile_contents: String) -> Command {
 
     // Convert the flat commands array and to a tree of subcommands based on level
     let all = treeify_commands(commands);
+    let all = remove_duplicates(all);
     let root_command = all.first().expect("root command must exist");
 
     // The command root and a possible init script
     root_command.clone()
+}
+
+// remove duplicate commands to enable override function
+fn remove_duplicates(mut cmds: Vec<Command>) -> Vec<Command> {
+    trait Dedup<T: PartialEq + Clone> {
+        fn clear_duplicates(&mut self);
+    }
+    impl<T: PartialEq + Clone> Dedup<T> for Vec<T> {
+        fn clear_duplicates(&mut self) {
+            let mut already_seen = vec![];
+            self.retain(|item| match already_seen.contains(item) {
+                true => false,
+                _ => {
+                    already_seen.push(item.clone());
+                    true
+                }
+            })
+        }
+    }
+    cmds.reverse();
+    cmds.clear_duplicates();
+    cmds.reverse();
+    for c in &mut cmds {
+        if !c.subcommands.is_empty() {
+            c.subcommands = remove_duplicates(c.subcommands.clone());
+        }
+    }
+    cmds
 }
 
 fn create_markdown_parser(inkfile_contents: &str) -> Parser {
