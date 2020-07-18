@@ -382,6 +382,15 @@ ARGS:
 
 You can change how parsing occurs by including some special directives in the markdown file.
 
+#### inkjet_sort: false
+
+By default subcommands in the help output are listed in the same order
+they are defined in the markdown file. Users can choose to instead have subcommands sorted alphabetically by defining this directive. As an example, if you are using inkjet to distribute a CLI of code snippets, sorted help would make sense. For projects, you may want the order to be as defined (e.g. publish comes after test).
+
+#### inkjet_fixed_dir: false
+
+When you run an inkjet command from a project subdirectory, inkjet will by default search up the tree to find a `inkjet.md` file. In order for commands to work as expected, scripts execute as if their working directory was the same as the location of the `inkjet.md` file that defined them. Similarly, if you call inkjet with `--inkfile tests/inkjet.md`, your commands will execute as if the working directory was `tests`. If this is not desired, simply include the `inkjet_fixed_dir: false` directive in the file to have the working directory match your current directory.
+
 #### inkjet_import: all
 
 It's often the case that large projects will have multiple `inkjet.md` files.
@@ -394,14 +403,40 @@ The merge behaviour is as follows:
 
 The override behaviour is useful as it enables you to share generic commands, and them override them on a project-by-project basis as needed.
 
-#### inkjet_sort: false
+All imported inkjet.md files are run as if they were called directly. Namely, if `inkjet_fixed_dir` is not set to false, imported commands will run with their working directory set to the parent directory of its `inkjet.md` file.
 
-By default subcommands in the help output are listed in the same order
-they are defined in the markdown file. Users can choose to instead have subcommands sorted alphabetically by defining this directive. As an example, if you are using inkjet to distribute a CLI of code snippets, sorted help would make sense. For projects, you may want the order to be as defined (e.g. publish comes after test).
+**Example:**
 
-#### inkjet_fixed_dir: false
+````bash
+$ tree
+.
+├── frontend
+│   ├── Dockerfile
+│   └── inkjet.md
+└── inkjet.md
+$ cat inkjet.md
+# main service
+## release
+```
+echo "Release"
+```
+$ cat frontend/inkjet.md
+# frontend
+## build
+```
+echo "Building frontend"
+docker build . -t frontend
+```
+$ inkjet frontend build
+Building frontend...
+...successful docker build output here...
+$ inkjet release
+Release
+```
 
-When you run an inkjet command from a project subdirectory, inkjet will by default search up the tree to find a `inkjet.md` file. In order for commands to work as expected, scripts execute as if their working directory was the same as the location of the `inkjet.md` file that defined them. Similarly, if you call inkjet with `--inkfile tests/inkjet.md`, your commands will execute as if the working directory was `tests`. If this is not desired, simply include the `inkjet_fixed_dir: false` directive in the file to have the working directory match your current directory.
+Note that the above example `.` works because as the docker build is run from frontend directory.
+
+````
 
 ### Running inkjet from within a script
 

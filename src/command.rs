@@ -10,6 +10,7 @@ pub struct Command {
     pub option_flags: Vec<OptionFlag>,
     pub start: usize,
     pub end: usize,
+    pub inkjet_file: String,
 }
 
 impl PartialEq for Command {
@@ -31,6 +32,7 @@ impl Command {
             option_flags: vec![],
             start: 0,
             end: 0,
+            inkjet_file: "".to_string(),
         }
     }
 

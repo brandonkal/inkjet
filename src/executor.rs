@@ -86,10 +86,14 @@ pub fn execute_command(
         };
         bat_cmd.wait()
     } else {
-        let parent_dir = get_parent_dir(&inkfile_path);
+        let mut inkfile = inkfile_path;
+        if cmd.inkjet_file != "" {
+            inkfile = cmd.inkjet_file.trim()
+        }
+        let parent_dir = get_parent_dir(&inkfile);
         let mut tempfile = String::new();
         let mut child = prepare_command(&cmd, &parent_dir, &mut tempfile);
-        child = add_utility_variables(child, inkfile_path);
+        child = add_utility_variables(child, inkfile);
         child = add_flag_variables(child, &cmd);
         if fixed_dir {
             child.current_dir(parent_dir);

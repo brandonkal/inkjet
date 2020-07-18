@@ -59,8 +59,8 @@ mod when_no_inkfile_found_in_current_directory {
 
     #[test]
     fn exits_with_error_for_any_other_command() {
-        common::run_inkjet(&PathBuf::from("./inkjet.md"))
-            .current_dir(".github")
+        common::run_inkjet(&PathBuf::from("./nothing.inkjet.md"))
+            .current_dir("tests")
             .command("nothing")
             .assert()
             .code(1)

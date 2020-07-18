@@ -16,6 +16,7 @@ pub fn build_command_structure(inkfile_contents: String) -> Command {
     let mut text = "".to_string();
     let mut list_level = 0;
     let mut first_was_pushed = false;
+    let mut current_file = "".to_string();
 
     for (event, range) in parser.into_offset_iter() {
         match event {
@@ -29,6 +30,7 @@ pub fn build_command_structure(inkfile_contents: String) -> Command {
                             commands.push(current_command.build());
                         }
                         current_command = Command::new(heading_level as u8);
+                        current_command.inkjet_file = current_file.clone();
                         current_command.start = range.start;
                     }
                     Tag::CodeBlock(cb) => {
@@ -170,6 +172,14 @@ pub fn build_command_structure(inkfile_contents: String) -> Command {
                 }
             }
             Html(html) => {
+                // **Note:** Internally, inkjet uses a special comment in the form of
+                // `<!-- inkfile: imported/inkjet.md -->` to set the working directory.
+                // Users should consider not using this implementation detail directly
+                // as it's not self documenting (comments are hidden when rendered).
+                let s = "<!-- inkfile: ";
+                if html.starts_with(s) {
+                    current_file = html.replace(s, "").replace(" -->", "");
+                }
                 text += &html.to_string();
             }
             Code(inline_code) => {
@@ -199,9 +209,10 @@ fn remove_duplicates(mut cmds: Vec<Command>) -> Vec<Command> {
     impl<T: PartialEq + Clone> Dedup<T> for Vec<T> {
         fn clear_duplicates(&mut self) {
             let mut already_seen = vec![];
-            self.retain(|item| match already_seen.contains(item) {
-                true => false,
-                _ => {
+            self.retain(|item| {
+                if already_seen.contains(item) {
+                    false
+                } else {
                     already_seen.push(item.clone());
                     true
                 }

@@ -2,6 +2,8 @@
 
 > Development tasks for inkjet
 
+inkjet_import: all
+
 ## echo (name) (optional=default)
 
 > Echo something
