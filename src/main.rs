@@ -9,7 +9,7 @@ use clap::{crate_name, crate_version, App, AppSettings, Arg, ArgMatches, SubComm
 use colored::*;
 
 use inkjet::command::Command;
-use inkjet::executor::execute_command;
+use inkjet::executor::{execute_command, execute_merge_command};
 use inkjet::view;
 
 fn main() {
@@ -25,7 +25,7 @@ fn main() {
         .setting(AppSettings::SubcommandRequired)
         .setting(color_setting)
         .version(crate_version!())
-        .about("Inkjet parser created by Brandon Kalinowski")
+        .about("Inkjet is a tool to build interactive CLIs with executable markdown.\nInkjet parser created by Brandon Kalinowski")
         .arg(custom_inkfile_path_arg())
         .arg_from_usage(
             "-i --interactive 'Execute the command in the document prompting for arguments'",
@@ -40,15 +40,15 @@ fn main() {
         cli_app.get_matches();
         return;
     }
-    let mdtxt = inkfile.unwrap();
-    let about_txt = format!(
-        "Generated from the {} file.\nInkjet parser created by Brandon Kalinowski",
-        inkfile_path
-    );
 
-    cli_app = cli_app.about(about_txt.as_str());
+    let mut mdtxt = inkfile.unwrap();
 
     let root_command = inkjet::parser::build_command_structure(mdtxt.clone());
+    let about_txt = format!(
+        "Generated from the {} file.\nInkjet parser created by Brandon Kalinowski\n\n{}",
+        inkfile_path, root_command.desc
+    );
+    cli_app = cli_app.about(about_txt.trim());
     let matches = build_subcommands(cli_app, color_setting, &opts, &root_command.subcommands)
         .get_matches_from(args);
     let mut chosen_cmd = find_command(&matches, &root_command.subcommands)

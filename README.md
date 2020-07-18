@@ -47,6 +47,8 @@ First, define a simple `inkjet.md` in your project.
 
 <!-- A heading defines the command's name -->
 
+> (Optional) Information entered here will appear in the CLI about help text.
+
 ## build
 
 <!-- A blockquote defines the command's description -->
