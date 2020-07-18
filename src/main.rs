@@ -34,7 +34,7 @@ fn main() {
 
     let (opts, args) = pre_parse(env::args().collect());
 
-    let (inkfile, inkfile_path) = find_inkfile(&opts.inkfile_path);
+    let (inkfile, inkfile_path) = find_inkfile(&opts.inkfile_opt);
     if inkfile.is_err() {
         // If the inkfile can't be found, at least parse for --version or --help
         cli_app.get_matches();
@@ -194,7 +194,7 @@ macro_rules! sset {
 struct CustomOpts {
     interactive: bool,
     preview: bool,
-    inkfile_path: String,
+    inkfile_opt: String,
 }
 
 // We must parse flags first to handle global flags and implicit defaults
@@ -210,18 +210,28 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     }
     if args.len() == 1 {
         args.insert(1, "default".to_string());
-    } else if args.len() == 2 && (args[1] == "-p" || args[1] == "--preview") {
+    } else if args.len() == 2
+        && (args[1] == "-p"
+            || args[1] == "--preview"
+            || args[1] == "-i"
+            || args[1] == "--interactive")
+    {
         args.insert(2, "default".to_string());
     }
     for i in 1..args.len() {
         let arg = &args[i];
         if i == inkfile_index {
-            opts.inkfile_path = canonical_path(arg);
+            opts.inkfile_opt = canonical_path(arg);
+            if i == args.len() - 1 {
+                // No default was called.
+                args.insert(i + 1, "default".to_string());
+                break;
+            }
         } else if arg == "-i" || arg == "--interactive" {
             opts.interactive = true;
-        } else if arg == "--inkfile" {
+        } else if arg == "--inkfile" || arg == "-c" {
             if let Some(idx) = arg.find('=') {
-                opts.inkfile_path = canonical_path(&arg[(idx + 1)..]);
+                opts.inkfile_opt = canonical_path(&arg[(idx + 1)..]);
             } else {
                 inkfile_index = i + 1
             }
@@ -245,26 +255,27 @@ fn canonical_path(p: &str) -> String {
     Path::new(p).to_str().unwrap().to_string()
 }
 
-fn find_inkfile(inkfile_path: &str) -> (Result<String, String>, String) {
-    let (inkfile, the_path) = inkjet::loader::read_inkfile(&inkfile_path);
+fn find_inkfile(inkfile_opt: &str) -> (Result<String, String>, String) {
+    let (inkfile, inkfile_path, is_file) = inkjet::loader::read_inkfile(&inkfile_opt);
 
     if inkfile.is_err() {
-        if inkfile_path == "" || inkfile_path == "./inkjet.md" {
+        if inkfile_opt == "" || inkfile_opt == "./inkjet.md" {
             // Just log a warning and let the process continue
             eprintln!("{} no inkjet.md found", "WARNING:".yellow());
         } else {
-            // This is a custom inkfile. We exit with an error it's not found
             eprintln!(
                 "{} specified inkfile \"{}\" not found",
                 "ERROR:".red(),
-                inkfile_path
+                inkfile_opt
             );
             std::process::exit(1);
         }
         (inkfile, "".to_string())
+    } else if !is_file {
+        (inkfile, inkfile_path)
     } else {
         // Find the absolute path to the inkfile
-        let absolute_path = fs::canonicalize(&the_path)
+        let absolute_path = fs::canonicalize(&inkfile_path)
             .expect("canonicalize inkfile path failed")
             .to_str()
             .unwrap()
@@ -280,6 +291,7 @@ fn custom_inkfile_path_arg<'a, 'b>() -> Arg<'a, 'b> {
     Arg::with_name("inkfile")
         .help("Path to a different inkfile you want to use")
         .long("inkfile")
+        .short("c")
         .takes_value(true)
         .multiple(false)
 }

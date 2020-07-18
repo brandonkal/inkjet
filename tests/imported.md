@@ -1,6 +1,6 @@
 # subproject
 
-## echo
+## echo//default
 
 > an echo command imported
 

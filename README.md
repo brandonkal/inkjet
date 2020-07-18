@@ -464,6 +464,12 @@ alias snippet="inkjet --inkfile ~/inkjet.md"
 snippet <subcommand>
 ```
 
+**Tip:** The shorthand alternative to `--inkfile` is `-c`. This flag also accepts the text contents of the inkfile or `-` to read stdin. This is enabled in order to use inkjet as an interpreter similar to other shells. If the value of this flag contains a multiple lines, it is interpreted as the contents, otherwise it is parsed as a filename as usual.
+
+```bash
+inkjet -c "$(cat inkjet.md)"
+```
+
 ### Environment variable utilities
 
 Inside of each script's execution environment, `inkjet` injects a few environment variable helpers that might come in handy.
