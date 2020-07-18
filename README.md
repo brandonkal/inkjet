@@ -20,7 +20,7 @@ With `inkjet` you can build interactive CLIs from your exising markdown. These C
 
 In its current state, inkjet works really well as a command runner for projects and sharing snippets as CLIs. In the fullness of time, I hope to expand inkjet to work as a general-purpose executable markdown tool.
 
-Here's the [inkjet.md](/inkjet.md) that `inkjet` itself uses as an example!
+Here's the [inkjet.md](/inkjet.md) that `inkjet` uses to build itself and run tests!
 
 To get started, follow the guide below or check out the more [advanced features](#features) `inkjet` has such as **positional args**, **optional flags**, **subcommands**, other **scripting runtimes** and more!
 
@@ -65,8 +65,8 @@ echo "building project..."
 
 > Tests my project
 
-You can also write documentation anywhere you want. Only certain types of markdown patterns
-are parsed to determine the command structure.
+You can also write documentation anywhere you want. Only certain types
+of markdown patterns are parsed to determine the command structure.
 
 ```js
 console.log("running project's tests")
@@ -90,7 +90,7 @@ Why the name inkjet?
 - I needed a name that is short and could work with a short alias. I have `alias i=inkjet` in my bashrc. This works well: `i test`, `i build`.
 - Inkjet printers made desktop publishing economical and fast. In the same way, **brandonkal/inkjet** makes building a CLI for project tasks fast and economical.
 - Like the printer, it is well suited for documentation.
-- The name was available. I needed a filename that identifies itself to what it does. Looking through GitHub, there are only a couple of repos that contain an inkjet.md file.
+- The name was available. I needed a filename that identifies itself to what it does. Looking through GitHub, there are only a couple of repos that contain an inkjet.md file and those have to do with the printer.
 
 ## Features
 
@@ -128,7 +128,7 @@ echo "Testing $test_case in $file"
 
 ### Optional flags
 
-You can define a list of optional flags for your commands. The flag name is injected into the script's scope as an environment variable.
+You can define a list of optional flags for your commands. The flag name is injected into the script's scope as an environment variable. If a flag name includes a `-` it will be replaced with an underscore (i.e. `--no-color` becomes `no_color`)
 
 It is important to note that `inkjet` auto injects a very common `boolean` flag called `verbose` into every single command even if it's not used. This saves a bit of typing for you! This means every command implicitly has a `-v` and `--verbose` flag already. The value of the `$verbose` environment variable is either `"true"` or simply unset/non-existent.
 
