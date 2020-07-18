@@ -47,6 +47,12 @@ fn main() {
     if mdtxt.contains("inkjet_import:") {
         mdtxt = execute_merge_command();
     }
+    // By default subcommands in the help output are listed in the same order
+    // they are defined in the markdown file. Users can define this directive
+    // for alphabetical sort.
+    if !mdtxt.contains("inkjet_sort: true") {
+        cli_app = cli_app.setting(AppSettings::DeriveDisplayOrder);
+    }
 
     let root_command = inkjet::parser::build_command_structure(mdtxt.clone());
     let about_txt = format!(
