@@ -1,4 +1,7 @@
 {
   "lldb.dereferencePointers": true,
-  "lldb.displayFormat": "auto"
+  "lldb.displayFormat": "auto",
+  "cSpell.words": [
+    "inkfile"
+  ]
 }

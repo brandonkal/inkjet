@@ -209,7 +209,7 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     // Loop through all args and parse
     let mut inkfile_index = 1000;
     // If the first argument is a markdown file or '-' assume it is a inkfile arg
-    // This allows us to use it as an interpretter without specifying '--inkfile'
+    // This allows us to use it as an interpreter without specifying '--inkfile'
     if args.len() > 1 && args[1] == "-" || args[1].ends_with(".md") {
         args.insert(1, "--inkfile".to_string());
     }

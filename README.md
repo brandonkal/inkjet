@@ -8,15 +8,15 @@ As developers, we are great at creating new things and using iterative developme
 
 But with all these tools, project set up becomes more complex. Gone are the days of just a `git clone`. The "Getting Started" section of our READMEs resemble long lists of manual tasks that a new developer is expected to execute, often by copying and pasting snippets of code into the terminal.
 
-My last young project currently has a README.md that started out as a pasteboard of code snippets to run to reproduce an environment. The document expands with the project. It is reproducable, but it is not yet automated. Eventually I had planned to move these scripts into a combination of Ansible playbooks, Makefiles, and shell scripts. That would likely then require additional markdown documentation on how to use all of those scripts.
+My last young project currently has a README.md that started out as a pasteboard of code snippets to run to reproduce an environment. The document expands with the project. It is reproducible, but it is not yet automated. Eventually I had planned to move these scripts into a combination of Ansible playbooks, Makefiles, and shell scripts. That would likely then require additional markdown documentation on how to use all of those scripts.
 
 An open source project that I respect has an extremely complex README file. Is it not odd that while we automate everything in the infrastructure space, we still fill our bootstrap guides with complex manual processes?
 
-That's when it occurred to me -- we need executable documentation. Markdown is well suited for this task because it renders well nearly everyhere with syntax highlighting of code blocks.
+That's when it occurred to me -- we need executable documentation. Markdown is well suited for this task because it renders well nearly everywhere with syntax highlighting of code blocks.
 
-We can replace Makefiles with inkjet.md files. Inkjet supports many languages, so you can write your tasks in Go, Ruby, TypeScript, bash, etc. More extravogant interpreters are supported by using a shebang at the start of your code block.
+We can replace Makefiles with inkjet.md files. Inkjet supports many languages, so you can write your tasks in Go, Ruby, TypeScript, bash, etc. More extravagant interpreters are supported by using a shebang at the start of your code block.
 
-With `inkjet` you can build interactive CLIs from your exising markdown. These CLIs can be as simple as a list of common tasks such as `test`, `build`, and `lint` or as complex applications with subcommands, flags, and options. All of this defined in a simple markdown file that is both a **human-readable document** and a **command definition**! Your code is documentation and your documentation is code. Because markdown is documentation focused, the format encourages descriptive text. This allows others to easily get started with your project's development setup by simply reading your `inkjet.md`.
+With `inkjet` you can build interactive CLIs from your existing markdown. These CLIs can be as simple as a list of common tasks such as `test`, `build`, and `lint` or as complex applications with subcommands, flags, and options. All of this defined in a simple markdown file that is both a **human-readable document** and a **command definition**! Your code is documentation and your documentation is code. Because markdown is documentation focused, the format encourages descriptive text. This allows others to easily get started with your project's development setup by simply reading your `inkjet.md`.
 
 In its current state, inkjet works really well as a command runner for projects and sharing snippets as CLIs. In the fullness of time, I hope to expand inkjet to work as a general-purpose executable markdown tool.
 
@@ -36,7 +36,7 @@ Head to the [Releases page][releases] and look for the latest published version.
 
 ### From source
 
-If you prefer to build from source, clone this repo and then run `cargo build --release`
+If you prefer to build from source, clone this repo and then run `cargo build --release`. The entire build script is in `inkjet.md`.
 
 ## Getting started
 
@@ -74,7 +74,7 @@ console.log("running project's tests")
 ````
 
 Note this code block above is defined as js. By default, inkjet supports sh, bash, zsh, fish, dash, JavaScript (node),
-Python, Ruby, PHP, Go (yaegi), and TypeScript (deno) as scripting runtimes! Using shebang syntax, you can use any other interpretter to execute your scripts.
+Python, Ruby, PHP, Go (yaegi), and TypeScript (deno) as scripting runtimes! Using shebang syntax, you can use any other interpreter to execute your scripts.
 
 Then, try running one of your commands!
 
@@ -90,7 +90,7 @@ Why the name inkjet?
 - I needed a name that is short and could work with a short alias. I have `alias i=inkjet` in my bashrc. This works well: `i test`, `i build`.
 - Inkjet printers made desktop publishing economical and fast. In the same way, **brandonkal/inkjet** makes building a CLI for project tasks fast and economical.
 - Like the printer, it is well suited for documentation.
-- The name was available. I needed a filename that identifies itself to what it does. Looking through GitHub, there are only a couple of repos that contain an inkjet.md file and those have to do with the printer.
+- The name was available. I needed a filename that identifies itself to what it does. Looking through GitHub, there are only a couple of repositories that contain an inkjet.md file and those have to do with the printer.
 
 ## Features
 
@@ -240,7 +240,7 @@ This is useful for blocks of code that need to shared for several tasks but shou
 
 ### Aliases and default target
 
-Seperate a subcommand name with `//` to define an alias.
+Separate a subcommand name with `//` to define an alias.
 
 ````markdown
 ## lint//default
@@ -396,12 +396,12 @@ When you run an inkjet command from a project subdirectory, inkjet will by defau
 It's often the case that large projects will have multiple `inkjet.md` files.
 For instance, each service may have its own `inkjet.md` file to define how to build and test that component. To enable the import feature, include the text directive `inkjet_import: all` somewhere within your main `inkjet.md` file. If inkjet discovers this directive in the text, it will run a shell command that finds all other `inkjet.md` files within the current folder and merge them together before parsing and building out the command tree. If the imported file has an h1 heading, its commands will appear as a subcommand of that heading. If only h2 and below headings are available in the imported file, those commands will become sibling commands for the parent. See [a merged example here](tests/merged-example.md).
 
-The merge behaviour is as follows:
+The merge behavior is as follows:
 
 1. Found `inkjet.md` files are first sorted by directory depth and then alphabetically.
 2. Merged definitions can override previously-defined definitions.
 
-The override behaviour is useful as it enables you to share generic commands, and them override them on a project-by-project basis as needed.
+The override behavior is useful as it enables you to share generic commands, and them override them on a project-by-project basis as needed.
 
 All imported inkjet.md files are run as if they were called directly. Namely, if `inkjet_fixed_dir` is not set to false, imported commands will run with their working directory set to the parent directory of its `inkjet.md` file.
 
@@ -535,13 +535,13 @@ While inkjet is suitable for project tasks, it can also be used to build and dis
 
 ### Executable interactive tutorials and guides
 
-Blog posts and tutorials often contain text with blocks of code walking the reader through the process of creating or installing an application or using a project. Markdown is commonly used as the authoring format for these guides. Using inkjet's interactive capabilities, it is simple to take an exising tutorial and distribute an executable documentation file. Users can download your tutorial and read it, preview code blocks, and execute each step inside their terminals.
+Blog posts and tutorials often contain text with blocks of code walking the reader through the process of creating or installing an application or using a project. Markdown is commonly used as the authoring format for these guides. Using inkjet's interactive capabilities, it is simple to take an existing tutorial and distribute an executable documentation file. Users can download your tutorial and read it, preview code blocks, and execute each step inside their terminals.
 
 ## FAQ
 
 ### Windows support?
 
-Currently, this is [unknown][windows_issue]. I'm pretty sure the executor logic will need to be adjusted for Windows. Git Bash and Ubuntu on Windows have been reported to work but they are not actively being tested.
+Currently, this is unknown. I'm pretty sure the executor logic will need to be adjusted for Windows. Git Bash and Ubuntu on Windows have been reported to work but they are not actively being tested.
 
 ### Is `inkjet` available as a lib?
 
@@ -553,7 +553,7 @@ Check out our [Contribution Guidelines](CONTRIBUTING.md) before creating an issu
 
 ### Wishlist
 
-If inkjet is useful to you, please consider auhoring one of these features.
+If inkjet is useful to you, please consider authoring one of these features.
 
 1. Import support. Using markdown links, we can import and combine several inkjet files together. For instance, you can link to your main `inkjet.md` file and define project-specific tasks and overrides in the project-specific `inkjet.md` file.
 2. Investigate dependency management. The one thing we lose migrating from Makefiles is dependency tracking. Most of my makefiles are filled with .PHONY, but having tasks specify their dependencies is still a welcome option.

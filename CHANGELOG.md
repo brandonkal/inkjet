@@ -10,7 +10,7 @@
 
 ### Added
 
-- Automated GitHub Releases and attached precompiled binaries for macOS and linux
+- Automated GitHub Releases and attached pre-compiled binaries for macOS and linux
 
 ## v0.7.0 (2019-10-13)
 
