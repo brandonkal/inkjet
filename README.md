@@ -26,13 +26,17 @@ To get started, follow the guide below or check out the more [advanced features]
 
 ## Installation
 
-### Precompiled binaries for linux and macOS
+### Using Homebrew
+
+Homebrew is the preferred method to install `inkjet` and keep it updated on macOS and Linux.
+
+```
+brew install brandonkal/tap/inkjet
+```
+
+### Pre-compiled binaries for linux and macOS
 
 Head to the [Releases page][releases] and look for the latest published version. Under **Assets** you'll see zips available for download for linux and macOS. Once downloaded, you can unzip them and then move the `inkjet` binary to somewhere accessible in your `$PATH` like `mv inkjet /usr/local/bin`.
-
-### Cargo
-
-`inkjet` is published to [crates.io][crate] which allows you to install it via `cargo install inkjet`.
 
 ### From source
 
