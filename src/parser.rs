@@ -303,6 +303,8 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
             .split_at(heading_level as usize - 2)
             .1
             .join(" ")
+    } else if heading_level == 1 {
+        String::from(text.split(' ').collect::<Vec<&str>>()[0])
     } else {
         text
     };
