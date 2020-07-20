@@ -293,7 +293,7 @@ fn treeify_commands(commands: Vec<Command>) -> Vec<Command> {
 fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Vec<Arg>) {
     // Why heading_level > 2? Because level 1 is the root command title (unused)
     // and level 2 can't be a subcommand so no need to split.
-    let name = if heading_level > 2 {
+    let name = (if heading_level > 2 {
         // Takes a subcommand name like this:
         // "#### db flush postgres (required_arg_name)"
         // and returns "postgres (required_arg_name)" as the actual name
@@ -307,7 +307,8 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
         String::from(text.split(' ').collect::<Vec<&str>>()[0])
     } else {
         text
-    };
+    })
+    .to_lowercase();
 
     // Find any required arguments. They look like this: (required_arg_name)
     let name_and_args: Vec<&str> = name.split(|c| c == '(' || c == ')').collect();
