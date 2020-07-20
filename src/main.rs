@@ -23,6 +23,7 @@ fn main() {
         .setting(AppSettings::VersionlessSubcommands)
         .setting(AppSettings::AllowNegativeNumbers)
         .setting(AppSettings::SubcommandRequired)
+        .global_setting(AppSettings::DisableHelpSubcommand)
         .setting(color_setting)
         .version(crate_version!())
         .about("Inkjet is a tool to build interactive CLIs with executable markdown.\nInkjet parser created by Brandon Kalinowski")
