@@ -25,11 +25,13 @@ fn needs_set_e(s: &str) -> bool {
 
 // Executes a shell function that finds all inkjet.md files in a directory and
 // merges them together. Useful for projects with several inkjet.md files.
-pub fn execute_merge_command() -> String {
-    let convert_code = "for f in $(find . -name inkjet.md | awk -F/ '{print NF-1 \" \" $0 }' | sort -n | cut -d ' ' -f 2-); do printf '<!-- inkfile: %s -->\n' \"$f\"; cat \"$f\"; done";
+pub fn execute_merge_command(inkfile_path: &str) -> String {
+    let parent_dir = get_parent_dir(inkfile_path);
+    let convert_code = "for f in $(find \"$(pwd -P)\" -name inkjet.md | awk -F/ '{print NF-1 \" \" $0 }' | sort -n | cut -d ' ' -f 2-); do printf '<!-- inkfile: %s -->\n' \"$f\"; cat \"$f\"; done";
     let out = process::Command::new("sh")
         .arg("-c")
         .arg(convert_code)
+        .current_dir(parent_dir)
         .output()
         .expect("Inkjet import command failed to start");
     if !out.status.success() {

@@ -45,7 +45,7 @@ fn main() {
     // If import directive is included,
     // merge all files first and then parse resulting text output
     if mdtxt.contains("inkjet_import:") {
-        mdtxt = execute_merge_command();
+        mdtxt = execute_merge_command(&inkfile_path);
     }
     if opts.print_all {
         print!("{}", mdtxt);
