@@ -60,7 +60,7 @@ fn main() {
 
     let root_command = inkjet::parser::build_command_structure(mdtxt.clone());
     let about_txt = format!(
-        "Generated from {}.\nInkjet parser created by Brandon Kalinowski\n\n{}",
+        "Generated from {}\nInkjet parser created by Brandon Kalinowski\n\n{}",
         inkfile_path, root_command.desc
     );
     cli_app = cli_app.about(about_txt.trim());
