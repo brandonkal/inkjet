@@ -529,6 +529,10 @@ This variable is an absolute path to the inkfile's parent directory. Having the 
 
 This is much like `INK_DIR` but it always resolves to the main `inkjet.md` file's parent directory.
 
+**`$INKET_IMPORTED`**
+
+A helper utility that is set to "true" if the script was imported by another `inkjet.md` file.
+
 ## Use cases
 
 Here's some example scenarios where `inkjet` might be handy.

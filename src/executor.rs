@@ -222,6 +222,10 @@ fn add_utility_variables(
     child.env("INKJET_DIR", get_parent_dir(inkfile_path));
     // This is the same as INKJET_DIR, but could differ for imported inkjet.md files.
     child.env("INK_DIR", get_parent_dir(local_inkfile_path));
+    // Environment variable is set if this file was imported from another.
+    if local_inkfile_path != inkfile_path {
+        child.env("INKJET_IMPORTED", "true");
+    }
 
     child
 }
