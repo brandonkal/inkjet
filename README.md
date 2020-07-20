@@ -444,7 +444,7 @@ Note that the above example `.` works because as the docker build is run from fr
 
 ### Running inkjet from within a script
 
-You can easily call `inkjet` within scripts if you need to chain commands together. However, if you plan on [running inkjet with a different inkfile](#running-inkjet-with-a-different-inkfile), you should consider using the `$INKJET` utility instead which allows your scripts to be location-agnostic.
+You can easily call `inkjet` within scripts if you need to chain commands together. However, if you plan on [running inkjet with a different inkfile](#running-inkjet-with-a-different-inkfile), you should consider using the `$INK` utility instead which allows your scripts to be location-agnostic.
 
 **Example:**
 
@@ -457,11 +457,11 @@ You can easily call `inkjet` within scripts if you need to chain commands togeth
 inkjet install
 inkjet build
 inkjet link
-# $INKJET also works. It's an alias variable for `inkjet --inkfile <path_to_inkfile>`
+# $INK also works. It's an alias variable for `inkjet --inkfile <path_to_inkfile>`
 # which guarantees your scripts will still work even if they are called from
 # another directory.
-$INKJET db migrate
-$INKJET start
+$INK db migrate
+$INK start
 ```
 ````
 
@@ -513,13 +513,21 @@ inkjet -c "$(cat inkjet.md)"
 
 Inside of each script's execution environment, `inkjet` injects a few environment variable helpers that might come in handy.
 
+**`$INK`**
+
+This is useful when [running inkjet within a script](#running-inkjet-from-within-a-script). This variable allows us to call `$INK command` instead of `inkjet --inkfile <path> command` inside scripts so that they can be location-agnostic (not care where they are called from). This is especially handy for global inkfiles which you may call from anywhere.
+
 **`$INKJET`**
 
-This is useful when [running inkjet within a script](#running-inkjet-from-within-a-script). This variable allows us to call `$INKJET command` instead of `inkjet --inkfile <path> command` inside scripts so that they can be location-agnostic (not care where they are called from). This is especially handy for global inkfiles which you may call from anywhere.
+This is similar to `INK` above but it always resolves to the orinal `inkjet.md` file. For instance, You may have some common scripts in the project's main `inkjet.md` file and call those scripts in imported `inkjet.md` files throughout the project. Note that if you call the imported inkfile directly, it will resolve the same as `$INK` above. For this reason, you will see different behavior depending on where you call the script.
+
+**`$INK_DIR`**
+
+This variable is an absolute path to the inkfile's parent directory. Having the parent directory available allows us to load files relative to the inkfile itself which can be useful when you have commands that depend on other external files.
 
 **`$INKJET_DIR`**
 
-This variable is an absolute path to the inkfile's parent directory. Having the parent directory available allows us to load files relative to the inkfile itself which can be useful when you have commands that depend on other external files.
+This is much like `INK_DIR` but it always resolves to the main `inkjet.md` file's parent directory.
 
 ## Use cases
 

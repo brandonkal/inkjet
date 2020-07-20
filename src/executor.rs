@@ -88,14 +88,15 @@ pub fn execute_command(
         };
         bat_cmd.wait()
     } else {
-        let mut inkfile = inkfile_path;
-        if cmd.inkjet_file != "" {
-            inkfile = cmd.inkjet_file.trim()
+        let inkfile = inkfile_path;
+        let mut local_inkfile = cmd.inkjet_file.trim();
+        if local_inkfile == "" {
+            local_inkfile = inkfile
         }
-        let parent_dir = get_parent_dir(&inkfile);
+        let parent_dir = get_parent_dir(local_inkfile);
         let mut tempfile = String::new();
         let mut child = prepare_command(&cmd, &parent_dir, &mut tempfile);
-        child = add_utility_variables(child, inkfile);
+        child = add_utility_variables(child, inkfile, local_inkfile);
         child = add_flag_variables(child, &cmd);
         if fixed_dir {
             child.current_dir(parent_dir);
@@ -197,17 +198,30 @@ fn get_parent_dir(inkfile_path: &str) -> String {
 }
 
 // Add some useful environment variables that scripts can use
-fn add_utility_variables(mut child: process::Command, inkfile_path: &str) -> process::Command {
+fn add_utility_variables(
+    mut child: process::Command,
+    inkfile_path: &str,
+    local_inkfile_path: &str,
+) -> process::Command {
     // This allows us to call "$INKJET command" instead of "inkjet --inkfile <path> command"
     // inside scripts so that they can be location-agnostic (not care where they are
     // called from). This is useful for global inkfiles especially.
+    // $INKJET always refers to the root inkjet script
     child.env(
         "INKJET",
         format!("{} --inkfile {}", crate_name!(), inkfile_path),
     );
+    // $INK is shorthand for "$INKJET command". The difference here is that it resolves to the local inkjet.md which
+    // could differ from $INKJET if the file was imported.
+    child.env(
+        "INK",
+        format!("{} --inkfile {}", crate_name!(), local_inkfile_path),
+    );
     // This allows us to refer to the directory the inkfile lives in which can be handy
     // for loading relative files to it.
     child.env("INKJET_DIR", get_parent_dir(inkfile_path));
+    // This is the same as INKJET_DIR, but could differ for imported inkjet.md files.
+    child.env("INK_DIR", get_parent_dir(local_inkfile_path));
 
     child
 }
