@@ -1,3 +1,5 @@
+//! Make your markdown executable with inkjet, the interactive CLI task runner
+#![warn(clippy::indexing_slicing)]
 use dialoguer::theme::ColoredTheme;
 use dialoguer::{Confirmation, Input, KeyPrompt};
 use std::collections::HashSet;
@@ -41,8 +43,8 @@ fn main() {
         cli_app.get_matches();
         return;
     }
-
     let mut mdtxt = inkfile.unwrap();
+
     // If import directive is included,
     // merge all files first and then parse resulting text output
     if mdtxt.contains("inkjet_import:") {
@@ -59,7 +61,7 @@ fn main() {
         cli_app = cli_app.setting(AppSettings::DeriveDisplayOrder);
     }
 
-    let root_command = inkjet::parser::build_command_structure(mdtxt.clone());
+    let root_command = inkjet::parser::build_command_structure(&mdtxt);
     let about_txt = format!(
         "Generated from {}\nInkjet parser created by Brandon Kalinowski\n\n{}",
         inkfile_path, root_command.desc
@@ -74,7 +76,10 @@ fn main() {
 
     if opts.interactive {
         let p = view::Printer::new(color, false, &inkfile_path);
-        let portion = &mdtxt[chosen_cmd.start..chosen_cmd.end];
+
+        let portion = &mdtxt
+            .get(chosen_cmd.start..chosen_cmd.end)
+            .expect("portion out of bounds");
         let print_err = p.print_markdown(&portion);
         if let Err(err) = print_err {
             eprintln!("{} printing markdown: {}", "ERROR:".red(), err);
@@ -110,7 +115,7 @@ fn interactive_params(
             .items(&['y', 'n', 'p'])
             .default(0)
             .interact()
-            .unwrap();
+            .expect("unable to read response");
         if rv == 'y' {
             break;
         } else if rv == 'p' {
@@ -141,11 +146,11 @@ fn interactive_params(
                 .allow_empty(!arg.required)
                 .default(arg.default.clone())
                 .interact()
-                .unwrap();
+                .expect("unable to read input");
             arg.val = rv
         }
     }
-    for flag in chosen_cmd.option_flags.iter_mut() {
+    for flag in &mut chosen_cmd.option_flags {
         if !flag.takes_value {
             if flag.name == "verbose" {
                 break;
@@ -155,7 +160,7 @@ fn interactive_params(
                     .with_text(&format!("{}: Set {} option?", chosen_cmd.name, flag.name))
                     .default(false)
                     .interact()
-                    .unwrap();
+                    .expect("unable to confirm option");
                 if rv {
                     flag.val = "true".to_string();
                 }
@@ -168,7 +173,7 @@ fn interactive_params(
                     .with_prompt(&format!("{}: Enter option for {}", chosen_cmd.name, name,))
                     .allow_empty(true)
                     .interact()
-                    .unwrap();
+                    .expect("unable to read option");
                 if is_invalid_number(flag.validate_as_number, &rv) {
                     log_expect_number(&name);
                     continue;
@@ -203,7 +208,8 @@ struct CustomOpts {
     print_all: bool,
 }
 
-// We must parse flags first to handle global flags and implicit defaults
+/// We must parse flags first to handle global flags and implicit defaults
+#[allow(clippy::indexing_slicing)]
 fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     let mut opts = CustomOpts::default();
     let early_exit_modifiers = sset!["-h", "--help", "-V", "--version", "--inkjet-print-all"];
@@ -224,6 +230,7 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     {
         args.insert(2, "default".to_string());
     }
+
     for i in 1..args.len() {
         let arg = &args[i];
         if i == inkfile_index {
@@ -261,7 +268,10 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
 
 // converts a given path str to a canonical path String
 fn canonical_path(p: &str) -> String {
-    Path::new(p).to_str().unwrap().to_string()
+    Path::new(p)
+        .to_str()
+        .expect("could not canonicalize path")
+        .to_string()
 }
 
 fn find_inkfile(inkfile_opt: &str) -> (Result<String, String>, String) {
@@ -280,16 +290,17 @@ fn find_inkfile(inkfile_opt: &str) -> (Result<String, String>, String) {
             std::process::exit(1);
         }
         (inkfile, "".to_string())
-    } else if !is_file {
-        (inkfile, inkfile_path)
-    } else {
+    } else if is_file {
         // Find the absolute path to the inkfile
         let absolute_path = fs::canonicalize(&inkfile_path)
             .expect("canonicalize inkfile path failed")
             .to_str()
-            .unwrap()
+            .expect("path contained invalid UTF-8 characters")
             .to_string();
+
         (inkfile, absolute_path)
+    } else {
+        (inkfile, inkfile_path)
     }
 }
 
@@ -304,7 +315,7 @@ fn custom_inkfile_path_arg<'a, 'b>() -> Arg<'a, 'b> {
         .takes_value(true)
         .multiple(false)
 }
-
+/// Takes a `clap_app` and a parsed root command and recursively builds the CLI application
 fn build_subcommands<'a, 'b>(
     mut cli_app: App<'a, 'b>,
     color_setting: AppSettings,
@@ -395,7 +406,7 @@ fn get_command_options(mut cmd: Command, matches: &ArgMatches) -> Command {
             let raw_value = matches
                 .value_of(flag.name.clone())
                 .or(Some(""))
-                .unwrap()
+                .expect("unable to read flag value")
                 .to_string();
 
             if is_invalid_number(flag.validate_as_number, &raw_value) {
@@ -417,7 +428,7 @@ fn get_command_options(mut cmd: Command, matches: &ArgMatches) -> Command {
 
     cmd
 }
-
+/// returns true if string string should parse as number and does not
 fn is_invalid_number(is_num: bool, raw_value: &str) -> bool {
     if !is_num || raw_value == "" {
         return false;

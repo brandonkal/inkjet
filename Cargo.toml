@@ -19,6 +19,7 @@ path = "src/lib.rs"
 lto = true
 codegen-units = 1
 panic = 'abort'
+backtrace = false
 
 [dependencies]
 colored = "1.9.3"                                                       # https://github.com/mackwic/colored

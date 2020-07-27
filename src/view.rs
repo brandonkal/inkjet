@@ -1,3 +1,4 @@
+#![warn(clippy::indexing_slicing)]
 use mdcat::{ResourceAccess, TerminalCapabilities, TerminalSize};
 use pulldown_cmark::{Options, Parser};
 use std::error::Error;
@@ -14,6 +15,7 @@ pub struct Printer {
 }
 
 impl Printer {
+    #[must_use]
     pub fn new(colors: bool, local_only: bool, filename: &str) -> Printer {
         let terminal_capabilities = if !colors {
             // If the user disabled colours assume a dumb terminal

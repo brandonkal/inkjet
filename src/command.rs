@@ -1,3 +1,6 @@
+#![warn(clippy::indexing_slicing)]
+/// Command represents a target constructed from the inkjet file parsing process.
+/// It provides all the options required to then execute the target.
 #[derive(Debug, Clone)]
 pub struct Command {
     pub cmd_level: u8,
@@ -20,6 +23,7 @@ impl PartialEq for Command {
 }
 
 impl Command {
+    #[must_use]
     pub fn new(cmd_level: u8) -> Self {
         Self {
             cmd_level,
@@ -35,7 +39,7 @@ impl Command {
             inkjet_file: "".to_string(),
         }
     }
-
+    #[must_use]
     pub fn build(mut self) -> Self {
         // Auto add common flags like verbose for commands that have a script source
         if !self.script.source.is_empty() {
@@ -63,13 +67,14 @@ pub struct Script {
 }
 
 impl Script {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             executor: "".to_string(),
             source: "".to_string(),
         }
     }
-
+    #[must_use]
     pub fn has_script(&self) -> bool {
         self.source != "" && self.executor != ""
     }
@@ -84,6 +89,7 @@ pub struct Arg {
 }
 
 impl Arg {
+    #[must_use]
     pub fn new(name: String, required: bool, default: Option<String>) -> Self {
         Arg {
             name,
@@ -107,6 +113,7 @@ pub struct OptionFlag {
 }
 
 impl OptionFlag {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             name: "".to_string(),

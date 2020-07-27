@@ -1,3 +1,4 @@
+#![warn(clippy::indexing_slicing)]
 use colored::*;
 
 use pulldown_cmark::CodeBlockKind::Fenced;
@@ -8,7 +9,9 @@ use pulldown_cmark::{
 
 use crate::command::{Arg, Command, OptionFlag};
 
-pub fn build_command_structure(inkfile_contents: String) -> Command {
+/// The main parsing logic. Takes an inkfile content as a string and returns the parsed Command.
+#[must_use]
+pub fn build_command_structure(inkfile_contents: &str) -> Command {
     let parser = create_markdown_parser(&inkfile_contents);
     let mut commands = vec![];
     let mut current_command = Command::new(1);
@@ -247,7 +250,7 @@ fn treeify_commands(commands: Vec<Command>) -> Vec<Command> {
 
     #[allow(clippy::needless_range_loop, clippy::comparison_chain)]
     for i in 0..num_commands {
-        let mut c = commands[i].clone();
+        let mut c = commands.get(i).unwrap().clone();
         let is_last_cmd = i == num_commands - 1;
 
         // We allow virtually increasing the command level if multiple h1s are found with subcommands
@@ -265,13 +268,11 @@ fn treeify_commands(commands: Vec<Command>) -> Vec<Command> {
             current_command.subcommands.push(c.clone());
         }
         // This must be a sibling command
-        else if c.cmd_level == current_command.cmd_level {
-            // Make sure the initial command doesn't skip itself before it finds children
-            if i > 0 {
-                // Found a sibling, so the current command has found all children.
-                command_tree.push(current_command.clone());
-                current_command = c.clone();
-            }
+        // Make sure the initial command doesn't skip itself before it finds children
+        else if c.cmd_level == current_command.cmd_level && i > 0 {
+            // Found a sibling, so the current command has found all children.
+            command_tree.push(current_command.clone());
+            current_command = c.clone();
         }
 
         // The last command needs to be added regardless, since there's not another iteration of the loop to do so
@@ -304,7 +305,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
             .1
             .join(" ")
     } else if heading_level == 1 {
-        String::from(text.split(' ').collect::<Vec<&str>>()[0])
+        text.split_whitespace().next().unwrap().to_owned()
     } else {
         text
     })
@@ -330,13 +331,15 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
     if !args.is_empty() {
         let args = args.join("");
         let args: Vec<&str> = args.split(' ').collect();
-        for arg in args.iter() {
+        for arg in &args {
             if arg.ends_with('?') {
                 let mut arg = (*arg).to_string();
                 arg.pop();
                 out_args.push(Arg::new(arg, false, None));
             } else if arg.contains('=') {
                 let parts: Vec<&str> = arg.splitn(2, '=').collect();
+                // will always have >= 2 parts
+                #[allow(clippy::indexing_slicing)]
                 out_args.push(Arg::new(
                     parts[0].to_string(),
                     false,
@@ -389,7 +392,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_serve_command_name() {
-        let tree = build_command_structure(TEST_INKJETFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE);
         let serve_command = &tree
             .subcommands
             .iter()
@@ -400,7 +403,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_serve_command_description() {
-        let tree = build_command_structure(TEST_INKJETFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE);
         let serve_command = &tree
             .subcommands
             .iter()
@@ -411,19 +414,19 @@ mod build_command_structure {
 
     #[test]
     fn parses_serve_required_positional_arguments() {
-        let tree = build_command_structure(TEST_INKJETFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE);
         let serve_command = &tree
             .subcommands
             .iter()
             .find(|cmd| cmd.name == "serve")
             .expect("serve command missing");
         assert_eq!(serve_command.args.len(), 1);
-        assert_eq!(serve_command.args[0].name, "port");
+        assert_eq!(serve_command.args.get(0).unwrap().name, "port");
     }
 
     #[test]
     fn parses_serve_command_executor() {
-        let tree = build_command_structure(TEST_INKJETFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE);
         let serve_command = &tree
             .subcommands
             .iter()
@@ -434,7 +437,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_serve_command_source_with_tildes() {
-        let tree = build_command_structure(TEST_INKJETFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE);
         let serve_command = &tree
             .subcommands
             .iter()
@@ -448,7 +451,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_node_command_source_with_backticks() {
-        let tree = build_command_structure(TEST_INKJETFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE);
         let node_command = &tree
             .subcommands
             .iter()
@@ -461,8 +464,9 @@ mod build_command_structure {
     }
 
     #[test]
+    #[allow(clippy::indexing_slicing)]
     fn adds_verbose_optional_flag_to_command_with_script() {
-        let tree = build_command_structure(TEST_INKJETFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE);
         let node_command = tree
             .subcommands
             .iter()
@@ -483,7 +487,7 @@ mod build_command_structure {
 
     #[test]
     fn does_not_add_verbose_optional_flag_to_command_with_no_script() {
-        let tree = build_command_structure(TEST_INKJETFILE.to_string());
+        let tree = build_command_structure(TEST_INKJETFILE);
         let no_script_command = tree
             .subcommands
             .iter()

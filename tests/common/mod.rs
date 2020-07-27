@@ -1,3 +1,4 @@
+#![warn(clippy::indexing_slicing)]
 use assert_cmd::{crate_name, prelude::*};
 use assert_fs::prelude::*;
 use std::path::PathBuf;
@@ -15,7 +16,7 @@ impl InkjetCommandExt for Command {
     }
 
     fn cli(&mut self, arguments: &'static str) -> &mut Command {
-        let args: Vec<&str> = arguments.split(" ").collect();
+        let args: Vec<&str> = arguments.split_whitespace().collect();
         for arg in args {
             self.arg(arg);
         }

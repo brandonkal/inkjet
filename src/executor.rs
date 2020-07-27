@@ -1,3 +1,4 @@
+#![warn(clippy::indexing_slicing)]
 use colored::*;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -11,20 +12,21 @@ use clap::crate_name;
 
 use crate::command::Command;
 
-// takes a source string and generates a temporary hash for the filename.
+/// takes a source string and generates a temporary hash for the filename.
 fn hash_source(s: &str) -> String {
     let mut hasher = DefaultHasher::new();
     s.hash(&mut hasher);
     format!("{:x}", hasher.finish())
 }
 
-// we append  `set -e` to these shells as a sensible default
+/// we append  `set -e` to these shells as a sensible default
 fn needs_set_e(s: &str) -> bool {
     s == "sh" || s == "bash" || s == "" || s == "dash" || s == "zsh"
 }
 
-// Executes a shell function that finds all inkjet.md files in a directory and
-// merges them together. Useful for projects with several inkjet.md files.
+/// Executes a shell function that finds all inkjet.md files in a directory and
+/// merges them together. Useful for projects with several inkjet.md files.
+/// returns the output of the merge operation: a new inkfile content String
 pub fn execute_merge_command(inkfile_path: &str) -> String {
     let parent_dir = get_parent_dir(inkfile_path);
     let convert_code = "for f in $(find \"$(pwd -P)\" -name inkjet.md | awk -F/ '{print NF-1 \" \" $0 }' | sort -n | cut -d ' ' -f 2-); do printf '<!-- inkfile: %s -->\n' \"$f\"; cat \"$f\"; done";
@@ -40,7 +42,7 @@ pub fn execute_merge_command(inkfile_path: &str) -> String {
     }
     String::from_utf8(out.stdout).expect("Inkjet import command failed")
 }
-
+/// Execute a given command using its executor or sh. If preview is set, the script will be printed instead.
 pub fn execute_command(
     mut cmd: Command,
     inkfile_path: &str,
@@ -68,7 +70,7 @@ pub fn execute_command(
             .spawn()
         {
             Ok(mut child) => {
-                let mut child_stdin = child.stdin.take().unwrap();
+                let mut child_stdin = child.stdin.take().expect("unable to build stdin");
                 if needs_set_e(&cmd.script.executor) {
                     let s = format!("set -e\n{}", cmd.script.source);
                     child_stdin.write_all(s.as_bytes())?;
@@ -118,6 +120,7 @@ pub fn execute_command(
     }
 }
 
+/// `prepare_command` takes a Command struct and builds a `process::Command` that can then be executed as a child process.
 fn prepare_command(cmd: &Command, parent_dir: &str, tempfile: &mut String) -> process::Command {
     let mut executor = cmd.script.executor.clone();
     let source = cmd.script.source.trim();
@@ -187,17 +190,17 @@ fn prepare_command(cmd: &Command, parent_dir: &str, tempfile: &mut String) -> pr
     }
 }
 
-// Find the absolute path to the inkfile's parent directory
+/// Find the absolute path to the inkfile's parent directory
 fn get_parent_dir(inkfile_path: &str) -> String {
     Path::new(&inkfile_path)
         .parent()
-        .unwrap()
+        .expect("unable to find parent path for inkfile")
         .to_str()
-        .unwrap()
+        .expect("inkfile parent path contains invalid UTF-8 characters")
         .to_owned()
 }
 
-// Add some useful environment variables that scripts can use
+/// Add some useful environment variables that scripts can use
 fn add_utility_variables(
     mut child: process::Command,
     inkfile_path: &str,
@@ -234,7 +237,9 @@ fn add_flag_variables(mut child: process::Command, cmd: &Command) -> process::Co
     // Add all required args as environment variables
     for arg in &cmd.args {
         let val = if arg.val.is_empty() && arg.default.is_some() {
-            arg.default.as_ref().unwrap()
+            arg.default
+                .as_ref()
+                .expect("unable to ref command default arg")
         } else {
             arg.val.as_str()
         };
