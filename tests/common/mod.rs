@@ -35,10 +35,12 @@ pub fn inkfile(content: &'static str) -> (assert_fs::TempDir, PathBuf) {
     (temp, inkfile_path)
 }
 
+pub fn run_binary() -> Command {
+    Command::cargo_bin(crate_name!()).expect("Was not able to find binary")
+}
+
 pub fn run_inkjet(inkfile: &PathBuf) -> Command {
-    let mut inkjet = Command::cargo_bin(crate_name!()).expect("Was not able to find binary");
-
+    let mut inkjet = run_binary();
     inkjet.arg("--inkfile").arg(inkfile);
-
     inkjet
 }

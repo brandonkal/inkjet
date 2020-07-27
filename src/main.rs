@@ -209,7 +209,6 @@ struct CustomOpts {
 }
 
 /// We must parse flags first to handle global flags and implicit defaults
-#[allow(clippy::indexing_slicing)]
 fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     let mut opts = CustomOpts::default();
     let early_exit_modifiers = sset!["-h", "--help", "-V", "--version", "--inkjet-print-all"];
@@ -217,21 +216,24 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     let mut inkfile_index = 1000;
     // If the first argument is a markdown file or '-' assume it is a inkfile arg
     // This allows us to use it as an interpreter without specifying '--inkfile'
-    if args.len() > 1 && args[1] == "-" || args[1].ends_with(".md") {
-        args.insert(1, "--inkfile".to_string());
-    }
-    if args.len() == 1 {
-        args.insert(1, "default".to_string());
-    } else if args.len() == 2
-        && (args[1] == "-p"
-            || args[1] == "--preview"
-            || args[1] == "-i"
-            || args[1] == "--interactive")
+    #[allow(clippy::indexing_slicing)]
     {
-        args.insert(2, "default".to_string());
+        if args.len() > 1 && (args[1] == "-" || args[1].ends_with(".md")) {
+            args.insert(1, "--inkfile".to_string());
+        }
+        if args.len() == 1
+            || (args.len() == 2
+                && (args[1] == "-p"
+                    || args[1] == "--preview"
+                    || args[1] == "-i"
+                    || args[1] == "--interactive"))
+        {
+            args.push("default".to_string());
+        }
     }
 
     for i in 1..args.len() {
+        #[allow(clippy::indexing_slicing)]
         let arg = &args[i];
         if i == inkfile_index {
             opts.inkfile_opt = canonical_path(arg);
@@ -244,7 +246,9 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
             opts.interactive = true;
         } else if arg == "--inkfile" || arg == "-c" {
             if let Some(idx) = arg.find('=') {
-                opts.inkfile_opt = canonical_path(&arg[(idx + 1)..]);
+                #[allow(clippy::indexing_slicing)]
+                let part2 = &arg[(idx + 1)..];
+                opts.inkfile_opt = canonical_path(part2);
             } else {
                 inkfile_index = i + 1
             }
@@ -260,6 +264,7 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
         } else {
             // This may be a flag for the default command.
             args.insert(i, "default".to_string());
+            // insert modifies the length, but this is ok because we break.
             break;
         }
     }

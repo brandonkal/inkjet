@@ -24,6 +24,16 @@ fn specifying_a_inkfile_in_a_different_dir() {
         .success();
 }
 
+#[test]
+fn simple_case_does_not_panic() {
+    // This also checks to ensure no extra output is printed (i.e. debug println)
+    common::run_binary()
+        .current_dir("tests/simple_case")
+        .assert()
+        .stdout("expected output\n")
+        .success();
+}
+
 // Using current_dir(".github") to make sure the default inkjet.md can't be found
 mod when_no_inkfile_found_in_current_directory {
     use super::*;
