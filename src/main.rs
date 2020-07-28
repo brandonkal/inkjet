@@ -61,7 +61,13 @@ fn main() {
         cli_app = cli_app.setting(AppSettings::DeriveDisplayOrder);
     }
 
-    let root_command = inkjet::parser::build_command_structure(&mdtxt);
+    let root_command = match inkjet::parser::build_command_structure(&mdtxt) {
+        Ok(cmd) => cmd,
+        Err(err) => {
+            eprintln!("{}: {}", "ERROR".red(), err);
+            std::process::exit(1);
+        }
+    };
     let about_txt = format!(
         "Generated from {}\nInkjet parser created by Brandon Kalinowski\n\n{}",
         inkfile_path, root_command.desc
@@ -433,7 +439,7 @@ fn get_command_options(mut cmd: Command, matches: &ArgMatches) -> Command {
 
     cmd
 }
-/// returns true if string string should parse as number and does not
+/// returns true if flag is set and the string should parse as number and does not
 fn is_invalid_number(is_num: bool, raw_value: &str) -> bool {
     if !is_num || raw_value == "" {
         return false;

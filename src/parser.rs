@@ -1,6 +1,4 @@
 #![warn(clippy::indexing_slicing)]
-use colored::*;
-
 use pulldown_cmark::CodeBlockKind::Fenced;
 use pulldown_cmark::{
     Event::{Code, End, Html, Start, Text},
@@ -9,9 +7,13 @@ use pulldown_cmark::{
 
 use crate::command::{Arg, Command, OptionFlag};
 
+/// Creates the message that is returned on an error
+fn invalid_type_msg(t: &str) -> String {
+    format!("Invalid flag type '{}' Expected string | number | bool.", t)
+}
+
 /// The main parsing logic. Takes an inkfile content as a string and returns the parsed Command.
-#[must_use]
-pub fn build_command_structure(inkfile_contents: &str) -> Command {
+pub fn build_command_structure(inkfile_contents: &str) -> Result<Command, String> {
     let parser = create_markdown_parser(&inkfile_contents);
     let mut commands = vec![];
     let mut current_command = Command::new(1);
@@ -57,6 +59,9 @@ pub fn build_command_structure(inkfile_contents: &str) -> Command {
             End(tag) => match tag {
                 Tag::Heading(heading_level) => {
                     let (name, aliases, args) = parse_heading_to_cmd(heading_level, text.clone());
+                    if name.is_empty() {
+                        return Err("unexpected empty heading name".to_owned());
+                    }
                     current_command.name = name;
                     current_command.args = args;
                     current_command.aliases = aliases;
@@ -117,7 +122,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Command {
                                         }
                                         "bool" | "boolean" => {}
                                         t => {
-                                            eprintln!("{} Invalid flag type '{}' Expected string | number | bool.", "ERROR:".red(), t);
+                                            return Err(invalid_type_msg(t));
                                         }
                                     }
                                 } else {
@@ -147,10 +152,11 @@ pub fn build_command_structure(inkfile_contents: &str) -> Command {
                         "type" => {
                             if val == "string" || val == "number" {
                                 current_option_flag.takes_value = true;
-                            }
-
-                            if val == "number" {
-                                current_option_flag.validate_as_number = true;
+                                if val == "number" {
+                                    current_option_flag.validate_as_number = true;
+                                }
+                            } else {
+                                return Err(invalid_type_msg(val));
                             }
                         }
                         // Parse out the short and long flag names
@@ -201,7 +207,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Command {
     let root_command = all.first().expect("root command must exist");
 
     // The command root and a possible init script
-    root_command.clone()
+    Ok(root_command.clone())
 }
 
 // remove duplicate commands to enable override function
@@ -309,7 +315,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
     } else {
         text
     })
-    .to_lowercase();
+    .to_lowercase(); //@kcov-ignore (kcov bug)
 
     // Find any required arguments. They look like this: (required_arg_name)
     let name_and_args: Vec<&str> = name.split(|c| c == '(' || c == ')').collect();
@@ -319,7 +325,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
     let mut name_and_alias = name.trim().splitn(2, "//");
     let name = match name_and_alias.next() {
         Some(n) => String::from(n),
-        _ => "".to_string(),
+        _ => "".to_string(), //@kcov-ignore
     };
     let alias = match name_and_alias.next() {
         Some(a) => a.to_string(),
@@ -392,18 +398,40 @@ mod build_command_structure {
 
     #[test]
     fn parses_serve_command_name() {
-        let tree = build_command_structure(TEST_INKJETFILE);
-        let serve_command = &tree
+        let tree = build_command_structure(
+            r#"
+## boolean
+
+**OPTIONS**
+- flags: -s --set |bool| Which port to serve on
+~~~
+echo $set
+~~~
+        "#,
+        )
+        .expect("build tree failed");
+        let boolean_command = &tree
             .subcommands
             .iter()
-            .find(|cmd| cmd.name == "serve")
-            .expect("serve command missing");
-        assert_eq!(serve_command.name, "serve");
+            .find(|cmd| cmd.name == "boolean")
+            .expect("boolean command missing");
+        assert_eq!(boolean_command.name, "boolean");
+        assert_eq!(
+            boolean_command
+                .option_flags
+                .get(0)
+                .expect("option flag not attached")
+                .takes_value,
+            false
+        );
     }
 
     #[test]
+    fn validates_bool() {}
+
+    #[test]
     fn parses_serve_command_description() {
-        let tree = build_command_structure(TEST_INKJETFILE);
+        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
         let serve_command = &tree
             .subcommands
             .iter()
@@ -414,7 +442,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_serve_required_positional_arguments() {
-        let tree = build_command_structure(TEST_INKJETFILE);
+        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
         let serve_command = &tree
             .subcommands
             .iter()
@@ -426,7 +454,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_serve_command_executor() {
-        let tree = build_command_structure(TEST_INKJETFILE);
+        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
         let serve_command = &tree
             .subcommands
             .iter()
@@ -437,7 +465,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_serve_command_source_with_tildes() {
-        let tree = build_command_structure(TEST_INKJETFILE);
+        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
         let serve_command = &tree
             .subcommands
             .iter()
@@ -451,7 +479,7 @@ mod build_command_structure {
 
     #[test]
     fn parses_node_command_source_with_backticks() {
-        let tree = build_command_structure(TEST_INKJETFILE);
+        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
         let node_command = &tree
             .subcommands
             .iter()
@@ -466,7 +494,7 @@ mod build_command_structure {
     #[test]
     #[allow(clippy::indexing_slicing)]
     fn adds_verbose_optional_flag_to_command_with_script() {
-        let tree = build_command_structure(TEST_INKJETFILE);
+        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
         let node_command = tree
             .subcommands
             .iter()
@@ -487,7 +515,7 @@ mod build_command_structure {
 
     #[test]
     fn does_not_add_verbose_optional_flag_to_command_with_no_script() {
-        let tree = build_command_structure(TEST_INKJETFILE);
+        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
         let no_script_command = tree
             .subcommands
             .iter()
@@ -495,5 +523,43 @@ mod build_command_structure {
             .expect("no_script command missing");
 
         assert_eq!(no_script_command.option_flags.len(), 0);
+    }
+
+    #[test]
+    fn fails_on_bad_flag_type() {
+        let expected_err = "Invalid flag type 'invalid' Expected string | number | bool.";
+        const FILE: &str = r#"
+## check
+OPTIONS
+- flags: -b |invalid| An invalid type
+```
+echo "Should not print $b"
+```
+"#;
+        let err_str = build_command_structure(FILE).expect_err("invalid type should be Err");
+        assert_eq!(err_str, expected_err);
+        const FILE2: &str = r#"
+## check
+OPTIONS
+* val
+    * flags: --val
+    * type: invalid
+```
+echo "Should not print $val"
+        "#;
+        let err_str2 = build_command_structure(FILE2).expect_err("invalid type should be Err");
+        assert_eq!(err_str2, expected_err);
+    }
+
+    #[test]
+    fn fails_on_empty_name() {
+        const FILE: &str = r#"
+## //alias
+```
+echo "Should not print"
+```
+"#;
+        let err_str = build_command_structure(FILE).expect_err("should error on no command name");
+        assert_eq!(err_str, "unexpected empty heading name");
     }
 }

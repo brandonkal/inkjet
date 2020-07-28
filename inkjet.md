@@ -239,3 +239,46 @@ inkjet_fixed_dir: true
 ```
 ls .vscode
 ```
+
+## cov
+
+> Collect coverage report as HTML
+
+```bash
+pkg="inkjet"
+cargo test --no-run || exit $?
+rm -rf target/cov
+
+for file in target/debug/*; do
+  if [[ -f "$file" && -x "$file" ]]; then
+    folder="target/cov-tmp/$(basename "$file")"
+    mkdir -p "$folder"
+    kcov --exclude-pattern=/.cargo,/usr/lib,/tests --exclude-region='#[cfg(test)]:#[cfg(testkcovstopmarker)]' "$folder" "$file"
+  fi
+done
+kcov --exclude-pattern=/.cargo,/usr/lib,/tests --exclude-region='#[cfg(test)]:#[cfg(testkcovstopmarker)]' --exclude-line='@kcov-ignore' --merge target/cov-tmp/merged target/cov-tmp/*
+mv target/cov-tmp/merged/kcov-merged target/cov
+rm -rf target/cov-tmp
+echo "Coverage report generated at target/cov" >&2
+```
+
+## install
+
+### install kcov-deps
+
+```
+sudo apt-get install libcurl4-openssl-dev libelf-dev libdw-dev cmake gcc
+```
+
+### install kcov
+
+```
+wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
+tar xzf master.tar.gz
+cd kcov-master
+mkdir build
+cd build
+cmake ..
+make
+sudo make install
+```

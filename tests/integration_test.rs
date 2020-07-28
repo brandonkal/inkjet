@@ -25,6 +25,27 @@ fn specifying_a_inkfile_in_a_different_dir() {
 }
 
 #[test]
+fn fails_on_bad_flag_type() {
+    let (_temp, inkfile_path) = common::inkfile(
+        r#"
+## check
+OPTIONS
+- flags: -b |invalid| An invalid type
+```
+echo "Should not print $b"
+```
+"#,
+    );
+    common::run_inkjet(&inkfile_path)
+        .arg("check")
+        .assert()
+        .stderr(contains(
+            "Invalid flag type 'invalid' Expected string | number | bool.",
+        ))
+        .failure();
+}
+
+#[test]
 fn simple_case_does_not_panic() {
     // This also checks to ensure no extra output is printed (i.e. debug println)
     common::run_binary()

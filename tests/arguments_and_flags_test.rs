@@ -221,7 +221,7 @@ echo "Value: $val"
     * type: number
 
 ~~~bash
-echo "This shouldn't render"
+echo "This shouldn't render $val"
 ~~~
 "#,
         );

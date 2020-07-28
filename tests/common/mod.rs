@@ -25,14 +25,11 @@ impl InkjetCommandExt for Command {
 }
 
 pub fn inkfile(content: &'static str) -> (assert_fs::TempDir, PathBuf) {
-    let temp = assert_fs::TempDir::new().unwrap();
-    let inkfile = temp.child("inkjet.md");
-
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    let inkfile = temp_dir.child("inkjet.md");
     inkfile.write_str(content).unwrap();
-
     let inkfile_path = inkfile.path().to_path_buf();
-
-    (temp, inkfile_path)
+    (temp_dir, inkfile_path)
 }
 
 pub fn run_binary() -> Command {
