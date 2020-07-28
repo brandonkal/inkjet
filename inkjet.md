@@ -247,7 +247,7 @@ ls .vscode
 ```bash
 pkg="inkjet"
 cargo test --no-run || exit $?
-rm -rf target/cov
+rm -rf target/cov target/cov-tmp
 
 for file in target/debug/*; do
   if [[ -f "$file" && -x "$file" ]]; then

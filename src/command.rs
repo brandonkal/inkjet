@@ -96,8 +96,8 @@ impl Arg {
             val: "".to_string(),
             required,
             default,
-        }
-    } //@kcov-ignore (kcov bug)
+        } //@kcov-ignore (kcov bug)
+    }
 }
 
 #[derive(Debug, Clone, Default)]

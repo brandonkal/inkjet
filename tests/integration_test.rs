@@ -46,6 +46,27 @@ echo "Should not print $b"
 }
 
 #[test]
+fn fails_on_invalid_number() {
+    let (_temp, inkfile_path) = common::inkfile(
+        r#"
+## check
+OPTIONS
+- flags: --num |number| A number
+```
+echo "Should not print $num"
+```
+"#,
+    );
+    common::run_inkjet(&inkfile_path)
+        .arg("check")
+        .arg("--num")
+        .arg("abc")
+        .assert()
+        .stderr(contains("expects a numerical value"))
+        .failure();
+}
+
+#[test]
 fn simple_case_does_not_panic() {
     // This also checks to ensure no extra output is printed (i.e. debug println)
     common::run_binary()

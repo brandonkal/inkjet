@@ -1,0 +1,10 @@
+#!/usr/bin/expect -f
+spawn inkjet -i echo > output.txt
+expect "Execute step echo?"
+send "y"
+expect "Enter value for name"
+send "Brandon\r"
+expect "Enter value for optional"
+send "\r"
+expect "Enter option for num"
+send "42\r"

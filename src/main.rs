@@ -4,7 +4,6 @@ use dialoguer::theme::ColoredTheme;
 use dialoguer::{Confirmation, Input, KeyPrompt};
 use std::collections::HashSet;
 use std::env;
-use std::fs;
 use std::path::Path;
 
 use clap::{crate_name, crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
@@ -16,12 +15,13 @@ use inkjet::view;
 
 fn main() {
     let color = env::var_os("NO_COLOR").is_none();
-    let (opts, args) = pre_parse(env::args().collect());
-    run(opts, args, color)
+    let args = env::args().collect();
+    run(args, color)
 }
 
 /// Parse and execute the chosen command
-fn run(opts: CustomOpts, args: Vec<String>, color: bool) {
+fn run(args: Vec<String>, color: bool) {
+    let (opts, args) = pre_parse(args);
     let color_setting = if color {
         AppSettings::ColoredHelp
     } else {
@@ -40,7 +40,7 @@ fn run(opts: CustomOpts, args: Vec<String>, color: bool) {
             "-i --interactive 'Execute the command in the document prompting for arguments'",
         )
         .arg_from_usage("-p --preview 'Preview the command source and exit'");
-    let (inkfile, inkfile_path) = find_inkfile(&opts.inkfile_opt);
+    let (inkfile, inkfile_path) = inkjet::loader::find_inkfile(&opts.inkfile_opt);
     if inkfile.is_err() {
         // If the inkfile can't be found, at least parse for --version or --help
         cli_app.get_matches_from(args);
@@ -55,7 +55,7 @@ fn run(opts: CustomOpts, args: Vec<String>, color: bool) {
     }
     if opts.print_all {
         print!("{}", mdtxt);
-        std::process::exit(0);
+        return;
     }
     // By default subcommands in the help output are listed in the same order
     // they are defined in the markdown file. Users can define this directive
@@ -229,20 +229,14 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
         if args.len() > 1 && (args[1] == "-" || args[1].ends_with(".md")) {
             args.insert(1, "--inkfile".to_string());
         }
-        if args.len() == 1
-            || (args.len() == 2
-                && (args[1] == "-p"
-                    || args[1] == "--preview"
-                    || args[1] == "-i"
-                    || args[1] == "--interactive"))
-        {
-            args.push("default".to_string());
-        }
     }
+    let mut default_index = 0;
 
     for i in 1..args.len() {
         #[allow(clippy::indexing_slicing)]
         let arg = &args[i];
+        // we keep track of if default should be inserted. iff not 0, we insert it.
+        // if -1 we insert it at the end.
         if i == inkfile_index {
             opts.inkfile_opt = canonical_path(arg);
             if i == args.len() - 1 {
@@ -257,23 +251,45 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
                 #[allow(clippy::indexing_slicing)]
                 let part2 = &arg[(idx + 1)..];
                 opts.inkfile_opt = canonical_path(part2);
+                inkfile_index = 999; // we've found it
             } else {
                 inkfile_index = i + 1
             }
         } else if arg == "--preview" || arg == "-p" {
-            opts.preview = true;
-        } else if !arg.starts_with('-') || early_exit_modifiers.contains(arg) {
-            if arg == "--inkjet-print-all" {
-                opts.print_all = true;
+            if !opts.preview {
+                opts.preview = true;
             }
+        } else if arg == "--inkjet-print-all" {
+            opts.print_all = true;
+            default_index = 1000;
+            break;
+        } else if arg.ends_with(".md") && inkfile_index != 1000 {
+            opts.inkfile_opt = canonical_path(arg);
+            inkfile_index = i
+        // if it is not a flag or early exit:
+        } else if !arg.starts_with('-') || early_exit_modifiers.contains(arg) {
+            default_index = 1000;
             break; // no more parsing to do as a subcommand has been called
         } else if arg == "-" {
             continue; // stdin file input
         } else {
             // This may be a flag for the default command.
-            args.insert(i, "default".to_string());
+            default_index = i;
             // insert modifies the length, but this is ok because we break.
             break;
+        }
+    }
+    if default_index <= args.len() {
+        if default_index == 0 {
+            args.push("default".to_string());
+        } else {
+            args.insert(default_index, "default".to_string());
+        }
+    }
+    if inkfile_index < args.len() {
+        let flag = args.get(inkfile_index - 1).unwrap();
+        if !(flag == "-c" || flag == "--inkfile") {
+            args.insert(inkfile_index, "--inkfile".to_string());
         }
     }
     (opts, args)
@@ -285,36 +301,6 @@ fn canonical_path(p: &str) -> String {
         .to_str()
         .expect("could not canonicalize path")
         .to_string()
-}
-
-fn find_inkfile(inkfile_opt: &str) -> (Result<String, String>, String) {
-    let (inkfile, inkfile_path, is_file) = inkjet::loader::read_inkfile(&inkfile_opt);
-
-    if inkfile.is_err() {
-        if inkfile_opt == "" || inkfile_opt == "./inkjet.md" {
-            // Just log a warning and let the process continue
-            eprintln!("{} no inkjet.md found", "WARNING:".yellow());
-        } else {
-            eprintln!(
-                "{} specified inkfile \"{}\" not found",
-                "ERROR:".red(),
-                inkfile_opt
-            );
-            std::process::exit(1);
-        }
-        (inkfile, "".to_string())
-    } else if is_file {
-        // Find the absolute path to the inkfile
-        let absolute_path = fs::canonicalize(&inkfile_path)
-            .expect("canonicalize inkfile path failed")
-            .to_str()
-            .expect("path contained invalid UTF-8 characters")
-            .to_string();
-
-        (inkfile, absolute_path)
-    } else {
-        (inkfile, inkfile_path)
-    }
 }
 
 fn custom_inkfile_path_arg<'a, 'b>() -> Arg<'a, 'b> {
@@ -453,4 +439,49 @@ fn log_expect_number(name: &str) {
         "ERROR:".red(),
         name
     );
+}
+
+#[cfg(test)]
+mod main_tests {
+    use super::*;
+    #[test]
+    fn numbers() {
+        let is_f = is_invalid_number(false, "string");
+        assert_eq!(is_f, false);
+        let is_f = is_invalid_number(true, "42");
+        assert_eq!(is_f, false);
+        let is_t = is_invalid_number(true, "abc");
+        assert_eq!(is_t, true);
+        log_expect_number("flag");
+    }
+    #[test]
+    fn modify_args() {
+        let (_, o) = pre_parse(svec!("inkjet", "tests/simple_case/inkjet.md", "-p"));
+        assert_eq!(
+            o,
+            svec!(
+                "inkjet",
+                "--inkfile",
+                "tests/simple_case/inkjet.md",
+                "-p",
+                "default"
+            )
+        );
+    }
+    #[test]
+    fn modify_args2() {
+        let x2 = svec!("inkjet", "-p", "--inkfile", "file.txt", "-", "something");
+        let (_, o) = pre_parse(x2.clone());
+        assert_eq!(o, x2);
+    }
+    #[test]
+    fn preview() {
+        let args = svec!["inkjet", "tests/simple_case/inkjet.md", "-p"];
+        run(args, false);
+    }
+    #[test]
+    fn interactive() {
+        let args = svec!["inkjet", "tests/simple_case/inkjet.md", "-i"];
+        run(args, false);
+    }
 }

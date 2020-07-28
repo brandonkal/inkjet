@@ -1,5 +1,6 @@
 #![warn(clippy::indexing_slicing)]
 use colored::*;
+use std::fs;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
@@ -69,6 +70,37 @@ fn read_and_return(file: Result<std::fs::File, std::io::Error>) -> String {
     inkfile_contents
 }
 
+/// Finds an inkfile and returns its contents and inkfile_path
+pub fn find_inkfile(inkfile_opt: &str) -> (Result<String, String>, String) {
+    let (inkfile, inkfile_path, is_file) = read_inkfile(&inkfile_opt);
+
+    if inkfile.is_err() {
+        if inkfile_opt == "" || inkfile_opt == "./inkjet.md" {
+            // Just log a warning and let the process continue
+            eprintln!("{} no inkjet.md found", "WARNING:".yellow());
+        } else {
+            eprintln!(
+                "{} specified inkfile \"{}\" not found",
+                "ERROR:".red(),
+                inkfile_opt
+            );
+            std::process::exit(1);
+        }
+        (inkfile, "".to_string())
+    } else if is_file {
+        // Find the absolute path to the inkfile
+        let absolute_path = fs::canonicalize(&inkfile_path)
+            .expect("canonicalize inkfile path failed")
+            .to_str()
+            .expect("path contained invalid UTF-8 characters")
+            .to_string();
+
+        (inkfile, absolute_path)
+    } else {
+        (inkfile, inkfile_path)
+    }
+}
+
 #[cfg(test)]
 mod read_inkfile {
     use super::*;
@@ -99,5 +131,18 @@ mod read_inkfile {
 
         let expected_err = "failed to open src/inkjet.md";
         assert_eq!(err, expected_err, "error message was wrong");
+    }
+
+    #[test]
+    fn stdin_name_works() {
+        let sn = stdin_name();
+        assert_eq!(sn.contains("stdin"), true)
+    }
+
+    #[test]
+    fn reads_stdin() {
+        let (_inkfile, inkfile_path, is_file) = read_inkfile("");
+        assert_eq!(inkfile_path.contains("inkjet.md"), true);
+        assert_eq!(is_file, true);
     }
 }
