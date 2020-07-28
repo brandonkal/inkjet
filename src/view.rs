@@ -2,7 +2,7 @@
 use mdcat::{ResourceAccess, TerminalCapabilities, TerminalSize};
 use pulldown_cmark::{Options, Parser};
 use std::error::Error;
-use std::io::stdout;
+use std::io::stderr;
 use std::path::Path;
 use syntect::parsing::SyntaxSet;
 
@@ -55,7 +55,7 @@ impl Printer {
         let parser = create_markdown_parser(&input);
 
         mdcat::push_tty(
-            &mut stdout(),
+            &mut stderr(),
             &self.terminal_capabilities,
             TerminalSize {
                 // width: self.size.width.to_string(),

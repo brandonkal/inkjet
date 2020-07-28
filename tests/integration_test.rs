@@ -129,7 +129,7 @@ mod when_custom_specified_inkfile_not_found {
         common::run_inkjet(&PathBuf::from("./nonexistent.md"))
             .command("--help")
             .assert()
-            .code(1)
+            .code(10)
             .stderr(contains("specified inkfile \"./nonexistent.md\" not found"))
             .failure();
     }
@@ -139,7 +139,7 @@ mod when_custom_specified_inkfile_not_found {
         common::run_inkjet(&PathBuf::from("./nonexistent.md"))
             .command("--version")
             .assert()
-            .code(1)
+            .code(10)
             .stderr(contains("specified inkfile \"./nonexistent.md\" not found"))
             .failure();
     }
@@ -149,7 +149,7 @@ mod when_custom_specified_inkfile_not_found {
         common::run_inkjet(&PathBuf::from("./nonexistent.md"))
             .command("what")
             .assert()
-            .code(1)
+            .code(10)
             .stderr(contains("specified inkfile \"./nonexistent.md\" not found"))
             .failure();
     }

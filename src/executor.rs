@@ -2,11 +2,11 @@
 use colored::*;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-use std::io::{Error, ErrorKind, Result, Write};
+use std::io;
+use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process;
-use std::process::ExitStatus;
 
 use clap::crate_name;
 
@@ -27,21 +27,43 @@ fn needs_set_e(s: &str) -> bool {
 /// Executes a shell function that finds all inkjet.md files in a directory and
 /// merges them together. Useful for projects with several inkjet.md files.
 /// returns the output of the merge operation: a new inkfile content String
-pub fn execute_merge_command(inkfile_path: &str) -> String {
+pub fn execute_merge_command(inkfile_path: &str) -> Result<String, String> {
     let parent_dir = get_parent_dir(inkfile_path);
     let convert_code = "for f in $(find \"$(pwd -P)\" -name inkjet.md | awk -F/ '{print NF-1 \" \" $0 }' | sort -n | cut -d ' ' -f 2-); do printf '<!-- inkfile: %s -->\n' \"$f\"; cat \"$f\"; done";
-    let out = process::Command::new("sh")
+    match process::Command::new("sh")
         .arg("-c")
         .arg(convert_code)
         .current_dir(parent_dir)
         .output()
-        .expect("Inkjet import command failed to start");
-    if !out.status.success() {
-        eprintln!("{} {}", "ERROR:".red(), "Inkjet import command failed");
-        process::exit(1);
+    {
+        Ok(out) => {
+            if !out.status.success() {
+                return Err("Inkjet import command failed".to_string());
+            }
+            match String::from_utf8(out.stdout) {
+                Ok(result) => Ok(result),
+                Err(_) => Err("Injet import command failed to convert to UTF-8".to_string()),
+            }
+        }
+        Err(_) => Err("Inkjet import command failed to start".to_string()),
     }
-    String::from_utf8(out.stdout).expect("Inkjet import command failed")
 }
+
+fn run_bat(source: String, lang: &str) -> io::Result<process::Child> {
+    match process::Command::new("bat")
+        .args(&["--plain", "--language", lang])
+        .stdin(process::Stdio::piped())
+        .spawn()
+    {
+        Ok(mut child) => {
+            let mut child_stdin = child.stdin.take().expect("unable to build stdin");
+            child_stdin.write_all(source.as_bytes())?;
+            io::Result::Ok(child)
+        }
+        Err(err) => io::Result::Err(err),
+    }
+}
+
 /// Execute a given command using its executor or sh. If preview is set, the script will be printed instead.
 pub fn execute_command(
     mut cmd: Command,
@@ -49,46 +71,33 @@ pub fn execute_command(
     preview: bool,
     color: bool,
     fixed_dir: bool,
-) -> Result<ExitStatus> {
+) -> Option<io::Result<process::ExitStatus>> {
     if cmd.script.source == "" {
         let msg = "Command has no script.";
-        return Err(Error::new(ErrorKind::Other, msg));
+        return Some(Err(io::Error::new(io::ErrorKind::Other, msg)));
     }
 
     if cmd.script.executor == "" && !cmd.script.source.trim().starts_with("#!") {
         cmd.script.executor = String::from("sh"); // default to default shell
     }
+    let source = if needs_set_e(&cmd.script.executor) {
+        format!("set -e\n{}", &cmd.script.executor)
+    } else {
+        cmd.script.source.clone()
+    };
 
     if preview {
         if !color {
-            print!("{}", cmd.script.source);
-            process::exit(0);
+            print!("{}", source);
+            return None;
         }
-        let mut bat_cmd = match process::Command::new("bat")
-            .args(&["--plain", "--language", &cmd.script.executor])
-            .stdin(process::Stdio::piped())
-            .spawn()
-        {
-            Ok(mut child) => {
-                let mut child_stdin = child.stdin.take().expect("unable to build stdin");
-                if needs_set_e(&cmd.script.executor) {
-                    let s = format!("set -e\n{}", cmd.script.source);
-                    child_stdin.write_all(s.as_bytes())?;
-                } else {
-                    child_stdin.write_all(cmd.script.source.as_bytes())?;
-                }
-                child
+        match run_bat(source.clone(), &cmd.script.executor) {
+            Ok(mut child) => Some(child.wait()),
+            Err(_) => {
+                print!("{}", source);
+                None
             }
-            Err(e) => {
-                if ErrorKind::NotFound == e.kind() {
-                    print!("{}", cmd.script.source);
-                    process::exit(0);
-                }
-                eprintln!("{} {}", "ERROR:".red(), e);
-                process::exit(1);
-            }
-        };
-        bat_cmd.wait()
+        }
     } else {
         let mut local_inkfile = cmd.inkjet_file.trim();
         if local_inkfile == "" {
@@ -102,20 +111,20 @@ pub fn execute_command(
         if fixed_dir {
             child.current_dir(parent_dir);
         }
-        let result = child
-            .spawn()
-            .unwrap_or_else(|err| {
-                if tempfile != "" && std::fs::remove_file(&tempfile).is_err() {
-                    eprintln!("{} Failed to delete file {}", "ERROR:".red(), tempfile);
-                }
-                eprintln!("{} {}", "ERROR:".red(), err);
-                process::exit(1);
-            })
-            .wait();
-        if tempfile != "" && std::fs::remove_file(&tempfile).is_err() {
-            eprintln!("{} Failed to delete file {}", "ERROR:".red(), tempfile);
+        let spawned_child = child.spawn();
+        match spawned_child {
+            Err(err) => {
+                delete_file(&tempfile);
+                Some(io::Result::Err(err))
+            }
+            Ok(mut child) => Some(child.wait()),
         }
-        result
+    }
+}
+
+fn delete_file(file: &str) {
+    if file != "" && std::fs::remove_file(&file).is_err() {
+        eprintln!("{} Failed to delete file {}", "ERROR:".red(), file);
     }
 }
 

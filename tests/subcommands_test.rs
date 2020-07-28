@@ -89,7 +89,7 @@ echo "system, online"
         common::run_inkjet(&inkfile_path)
             .command("start")
             .assert()
-            .code(1)
+            .code(10)
             .stderr(contains("Command has no script."))
             .failure();
     }
