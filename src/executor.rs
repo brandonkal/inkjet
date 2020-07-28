@@ -90,15 +90,14 @@ pub fn execute_command(
         };
         bat_cmd.wait()
     } else {
-        let inkfile = inkfile_path;
         let mut local_inkfile = cmd.inkjet_file.trim();
         if local_inkfile == "" {
-            local_inkfile = inkfile
+            local_inkfile = inkfile_path
         }
         let parent_dir = get_parent_dir(local_inkfile);
         let mut tempfile = String::new();
         let mut child = prepare_command(&cmd, &parent_dir, &mut tempfile);
-        child = add_utility_variables(child, inkfile, local_inkfile);
+        child = add_utility_variables(child, inkfile_path, local_inkfile);
         child = add_flag_variables(child, &cmd);
         if fixed_dir {
             child.current_dir(parent_dir);
