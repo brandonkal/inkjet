@@ -16,6 +16,12 @@ use inkjet::view;
 
 fn main() {
     let color = env::var_os("NO_COLOR").is_none();
+    let (opts, args) = pre_parse(env::args().collect());
+    run(opts, args, color)
+}
+
+/// Parse and execute the chosen command
+fn run(opts: CustomOpts, args: Vec<String>, color: bool) {
     let color_setting = if color {
         AppSettings::ColoredHelp
     } else {
@@ -26,7 +32,7 @@ fn main() {
         .setting(AppSettings::AllowNegativeNumbers)
         .setting(AppSettings::SubcommandRequired)
         .global_setting(AppSettings::DisableHelpSubcommand)
-        .setting(color_setting)
+        .global_setting(color_setting)
         .version(crate_version!())
         .about("Inkjet is a tool to build interactive CLIs with executable markdown.\nInkjet parser created by Brandon Kalinowski")
         .arg(custom_inkfile_path_arg())
@@ -34,13 +40,10 @@ fn main() {
             "-i --interactive 'Execute the command in the document prompting for arguments'",
         )
         .arg_from_usage("-p --preview 'Preview the command source and exit'");
-
-    let (opts, args) = pre_parse(env::args().collect());
-
     let (inkfile, inkfile_path) = find_inkfile(&opts.inkfile_opt);
     if inkfile.is_err() {
         // If the inkfile can't be found, at least parse for --version or --help
-        cli_app.get_matches();
+        cli_app.get_matches_from(args);
         return;
     }
     let mut mdtxt = inkfile.unwrap();
@@ -60,7 +63,6 @@ fn main() {
     if !mdtxt.contains("inkjet_sort: true") {
         cli_app = cli_app.setting(AppSettings::DeriveDisplayOrder);
     }
-
     let root_command = match inkjet::parser::build_command_structure(&mdtxt) {
         Ok(cmd) => cmd,
         Err(err) => {
@@ -73,8 +75,9 @@ fn main() {
         inkfile_path, root_command.desc
     );
     cli_app = cli_app.about(about_txt.trim());
-    let matches = build_subcommands(cli_app, color_setting, &opts, &root_command.subcommands)
-        .get_matches_from(args);
+    let matches =
+        build_subcommands(cli_app, &opts, &root_command.subcommands).get_matches_from(args);
+
     let mut chosen_cmd = find_command(&matches, &root_command.subcommands)
         .expect("SubcommandRequired failed to work");
 
@@ -94,7 +97,6 @@ fn main() {
         eprintln!();
         chosen_cmd = interactive_params(chosen_cmd, &inkfile_path, color, fixed_pwd);
     }
-
     match execute_command(chosen_cmd, &inkfile_path, opts.preview, color, fixed_pwd) {
         Ok(status) => {
             if let Some(code) = status.code() {
@@ -329,17 +331,15 @@ fn custom_inkfile_path_arg<'a, 'b>() -> Arg<'a, 'b> {
 /// Takes a `clap_app` and a parsed root command and recursively builds the CLI application
 fn build_subcommands<'a, 'b>(
     mut cli_app: App<'a, 'b>,
-    color_setting: AppSettings,
     opts: &CustomOpts,
     subcommands: &'a [Command],
 ) -> App<'a, 'b> {
     for c in subcommands {
         let mut subcmd = SubCommand::with_name(&c.name)
             .about(c.desc.as_ref())
-            .setting(color_setting)
             .setting(AppSettings::AllowNegativeNumbers);
         if !c.subcommands.is_empty() {
-            subcmd = build_subcommands(subcmd, color_setting, opts, &c.subcommands);
+            subcmd = build_subcommands(subcmd, opts, &c.subcommands);
             // If this parent command has no script source, require a subcommand.
             if c.script.source == "" {
                 subcmd = subcmd.setting(AppSettings::SubcommandRequired);
@@ -384,7 +384,6 @@ fn build_subcommands<'a, 'b>(
 
 fn find_command(matches: &ArgMatches, subcommands: &[Command]) -> Option<Command> {
     let mut command = None;
-
     // The child subcommand that was used
     if let Some(subcommand_name) = matches.subcommand_name() {
         if let Some(matches) = matches.subcommand_matches(subcommand_name) {
