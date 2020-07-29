@@ -262,7 +262,7 @@ rm -rf target/cov-tmp
 echo "Coverage report generated at target/cov" >&2
 ```
 
-## gcov-build
+## grcov-build
 
 ```sh
 export CARGO_INCREMENTAL=0
@@ -275,11 +275,23 @@ cargo test
 ## grcov
 
 ```sh
+rm ./target/debug/lcov.info || :
+rm -rf ./target/debug/report || :
 grcov ./target/debug -s . -t lcov --llvm --branch \
-  --ignore /.cargo,/usr/lib,tests
-  --ignore-not-existing -o ./target/debug/lcov.info
+  --guess-directory-when-missing \
+  --ignore-not-existing \
+  --ignore "/*" \
+  -o ./target/debug/lcov.info
 genhtml -o target/debug/report --show-details --highlight \
  --ignore-errors source --legend ./target/debug/lcov.info
+```
+
+## grcov-2
+
+```sh
+zip -0 ccov/ccov.zip `find . \( -name "${PWD##*/}*.gc*" \) -print`
+grcov ccov/ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o ccov/lcov.info
+genhtml -o ccov/ --show-details --highlight --ignore-errors source --legend ccov/lcov.info
 ```
 
 ## install
