@@ -315,7 +315,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
     } else {
         text
     })
-    .to_lowercase(); //@kcov-ignore (kcov bug)
+    .to_lowercase();
 
     // Find any required arguments. They look like this: (required_arg_name)
     let name_and_args: Vec<&str> = name.split(|c| c == '(' || c == ')').collect();
@@ -325,7 +325,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
     let mut name_and_alias = name.trim().splitn(2, "//");
     let name = match name_and_alias.next() {
         Some(n) => String::from(n),
-        _ => "".to_string(), //@kcov-ignore
+        _ => "".to_string(),
     };
     let alias = match name_and_alias.next() {
         Some(a) => a.to_string(),

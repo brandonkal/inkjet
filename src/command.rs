@@ -39,7 +39,7 @@ impl Command {
             end: 0,
             inkjet_file: "".to_string(),
             validation_error_msg: "".to_string(),
-        } //@kcov-ignore (kcov bug)
+        }
     }
     #[must_use]
     pub fn build(mut self) -> Self {
@@ -54,7 +54,7 @@ impl Command {
                 takes_value: false,
                 validate_as_number: false,
                 val: "".to_string(),
-            }); //@kcov-ignore (kcov bug)
+            });
         }
         self
     }
@@ -74,7 +74,7 @@ impl Script {
         Self {
             executor: "".to_string(),
             source: "".to_string(),
-        } //@kcov-ignore (kcov bug)
+        }
     }
     #[must_use]
     pub fn has_script(&self) -> bool {
@@ -98,7 +98,7 @@ impl Arg {
             val: "".to_string(),
             required,
             default,
-        } //@kcov-ignore (kcov bug)
+        }
     }
 }
 
@@ -126,6 +126,6 @@ impl OptionFlag {
             takes_value: false,
             validate_as_number: false,
             val: "".to_string(),
-        } //@kcov-ignore (kcov bug)
+        }
     }
 }

@@ -240,29 +240,7 @@ inkjet_fixed_dir: true
 ls .vscode
 ```
 
-## cov
-
-> Collect coverage report as HTML
-
-```bash
-pkg="inkjet"
-cargo test --no-run || exit $?
-rm -rf target/cov target/cov-tmp
-
-for file in target/debug/*; do
-  if [[ -f "$file" && -x "$file" ]]; then
-    folder="target/cov-tmp/$(basename "$file")"
-    mkdir -p "$folder"
-    kcov --exclude-pattern=/.cargo,/usr/lib,/tests --exclude-region='#[cfg(test)]:#[cfg(testkcovstopmarker)]' "$folder" "$file"
-  fi
-done
-kcov --exclude-pattern=/.cargo,/usr/lib,/tests --exclude-region='#[cfg(test)]:#[cfg(testkcovstopmarker)]' --exclude-line='@kcov-ignore' --merge target/cov-tmp/merged target/cov-tmp/*
-mv target/cov-tmp/merged/kcov-merged target/cov
-rm -rf target/cov-tmp
-echo "Coverage report generated at target/cov" >&2
-```
-
-## grcov-build
+## cov-build
 
 ```sh
 export CARGO_INCREMENTAL=0
@@ -272,45 +250,16 @@ cargo build
 cargo test
 ```
 
-## grcov
+## cov
+
+> Collect coverage report as HTML
 
 ```sh
-rm ./target/debug/lcov.info || :
-rm -rf ./target/debug/report || :
-grcov ./target/debug -s . -t lcov --llvm --branch \
-  --guess-directory-when-missing \
-  --ignore-not-existing \
-  --ignore "/*" \
-  -o ./target/debug/lcov.info
-genhtml -o target/debug/report --show-details --highlight \
- --ignore-errors source --legend ./target/debug/lcov.info
-```
-
-## grcov-2
-
-```sh
-zip -0 ccov/ccov.zip `find . \( -name "${PWD##*/}*.gc*" \) -print`
-grcov ccov/ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o ccov/lcov.info
-genhtml -o ccov/ --show-details --highlight --ignore-errors source --legend ccov/lcov.info
-```
-
-## install
-
-### install kcov-deps
-
-```
-sudo apt-get install libcurl4-openssl-dev libelf-dev libdw-dev cmake gcc
-```
-
-### install kcov
-
-```
-wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
-tar xzf master.tar.gz
-cd kcov-master
-mkdir build
-cd build
-cmake ..
-make
-sudo make install
+rm -rf target/cov || :
+mkdir -p target/cov || :
+zip -0 target/cov/cov.zip `find . \( -name "${PWD##*/}*.gc*" \) -print`
+grcov target/cov/cov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o target/cov/inkjet.info \
+  --excl-start '#[cfg(test)]' --excl-stop '#[cfg(covexcludestop)]' --excl-line '@cov-ignore'
+genhtml -o target/cov/ --show-details --highlight --ignore-errors source --legend target/cov/inkjet.info
+echo "Coverage report generated at target/cov" >&2
 ```
