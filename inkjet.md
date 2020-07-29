@@ -262,6 +262,26 @@ rm -rf target/cov-tmp
 echo "Coverage report generated at target/cov" >&2
 ```
 
+## gcov-build
+
+```sh
+export CARGO_INCREMENTAL=0
+export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+export RUSTDOCFLAGS="-Cpanic=abort"
+cargo build
+cargo test
+```
+
+## grcov
+
+```sh
+grcov ./target/debug -s . -t lcov --llvm --branch \
+  --ignore /.cargo,/usr/lib,tests
+  --ignore-not-existing -o ./target/debug/lcov.info
+genhtml -o target/debug/report --show-details --highlight \
+ --ignore-errors source --legend ./target/debug/lcov.info
+```
+
 ## install
 
 ### install kcov-deps

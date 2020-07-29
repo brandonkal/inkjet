@@ -101,7 +101,9 @@ fn run(args: Vec<String>, color: bool) -> (i32, String) {
 
     let mut chosen_cmd = find_command(&matches, &root_command.subcommands)
         .expect("SubcommandRequired failed to work");
-
+    if !chosen_cmd.validation_error_msg.is_empty() {
+        return (1, chosen_cmd.validation_error_msg);
+    }
     let fixed_pwd = !mdtxt.contains("inkjet_fixed_dir: false");
 
     if opts.interactive {
@@ -220,7 +222,7 @@ fn interactive_params(
                     .interact()
                     .expect("unable to read option");
                 if is_invalid_number(flag.validate_as_number, &rv) {
-                    log_expect_number(&name);
+                    eprintln!("{}: {}", "INVALID".red(), not_number_err_msg(&name));
                     continue;
                 } else {
                     break;
@@ -404,7 +406,8 @@ fn build_subcommands<'a, 'b>(
 
     cli_app
 }
-
+/// finds the Command to execute based on supplied args. If the user input fails validation then
+/// the validation_error_msg property will be non-empty
 fn find_command(matches: &ArgMatches, subcommands: &[Command]) -> Option<Command> {
     let mut command = None;
     // The child subcommand that was used
@@ -415,13 +418,21 @@ fn find_command(matches: &ArgMatches, subcommands: &[Command]) -> Option<Command
                     // Check if a subcommand was called, otherwise return this command
                     command = find_command(matches, &c.subcommands)
                         .or_else(|| Some(c.clone()).map(|c| get_command_options(c, &matches)));
+                    // early exit on validation error (e.g. number required and not supplied)
+                    if command
+                        .as_ref()
+                        .map_or(false, |command| !command.validation_error_msg.is_empty())
+                    {
+                        return command;
+                    }
                 }
             }
         }
     }
     command
 }
-
+/// returns the Command or an error string on Error (number invalid)
+/// If a flag validation error occurs, the validation_error_msg key will be mutated and parsing will stop.
 fn get_command_options(mut cmd: Command, matches: &ArgMatches) -> Command {
     // Check all required args
     for arg in &mut cmd.args {
@@ -438,13 +449,12 @@ fn get_command_options(mut cmd: Command, matches: &ArgMatches) -> Command {
             // Extract the value
             let raw_value = matches
                 .value_of(flag.name.clone())
-                .or(Some(""))
-                .expect("unable to read flag value")
+                .unwrap_or("")
                 .to_string();
 
             if is_invalid_number(flag.validate_as_number, &raw_value) {
-                log_expect_number(&flag.name);
-                std::process::exit(1);
+                cmd.validation_error_msg = not_number_err_msg(&flag.name);
+                break;
             }
 
             raw_value
@@ -458,7 +468,6 @@ fn get_command_options(mut cmd: Command, matches: &ArgMatches) -> Command {
             }
         };
     }
-
     cmd
 }
 /// returns true if flag is set and the string should parse as number and does not
@@ -470,12 +479,8 @@ fn is_invalid_number(is_num: bool, raw_value: &str) -> bool {
     raw_value.parse::<isize>().is_err() && raw_value.parse::<f32>().is_err()
 }
 
-fn log_expect_number(name: &str) {
-    eprintln!(
-        "{} flag `{}` expects a numerical value",
-        "ERROR:".red(),
-        name
-    );
+fn not_number_err_msg(name: &str) -> String {
+    format!("flag `{}` expects a numerical value", name)
 }
 
 #[cfg(test)]
@@ -489,7 +494,7 @@ mod main_tests {
         assert_eq!(is_f, false);
         let is_t = is_invalid_number(true, "abc");
         assert_eq!(is_t, true);
-        log_expect_number("flag");
+        not_number_err_msg("flag");
     }
     #[test]
     fn modify_args() {

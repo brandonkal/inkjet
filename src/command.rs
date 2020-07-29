@@ -14,6 +14,7 @@ pub struct Command {
     pub start: usize,
     pub end: usize,
     pub inkjet_file: String,
+    pub validation_error_msg: String,
 }
 
 impl PartialEq for Command {
@@ -37,6 +38,7 @@ impl Command {
             start: 0,
             end: 0,
             inkjet_file: "".to_string(),
+            validation_error_msg: "".to_string(),
         } //@kcov-ignore (kcov bug)
     }
     #[must_use]
