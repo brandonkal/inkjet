@@ -20,6 +20,8 @@ fn main() {
     if !err_str.is_empty() {
         if prefix {
             eprintln!("{}: {}", "ERROR".red(), err_str);
+        } else if rc == 0 {
+            println!("{}", err_str);
         } else {
             eprintln!("{}", err_str);
         }
@@ -58,7 +60,14 @@ fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
             eprintln!("{} no inkjet.md found", "WARNING:".yellow());
             // If the inkfile can't be found, at least parse for --version or --help
             if let Err(err) = cli_app.get_matches_from_safe(args) {
-                return (1, err.message, false);
+                let rc = if err.kind == clap::ErrorKind::VersionDisplayed
+                    || err.kind == clap::ErrorKind::HelpDisplayed
+                {
+                    0
+                } else {
+                    1
+                };
+                return (rc, err.message, false);
             };
             return (10, "No argument match found".to_string(), true); // won't be called if help is parsed
         } else {
@@ -109,7 +118,14 @@ fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
     {
         Ok(m) => m,
         Err(err) => {
-            return (1, err.message, false);
+            let rc = if err.kind == clap::ErrorKind::VersionDisplayed
+                || err.kind == clap::ErrorKind::HelpDisplayed
+            {
+                0
+            } else {
+                1
+            };
+            return (rc, err.message, false);
         }
     };
 
