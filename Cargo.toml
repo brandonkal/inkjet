@@ -21,12 +21,12 @@ codegen-units = 1
 panic = 'abort'
 
 [dependencies]
-colored = "1.9.3"                                                       # https://github.com/mackwic/colored
-pulldown-cmark = { version = "0.7.0", default-features = false }          # https://github.com/raphlinus/pulldown-cmark
+colored = "1.9.3" # https://github.com/mackwic/colored
+pulldown-cmark = { version = "0.7.0", default-features = false } # https://github.com/raphlinus/pulldown-cmark
 dialoguer = { git = "https://github.com/brandonkal/dialoguer" }
 mdcat = "0.15.1"
 
-[dependencies.clap]																# https://github.com/clap-rs/clap
+[dependencies.clap] # https://github.com/clap-rs/clap
 version = "2.33.0"
 features = ["wrap_help"]
 
@@ -38,6 +38,6 @@ default-features = false
 features = ["parsing", "assets", "dump-load"]
 
 [dev-dependencies]
-assert_cmd = "0.12.0"                                                   # https://github.com/assert-rs/assert_cmd
-assert_fs = "0.13.1"                                                    # https://github.com/assert-rs/assert_fs
-predicates = "1.0.4"                                                    # https://github.com/assert-rs/predicates-rs
+assert_cmd = "0.12.0" # https://github.com/assert-rs/assert_cmd
+assert_fs = "0.13.1"  # https://github.com/assert-rs/assert_fs
+predicates = "1.0.4"  # https://github.com/assert-rs/predicates-rs
