@@ -255,11 +255,33 @@ cargo test
 > Collect coverage report as HTML
 
 ```sh
+v=$($INKJET utils v)
 rm -rf target/cov || :
 mkdir -p target/cov || :
 zip -0 target/cov/cov.zip `find . \( -name "${PWD##*/}*.gc*" \) -print`
 grcov target/cov/cov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o target/cov/inkjet.info \
-  --excl-start '#[cfg(test)]' --excl-stop '#[cfg(covexcludestop)]' --excl-line '@cov-ignore'
-genhtml -o target/cov/ --show-details --highlight --ignore-errors source --legend target/cov/inkjet.info
+  --excl-start '#\[cfg\(test\)\]' --excl-stop '#\[cfg\(covexcludestop\)\]' --excl-line '@cov-ignore'
+genhtml -o target/cov/ --show-details --highlight --ignore-errors source  --title --legend target/cov/inkjet.info
 echo "Coverage report generated at target/cov" >&2
+```
+
+### utils v
+
+> Returns a version string of the worker-image based on if it is dirty
+
+```sh
+revision=$(git log -1 --format=%h)
+if git status --porcelain | grep -q infra/brigade-deno-worker; then
+  revision="$revision-dirty"
+fi
+echo "$revision"
+```
+
+## double-dash -- (extra)
+
+> A test to ensure the double dash functions
+
+```sh
+echo $_
+echo Done
 ```
