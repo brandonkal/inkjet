@@ -16,17 +16,22 @@ use inkjet::view;
 fn main() {
     let color = env::var_os("NO_COLOR").is_none();
     let args = env::args().collect();
-    let (return_code, err_str) = run(args, color);
+    let (rc, err_str, prefix) = run(args, color);
     if !err_str.is_empty() {
-        eprintln!("{}: {}", "ERROR".red(), err_str);
+        if prefix {
+            eprintln!("{}: {}", "ERROR".red(), err_str);
+        } else {
+            eprintln!("{}", err_str);
+        }
     }
-    std::process::exit(return_code);
+    std::process::exit(rc);
 }
 
-/// Parse and execute the chosen command. Returns exit code and an error string if it should be printed.
+/// Parse and execute the chosen command.
 /// run attempts to ensure that the process does not exit unless there is a panic or clap --help or --version is matched.
 /// This enables improved integration testing.
-fn run(args: Vec<String>, color: bool) -> (i32, String) {
+/// Returns exit code, an error string if it should be printed, and if the error should be prefixed with `ERROR`.
+fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
     let (opts, args) = pre_parse(args);
     let color_setting = if color {
         AppSettings::ColoredHelp
@@ -52,12 +57,15 @@ fn run(args: Vec<String>, color: bool) -> (i32, String) {
             // Just log a warning and let the process continue
             eprintln!("{} no inkjet.md found", "WARNING:".yellow());
             // If the inkfile can't be found, at least parse for --version or --help
-            cli_app.get_matches_from(args);
-            return (10, "No argument match found".to_string()); // won't be called if help is parsed
+            if let Err(err) = cli_app.get_matches_from_safe(args) {
+                return (1, err.message, false);
+            };
+            return (10, "No argument match found".to_string(), true); // won't be called if help is parsed
         } else {
             return (
                 10,
                 format!("specified inkfile \"{}\" not found", opts.inkfile_opt),
+                true,
             ); // won't be called if help is parsed
         }
     }
@@ -71,13 +79,13 @@ fn run(args: Vec<String>, color: bool) -> (i32, String) {
                 mdtxt = txt;
             }
             Err(err) => {
-                return (10, err);
+                return (10, err, true);
             }
         };
     }
     if opts.print_all {
         print!("{}", mdtxt);
-        return (0, "".to_string());
+        return (0, "".to_string(), true);
     }
     // By default subcommands in the help output are listed in the same order
     // they are defined in the markdown file. Users can define this directive
@@ -88,7 +96,7 @@ fn run(args: Vec<String>, color: bool) -> (i32, String) {
     let root_command = match inkjet::parser::build_command_structure(&mdtxt) {
         Ok(cmd) => cmd,
         Err(err) => {
-            return (10, err);
+            return (10, err, true);
         }
     };
     let about_txt = format!(
@@ -96,13 +104,19 @@ fn run(args: Vec<String>, color: bool) -> (i32, String) {
         inkfile_path, root_command.desc
     );
     cli_app = cli_app.about(about_txt.trim());
-    let matches =
-        build_subcommands(cli_app, &opts, &root_command.subcommands).get_matches_from(args);
+    let matches = match build_subcommands(cli_app, &opts, &root_command.subcommands)
+        .get_matches_from_safe(args)
+    {
+        Ok(m) => m,
+        Err(err) => {
+            return (1, err.message, false);
+        }
+    };
 
     let mut chosen_cmd = find_command(&matches, &root_command.subcommands)
         .expect("SubcommandRequired failed to work");
     if !chosen_cmd.validation_error_msg.is_empty() {
-        return (1, chosen_cmd.validation_error_msg);
+        return (1, chosen_cmd.validation_error_msg, true);
     }
     let fixed_pwd = !mdtxt.contains("inkjet_fixed_dir: false");
 
@@ -114,13 +128,13 @@ fn run(args: Vec<String>, color: bool) -> (i32, String) {
             .expect("portion out of bounds");
         let print_err = p.print_markdown(&portion);
         if let Err(err) = print_err {
-            return (10, format!("printing markdown: {}", err));
+            return (10, format!("printing markdown: {}", err), true);
         }
         eprintln!();
         let (picked_cmd, exit_code, err_str) =
             interactive_params(chosen_cmd, &inkfile_path, color, fixed_pwd);
         if picked_cmd.is_none() {
-            return (exit_code, err_str);
+            return (exit_code, err_str, true);
         }
         chosen_cmd = picked_cmd.unwrap();
     }
@@ -128,14 +142,14 @@ fn run(args: Vec<String>, color: bool) -> (i32, String) {
         Some(result) => match result {
             Ok(status) => {
                 if let Some(code) = status.code() {
-                    (code, "".to_string())
+                    (code, "".to_string(), false)
                 } else {
-                    (0, "".to_string())
+                    (0, "".to_string(), false)
                 }
             }
-            Err(err) => (10, err.to_string()),
+            Err(err) => (10, err.to_string(), false),
         },
-        _ => (0, "".to_string()),
+        _ => (0, "".to_string(), false),
     }
 }
 
