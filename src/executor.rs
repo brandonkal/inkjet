@@ -81,7 +81,7 @@ pub fn execute_command(
         cmd.script.executor = String::from("sh"); // default to default shell
     }
     let source = if needs_set_e(&cmd.script.executor) {
-        format!("set -e\n{}", &cmd.script.executor)
+        format!("set -e\n{}", &cmd.script.source)
     } else {
         cmd.script.source.clone()
     };
