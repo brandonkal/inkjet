@@ -1,14 +1,14 @@
 #![warn(clippy::indexing_slicing)]
-/// Command represents a target constructed from the inkjet file parsing process.
+/// CommandBlock represents a target constructed from the inkjet file parsing process.
 /// It provides all the options required to then execute the target.
 #[derive(Debug, Clone)]
-pub struct Command {
+pub struct CommandBlock {
     pub cmd_level: u8,
     pub name: String,
     pub aliases: String,
     pub desc: String,
     pub script: Script,
-    pub subcommands: Vec<Command>,
+    pub subcommands: Vec<CommandBlock>,
     pub args: Vec<Arg>,
     pub option_flags: Vec<OptionFlag>,
     pub start: usize,
@@ -17,13 +17,13 @@ pub struct Command {
     pub validation_error_msg: String,
 }
 
-impl PartialEq for Command {
+impl PartialEq for CommandBlock {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name && self.cmd_level == other.cmd_level
     }
 }
 
-impl Command {
+impl CommandBlock {
     #[must_use]
     pub fn new(cmd_level: u8) -> Self {
         Self {

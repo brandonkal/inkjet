@@ -5,18 +5,18 @@ use pulldown_cmark::{
     Options, Parser, Tag,
 };
 
-use crate::command::{Arg, Command, OptionFlag};
+use crate::command::{Arg, CommandBlock, OptionFlag};
 
 /// Creates the message that is returned on an error
 fn invalid_type_msg(t: &str) -> String {
     format!("Invalid flag type '{}' Expected string | number | bool.", t)
 }
 
-/// The main parsing logic. Takes an inkfile content as a string and returns the parsed Command.
-pub fn build_command_structure(inkfile_contents: &str) -> Result<Command, String> {
+/// The main parsing logic. Takes an inkfile content as a string and returns the parsed CommandBlock.
+pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, String> {
     let parser = create_markdown_parser(&inkfile_contents);
     let mut commands = vec![];
-    let mut current_command = Command::new(1);
+    let mut current_command = CommandBlock::new(1);
     let mut current_option_flag = OptionFlag::new();
     let mut text = "".to_string();
     let mut list_level = 0;
@@ -34,7 +34,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<Command, String
                             first_was_pushed = true;
                             commands.push(current_command.build());
                         }
-                        current_command = Command::new(heading_level as u8);
+                        current_command = CommandBlock::new(heading_level as u8);
                         current_command.inkjet_file = current_file.clone();
                         current_command.start = range.start;
                     }
@@ -211,7 +211,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<Command, String
 }
 
 // remove duplicate commands to enable override function
-fn remove_duplicates(mut cmds: Vec<Command>) -> Vec<Command> {
+fn remove_duplicates(mut cmds: Vec<CommandBlock>) -> Vec<CommandBlock> {
     trait Dedup<T: PartialEq + Clone> {
         fn clear_duplicates(&mut self);
     }
@@ -247,7 +247,7 @@ fn create_markdown_parser(inkfile_contents: &str) -> Parser {
     Parser::new_ext(&inkfile_contents, options)
 }
 
-fn treeify_commands(commands: Vec<Command>) -> Vec<Command> {
+fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
     let mut command_tree = vec![];
     let mut current_command = commands.first().expect("command should exist").clone();
     let num_commands = commands.len();

@@ -9,7 +9,7 @@ use std::path::Path;
 use clap::{crate_name, crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
 use colored::*;
 
-use inkjet::command::Command;
+use inkjet::command::CommandBlock;
 use inkjet::executor::{execute_command, execute_merge_command};
 use inkjet::view;
 
@@ -171,11 +171,11 @@ fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
 
 /// Prompt for missing parameters interactively.
 fn interactive_params(
-    mut chosen_cmd: Command,
+    mut chosen_cmd: CommandBlock,
     inkfile_path: &str,
     color: bool,
     fixed_dir: bool,
-) -> (Option<Command>, i32, String) {
+) -> (Option<CommandBlock>, i32, String) {
     loop {
         let rv = KeyPrompt::with_theme(&ColoredTheme::default())
             .with_text(&format!("Execute step {}?", chosen_cmd.name))
@@ -387,7 +387,7 @@ fn custom_inkfile_path_arg<'a, 'b>() -> Arg<'a, 'b> {
 fn build_subcommands<'a, 'b>(
     mut cli_app: App<'a, 'b>,
     opts: &CustomOpts,
-    subcommands: &'a [Command],
+    subcommands: &'a [CommandBlock],
 ) -> App<'a, 'b> {
     for c in subcommands {
         let mut subcmd = SubCommand::with_name(&c.name)
@@ -436,9 +436,9 @@ fn build_subcommands<'a, 'b>(
 
     cli_app
 }
-/// finds the Command to execute based on supplied args. If the user input fails validation then
+/// finds the CommandBlock to execute based on supplied args. If the user input fails validation then
 /// the validation_error_msg property will be non-empty
-fn find_command(matches: &ArgMatches, subcommands: &[Command]) -> Option<Command> {
+fn find_command(matches: &ArgMatches, subcommands: &[CommandBlock]) -> Option<CommandBlock> {
     let mut command = None;
     // The child subcommand that was used
     if let Some(subcommand_name) = matches.subcommand_name() {
@@ -461,9 +461,9 @@ fn find_command(matches: &ArgMatches, subcommands: &[Command]) -> Option<Command
     }
     command
 }
-/// returns the Command or an error string on Error (number invalid)
+/// returns the CommandBlock or an error string on Error (number invalid)
 /// If a flag validation error occurs, the validation_error_msg key will be mutated and parsing will stop.
-fn get_command_options(mut cmd: Command, matches: &ArgMatches) -> Command {
+fn get_command_options(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBlock {
     // Check all required args
     for arg in &mut cmd.args {
         arg.val = match matches.value_of(arg.name.clone()) {

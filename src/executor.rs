@@ -10,7 +10,7 @@ use std::process;
 
 use clap::crate_name;
 
-use crate::command::Command;
+use crate::command::CommandBlock;
 
 /// takes a source string and generates a temporary hash for the filename.
 fn hash_source(s: &str) -> String {
@@ -66,7 +66,7 @@ fn run_bat(source: String, lang: &str) -> io::Result<process::Child> {
 
 /// Execute a given command using its executor or sh. If preview is set, the script will be printed instead.
 pub fn execute_command(
-    mut cmd: Command,
+    mut cmd: CommandBlock,
     inkfile_path: &str,
     preview: bool,
     color: bool,
@@ -128,8 +128,12 @@ fn delete_file(file: &str) {
     }
 }
 
-/// `prepare_command` takes a Command struct and builds a `process::Command` that can then be executed as a child process.
-fn prepare_command(cmd: &Command, parent_dir: &str, tempfile: &mut String) -> process::Command {
+/// `prepare_command` takes a CommandBlock struct and builds a `process::Command` that can then be executed as a child process.
+fn prepare_command(
+    cmd: &CommandBlock,
+    parent_dir: &str,
+    tempfile: &mut String,
+) -> process::Command {
     let mut executor = cmd.script.executor.clone();
     let source = cmd.script.source.trim();
     if source.starts_with("#!") {
@@ -240,7 +244,7 @@ fn add_utility_variables(
     child
 }
 
-fn add_flag_variables(mut child: process::Command, cmd: &Command) -> process::Command {
+fn add_flag_variables(mut child: process::Command, cmd: &CommandBlock) -> process::Command {
     // Add all required args as environment variables
     for arg in &cmd.args {
         let val = if arg.val.is_empty() && arg.default.is_some() {
