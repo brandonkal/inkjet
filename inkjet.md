@@ -105,8 +105,25 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Println("hello from go")
+	fmt.Println("Hello from Go")
 }
+```
+
+## yaml
+
+> An example yaml script using custom shebang
+
+While YAML is typically not executable, you can use shebangs to invoke kubectl, docker-compose, or Ansible.
+
+```yaml
+#!/usr/bin/env ansible-playbook
+- name: This is a hello-world example
+  hosts: localhost
+  tasks:
+    - name: Hello
+      copy:
+        content: hello world
+        dest: /tmp/testfile.txt
 ```
 
 ## test
@@ -244,10 +261,10 @@ ls .vscode
 
 ```sh
 export CARGO_INCREMENTAL=0
-export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort -Z unstable-options"
 export RUSTDOCFLAGS="-Cpanic=abort"
-cargo build
-cargo test
+cargo +nightly build --profile coverage -Z unstable-options
+cargo +nightly test --profile coverage -Z unstable-options
 ```
 
 ## cov
@@ -258,12 +275,14 @@ cargo test
 v=$($INKJET utils v)
 rm -rf target/cov || :
 mkdir -p target/cov || :
-zip -0 target/cov/cov.zip `find . \( -name "${PWD##*/}*.gc*" \) -print`
+zip -0 target/cov/cov.zip `find target/coverage \( -name "${PWD##*/}*.gc*" \) -print`
 grcov target/cov/cov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o target/cov/inkjet.info \
   --excl-start '#\[cfg\(test\)\]' --excl-stop '#\[cfg\(covexcludestop\)\]' --excl-line '@cov-ignore'
-genhtml -o target/cov/ --show-details --highlight --ignore-errors source  --title --legend target/cov/inkjet.info
+genhtml -o target/cov/ --show-details --highlight --ignore-errors source  --title "inkjet-$v" --legend target/cov/inkjet.info
 echo "Coverage report generated at target/cov" >&2
 ```
+
+## utils
 
 ### utils v
 
@@ -271,7 +290,7 @@ echo "Coverage report generated at target/cov" >&2
 
 ```sh
 revision=$(git log -1 --format=%h)
-if git status --porcelain | grep -q infra/brigade-deno-worker; then
+if git status --porcelain >/dev/null 2>&1; then
   revision="$revision-dirty"
 fi
 echo "$revision"
