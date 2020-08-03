@@ -132,16 +132,10 @@ fn delete_file(file: &str) {
 fn prepare_command(cmd: &Command, parent_dir: &str, tempfile: &mut String) -> process::Command {
     let mut executor = cmd.script.executor.clone();
     let source = cmd.script.source.trim();
-    if source.starts_with("#!") || executor == "go" {
+    if source.starts_with("#!") {
         let hash = hash_source(source);
-        // Handle Golang executor by default
-        let data = if executor == "go" && !source.starts_with("#!") {
-            String::from("#!/usr/bin/env yaegi\n") + source
-        } else {
-            String::from(source)
-        };
-        *tempfile = format!("{}/.order.{}", parent_dir, hash);
-        std::fs::write(&tempfile, data)
+        *tempfile = format!("{}/.inkjet-order.{}", parent_dir, hash);
+        std::fs::write(&tempfile, source)
             .unwrap_or_else(|_| panic!("Unable to write file {}", &tempfile));
         let meta = std::fs::metadata(&tempfile).expect("Unable to read file permissions");
         let mut perms = meta.permissions();
@@ -175,6 +169,11 @@ fn prepare_command(cmd: &Command, parent_dir: &str, tempfile: &mut String) -> pr
             "ts" | "typescript" => {
                 let mut child = process::Command::new("deno");
                 child.arg("eval").arg("-T").arg(source);
+                child
+            }
+            "go" => {
+                let mut child = process::Command::new("yaegi");
+                child.arg("-e").arg(source);
                 child
             }
             // If no language is specified, we use the default shell
