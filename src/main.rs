@@ -176,6 +176,10 @@ fn interactive_params(
     color: bool,
     fixed_dir: bool,
 ) -> (Option<CommandBlock>, i32, String) {
+    // We sort here as sorted args are only required for interactive prompts
+    chosen_cmd.args.sort_by(|a, b| a.name.cmp(&b.name));
+    chosen_cmd.option_flags.sort_by(|a, b| a.name.cmp(&b.name));
+
     loop {
         let rv = KeyPrompt::with_theme(&ColoredTheme::default())
             .with_text(&format!("Execute step {}?", chosen_cmd.name))
@@ -551,9 +555,4 @@ mod main_tests {
         let args = svec!["inkjet", "tests/simple_case/inkjet.md", "-p"];
         run(args, false);
     }
-    // #[test]
-    // fn interactive() {
-    //     let args = svec!["inkjet", "tests/simple_case/inkjet.md", "-i"];
-    //     run(args, false);
-    // }
 }
