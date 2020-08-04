@@ -90,7 +90,7 @@ echo "system, online"
             .command("start")
             .assert()
             .code(10)
-            .stderr(contains("Command has no script."))
+            .stderr(contains("CommandBlock has no script."))
             .failure();
     }
 }

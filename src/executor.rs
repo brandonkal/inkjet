@@ -73,7 +73,7 @@ pub fn execute_command(
     fixed_dir: bool,
 ) -> Option<io::Result<process::ExitStatus>> {
     if cmd.script.source == "" {
-        let msg = "Command has no script.";
+        let msg = "CommandBlock has no script.";
         return Some(Err(io::Error::new(io::ErrorKind::Other, msg)));
     }
 
