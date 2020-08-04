@@ -183,7 +183,7 @@ fn prepare_command(
             // If no language is specified, we use the default shell
             "" | "sh" | "bash" | "zsh" | "dash" => {
                 if executor == "" {
-                    executor = "sh".to_owned()
+                    executor = "sh".to_owned() //@cov-ignore (already added by execute_command)
                 }
                 let mut child = process::Command::new(executor);
                 let top = "set -e"; // a sane default for scripts
@@ -193,9 +193,9 @@ fn prepare_command(
             }
             // Any other executor that supports -c (sh, bash, zsh, fish, dash, etc...)
             _ => {
-                let mut child = process::Command::new(executor);
-                child.arg("-c").arg(source);
-                child
+                let mut child = process::Command::new(executor); //@cov-ignore
+                child.arg("-c").arg(source); //@cov-ignore
+                child //@cov-ignore
             }
         }
     }
