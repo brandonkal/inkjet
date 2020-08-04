@@ -257,7 +257,17 @@ inkjet_fixed_dir: true
 ls .vscode
 ```
 
-## cov-build
+## cov
+
+> Run tests in coverage profile and generate a coverage report
+
+```sh
+rm -rf target/coverage || :
+$INKJET cov build
+$INKJET cov collect
+```
+
+### cov build
 
 ```sh
 export CARGO_INCREMENTAL=0
@@ -267,7 +277,7 @@ cargo +nightly build --profile coverage -Z unstable-options
 cargo +nightly test --profile coverage -Z unstable-options
 ```
 
-## cov
+### cov collect
 
 > Collect coverage report as HTML
 
@@ -278,7 +288,9 @@ mkdir -p target/cov || :
 zip -0 target/cov/cov.zip `find target/coverage \( -name "${PWD##*/}*.gc*" \) -print`
 grcov target/cov/cov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o target/cov/inkjet.info \
   --excl-start '#\[cfg\(test\)\]' --excl-stop '#\[cfg\(covexcludestop\)\]' --excl-line '@cov-ignore'
-genhtml -o target/cov/ --show-details --highlight --ignore-errors source  --title "inkjet-$v" --legend target/cov/inkjet.info
+genhtml -o target/cov/ --show-details --highlight --ignore-errors source  --title "inkjet-$v" \
+  --legend target/cov/inkjet.info --no-function-coverage
+mv target/cov/src/* target/cov
 echo "Coverage report generated at target/cov" >&2
 ```
 
