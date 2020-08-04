@@ -76,6 +76,45 @@ fn simple_case_does_not_panic() {
         .success();
 }
 
+#[test]
+fn merge() {
+    let part1 = r#"> This is the main info
+
+# main
+
+## echo
+
+```
+echo "Hello"
+```"#;
+    let part2 = r#"# second
+
+## list
+
+```
+echo "Should not run as this is replaced"
+```
+
+## list
+
+```
+ls -1 ls-test
+```"#;
+    common::run_binary()
+        .current_dir("tests/merge")
+        .arg("--inkjet-print-all")
+        .assert()
+        .stdout(contains(part1))
+        .stdout(contains(part2))
+        .success();
+    common::run_binary()
+        .current_dir("tests/merge")
+        .cli("second list")
+        .assert()
+        .stdout(contains("1\n2\n3"))
+        .success();
+}
+
 // Using current_dir(".github") to make sure the default inkjet.md can't be found
 mod when_no_inkfile_found_in_current_directory {
     use super::*;
