@@ -29,7 +29,7 @@ fn needs_set_e(s: &str) -> bool {
 /// returns the output of the merge operation: a new inkfile content String
 pub fn execute_merge_command(inkfile_path: &str) -> Result<String, String> {
     let parent_dir = get_parent_dir(inkfile_path);
-    let convert_code = "for f in $(find \"$(pwd -P)\" -name inkjet.md | awk -F/ '{print NF-1 \" \" $0 }' | sort -n | cut -d ' ' -f 2-); do printf '<!-- inkfile: %s -->\n' \"$f\"; cat \"$f\"; done";
+    let convert_code = "for f in $(find \"$(pwd -P)\" -name inkjet.md -o -name '*.inkjet.md' | awk -F/ '{print NF-1 \" \" $0 }' | sort -n | cut -d ' ' -f 2-); do printf '<!-- inkfile: %s -->\n' \"$f\"; cat \"$f\"; done";
     match process::Command::new("sh")
         .arg("-c")
         .arg(convert_code)
