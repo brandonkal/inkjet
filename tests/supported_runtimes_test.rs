@@ -141,3 +141,67 @@ echo "Hello, " . $name . "!\n";
         .stdout(contains("Hello, World!"))
         .success();
 }
+
+#[test]
+fn typescript_deno() {
+    let (_temp, inkfile_path) = common::inkfile(
+        r#"
+## check (name)
+```ts
+const name: string = Deno.env.get("name")!;
+console.log(`Hello ${name}`);
+```
+"#,
+    );
+    common::run_inkjet(&inkfile_path)
+        .command("check")
+        .arg("Brandon")
+        .assert()
+        .stdout(contains("Hello Brandon"))
+        .success();
+}
+
+#[test]
+fn go() {
+    let (_temp, inkfile_path) = common::inkfile(
+        r#"
+## go
+> Execute embedded Go scripts with yaegi
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello from Go")
+}
+```
+"#,
+    );
+    common::run_inkjet(&inkfile_path)
+        .command("go")
+        .assert()
+        .stdout(contains("Hello from Go"))
+        .success();
+}
+
+#[test]
+fn shebang() {
+    let (_temp, inkfile_path) = common::inkfile(
+        r#"
+## check
+> Execute a shebang
+
+```yaml
+#!/usr/bin/env cat
+message: Hello from YAML
+```
+"#,
+    );
+    common::run_inkjet(&inkfile_path)
+        .command("check")
+        .assert()
+        .stdout(contains("Hello from YAML"))
+        .success();
+}
