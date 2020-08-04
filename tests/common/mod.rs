@@ -1,5 +1,5 @@
 #![warn(clippy::indexing_slicing)]
-use assert_cmd::{crate_name, prelude::*};
+use assert_cmd::{cargo, crate_name, prelude::*};
 use assert_fs::prelude::*;
 use std::path::PathBuf;
 use std::process::Command;
@@ -40,4 +40,13 @@ pub fn run_inkjet(inkfile: &PathBuf) -> Command {
     let mut inkjet = run_binary();
     inkjet.arg("--inkfile").arg(inkfile);
     inkjet
+}
+
+/// Returns the path for the current binary under this integration test
+pub fn cargo_bin() -> String {
+    let path = cargo::cargo_bin(crate_name!());
+    if path.is_file() {
+        return path.to_string_lossy().to_string();
+    }
+    panic!("Could not locate cargo_bin {:?}", path)
 }

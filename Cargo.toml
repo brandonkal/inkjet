@@ -39,3 +39,4 @@ features = ["parsing", "assets", "dump-load"]
 assert_cmd = "1.0.1" # https://github.com/assert-rs/assert_cmd
 assert_fs = "1.0.0"  # https://github.com/assert-rs/assert_fs
 predicates = "1.0.5"  # https://github.com/assert-rs/predicates-rs
+rexpect = "0.4.0"

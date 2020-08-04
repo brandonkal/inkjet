@@ -8,7 +8,7 @@ echo "expected output"
 
 ## echo (name) (optional=default)
 
-> Echo something
+> Echo something interactively
 
 **OPTIONS**
 
