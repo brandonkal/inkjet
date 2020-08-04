@@ -230,7 +230,7 @@ fn interactive_params(
     for flag in &mut chosen_cmd.option_flags {
         if !flag.takes_value {
             if flag.name == "verbose" {
-                break;
+                continue;
             }
             if flag.val != "true" {
                 let rv: bool = Confirmation::with_theme(&ColoredTheme::default())
