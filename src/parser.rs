@@ -340,7 +340,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
         for arg in &args {
             if arg.ends_with('?') {
                 let mut arg = (*arg).to_string();
-                arg.pop();
+                arg.pop(); // remove `?`
                 out_args.push(Arg::new(arg, false, None));
             } else if arg.contains('=') {
                 let parts: Vec<&str> = arg.splitn(2, '=').collect();
@@ -427,7 +427,47 @@ echo $set
     }
 
     #[test]
-    fn validates_bool() {}
+    fn validates_string_and_removes_duplicate() {
+        let tree = build_command_structure(
+            r#"
+## string
+
+> Should be ignored
+OPTIONS
+- flags: -s --str |bool| A boolean
+```
+echo "Ignore me"
+```
+
+## string
+OPTIONS
+- flags: -s --str |string| A string
+        "#,
+        )
+        .expect("build tree failed");
+        let string_command = &tree
+            .subcommands
+            .iter()
+            .find(|cmd| cmd.name == "string")
+            .expect("string command missing");
+        assert_eq!(string_command.name, "string");
+        assert_eq!(
+            string_command
+                .option_flags
+                .get(0)
+                .expect("option flag not attached")
+                .takes_value,
+            true
+        );
+        assert_eq!(
+            string_command
+                .option_flags
+                .get(0)
+                .expect("option flag not attached")
+                .validate_as_number,
+            false
+        );
+    }
 
     #[test]
     fn parses_serve_command_description() {
