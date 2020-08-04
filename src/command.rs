@@ -76,10 +76,6 @@ impl Script {
             source: "".to_string(),
         }
     }
-    #[must_use]
-    pub fn has_script(&self) -> bool {
-        self.source != "" && self.executor != ""
-    }
 }
 
 #[derive(Debug, Clone)]
