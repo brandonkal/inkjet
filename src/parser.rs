@@ -397,7 +397,7 @@ mod build_command_structure {
     use super::*;
 
     #[test]
-    fn parses_serve_command_name() {
+    fn builds_boolean() {
         let tree = build_command_structure(
             r#"
 ## boolean

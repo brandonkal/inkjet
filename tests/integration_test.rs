@@ -8,7 +8,7 @@ mod common;
 use common::InkjetCommandExt;
 
 #[test]
-fn specifying_a_inkfile_in_a_different_dir() {
+fn help_has_usage() {
     let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## foo
@@ -198,7 +198,7 @@ mod builds_command_tree {
     use super::*;
 
     #[test]
-    fn works_with_merged_files() {
+    fn works_with_second_h1() {
         let (_temp, inkfile_path) = common::inkfile(
             r#"
 #!/usr/bin/env inkjet
