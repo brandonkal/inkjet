@@ -6,6 +6,7 @@ use predicates::str::contains;
 
 mod common;
 use common::InkjetCommandExt;
+pub use common::*;
 
 #[test]
 fn help_has_usage() {

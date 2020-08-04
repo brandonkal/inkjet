@@ -2,7 +2,8 @@ use assert_cmd::prelude::*;
 use predicates::str::contains;
 
 mod common;
-use common::InkjetCommandExt;
+pub use common::InkjetCommandExt;
+pub use common::*;
 
 // NOTE: This test suite depends on the inkjet binary being available in the current shell
 

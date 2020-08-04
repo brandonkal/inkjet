@@ -3,6 +3,7 @@ use predicates::str::contains;
 
 mod common;
 use common::InkjetCommandExt;
+pub use common::*;
 
 #[test]
 fn executes_when_no_lang_code_is_specified() {
