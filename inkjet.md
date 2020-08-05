@@ -264,6 +264,7 @@ ls .vscode
 ```sh
 rm -rf target/coverage || :
 $INKJET cov build
+$INKJET cov build # view.rs shows incorrect coverage if run once
 $INKJET cov collect
 ```
 
