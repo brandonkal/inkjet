@@ -569,7 +569,7 @@ OPTIONS
     fn fails_on_bad_flag_type() {
         let expected_err = "Invalid flag type 'invalid' Expected string | number | bool.";
         const FILE: &str = r#"
-## check
+## check (arg?)
 OPTIONS
 - flags: -b |invalid| An invalid type
 ```
