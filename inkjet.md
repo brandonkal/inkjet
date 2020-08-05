@@ -291,7 +291,8 @@ grcov target/cov.zip -s . -t lcov --llvm --ignore-not-existing --ignore "/*" -o 
   --excl-start '#\[cfg\(test\)\]' --excl-stop '#\[cfg\(cov:end-exclude\)\]'
 rm target/cov.zip
 rust-covfix target/cov/intermediate.info -o target/lcov.info
-sed -i "1s/.*/TN:inkjet-$v/" target/lcov.info
+sed -i "1s/.*/TN:inkjet_$v/" target/lcov.info
+sed -i "1s/-/_/" target/lcov.info
 genhtml -o target/cov/ --show-details --highlight --ignore-errors source  --title "inkjet-$v" \
   --legend target/lcov.info --no-function-coverage
 mv target/cov/src/* target/cov
