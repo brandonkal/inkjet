@@ -1,4 +1,3 @@
-//! Make your markdown executable with inkjet, the interactive CLI task runner
 #![warn(clippy::indexing_slicing)]
 use dialoguer::theme::ColoredTheme;
 use dialoguer::{Confirmation, Input, KeyPrompt};
@@ -54,7 +53,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
                 };
                 return (rc, err.message, false);
             };
-            return (10, "No argument match found".to_string(), true); // won't be called if help is parsed
+            return (10, "No argument match found".to_string(), true); // cov:ignore (won't be called if help is parsed)
         } else {
             return (
                 10,
@@ -72,7 +71,8 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
             Ok(txt) => {
                 mdtxt = txt;
             }
-            Err(err) => {
+
+            Err(err) /* cov:include */ => {
                 return (10, err, true);
             }
         };
@@ -128,13 +128,13 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
             .expect("portion out of bounds");
         let print_err = p.print_markdown(&portion);
         if let Err(err) = print_err {
-            return (10, format!("printing markdown: {}", err), true);
+            return (10, format!("printing markdown: {}", err), true); // cov:include (unusual error)
         }
         eprintln!();
         let (picked_cmd, exit_code, err_str) =
             interactive_params(chosen_cmd, &inkfile_path, color, fixed_pwd);
         if picked_cmd.is_none() {
-            return (exit_code, err_str, true);
+            return (exit_code, err_str, true); // cov:include (skipped command)
         }
         chosen_cmd = picked_cmd.unwrap();
     }
@@ -144,7 +144,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
                 if let Some(code) = status.code() {
                     (code, "".to_string(), false)
                 } else {
-                    (0, "".to_string(), false)
+                    (0, "".to_string(), false) // cov:ignore (unusual)
                 }
             }
             Err(err) => (10, err.to_string(), false),

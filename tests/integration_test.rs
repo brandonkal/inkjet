@@ -26,6 +26,43 @@ fn help_has_usage() {
 }
 
 #[test]
+fn preview_mod() {
+    let (_temp, inkfile_path) = common::inkfile(
+        r#"
+## foo//default (name=World)
+
+```js
+console.log("Hello World!")
+```
+"#,
+    );
+
+    common::run_inkjet(&inkfile_path)
+        .arg("-p")
+        .assert()
+        .stdout(contains("console"))
+        .success();
+}
+
+#[test]
+fn default_args() {
+    let (_temp, inkfile_path) = common::inkfile(
+        r#"
+## foo//default (name=World)
+
+```sh
+echo "Hello $name"
+```
+"#,
+    );
+
+    common::run_inkjet(&inkfile_path)
+        .assert()
+        .stdout(contains("Hello World"))
+        .success();
+}
+
+#[test]
 fn fails_on_bad_flag_type() {
     let (_temp, inkfile_path) = common::inkfile(
         r#"
@@ -126,7 +163,19 @@ mod when_no_inkfile_found_in_current_directory {
             .current_dir(".github")
             .command("-V")
             .assert()
-            .stderr(contains("no inkjet.md found"));
+            .stderr(contains("no inkjet.md found"))
+            .stdout(contains("inkjet"))
+            .code(0);
+    }
+
+    #[test]
+    fn logs_warning_about_missing_inkfile_for_bad_arguments() {
+        common::run_inkjet(&PathBuf::from("./inkjet.md"))
+            .current_dir(".github")
+            .command("--bad-argument")
+            .assert()
+            .stderr(contains("no inkjet.md found"))
+            .code(1);
     }
 
     #[test]
@@ -153,6 +202,16 @@ mod when_no_inkfile_found_in_current_directory {
     fn exits_with_error_for_any_other_command() {
         common::run_inkjet(&PathBuf::from("./nothing.inkjet.md"))
             .current_dir("tests")
+            .command("nothing")
+            .assert()
+            .code(1)
+            .stderr(contains("error: Found argument 'nothing' which wasn't expected, or isn't valid in this context"))
+            .failure();
+    }
+    #[test]
+    fn exits_with_error_for_bad_command_when_file_missing() {
+        common::run_binary()
+            .current_dir("tests/common")
             .command("nothing")
             .assert()
             .code(1)

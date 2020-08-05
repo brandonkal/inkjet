@@ -1,3 +1,4 @@
+//! Make your markdown executable with inkjet, the interactive CLI task runner
 use colored::*;
 use std::env;
 

@@ -35,6 +35,29 @@ fn do_interactive_preview() -> Result<()> {
     Ok(())
 }
 
+fn do_interactive_skip() -> Result<()> {
+    let exec = format!(
+        "{} --inkfile tests/simple_case/inkjet.md -i echo",
+        cargo_bin()
+    );
+    let mut p = spawn(&exec, Some(6_000))?;
+    p.exp_string("Execute step echo?")?;
+    p.send("n")?;
+    p.flush()?;
+    match p.process.status() {
+        Some(s) => match s {
+            rexpect::process::wait::WaitStatus::Exited(_, code) => {
+                if code == 0 {
+                    return Ok(());
+                }
+                panic!("process exited with code {}", code);
+            }
+            _ => Ok(()),
+        },
+        _ => panic!("wait failed"),
+    }
+}
+
 #[test]
 fn interactive() {
     do_interactive().unwrap_or_else(|e| panic!("inkjet job failed with {}", e));
@@ -43,4 +66,9 @@ fn interactive() {
 #[test]
 fn interactive_preview() {
     do_interactive_preview().unwrap_or_else(|e| panic!("inkjet job failed with {}", e));
+}
+
+#[test]
+fn interactive_skip() {
+    do_interactive_skip().unwrap_or_else(|e| panic!("inkjet job failed with {}", e));
 }

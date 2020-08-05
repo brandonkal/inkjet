@@ -325,7 +325,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
     let mut name_and_alias = name.trim().splitn(2, "//");
     let name = match name_and_alias.next() {
         Some(n) => String::from(n),
-        _ => "".to_string(), //cov:ignore
+        _ => "".to_string(), // cov:ignore
     };
     let alias = match name_and_alias.next() {
         Some(a) => a.to_string(),

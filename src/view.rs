@@ -24,7 +24,7 @@ impl Printer {
             TerminalCapabilities::detect()
         };
         let resource_access = if local_only {
-            ResourceAccess::LocalOnly
+            ResourceAccess::LocalOnly // available for library users
         } else {
             ResourceAccess::RemoteAllowed
         };
@@ -74,4 +74,10 @@ fn create_markdown_parser(contents: &str) -> Parser {
     options.insert(Options::ENABLE_STRIKETHROUGH);
     options.insert(Options::ENABLE_TASKLISTS);
     Parser::new_ext(&contents, options)
+}
+
+#[test]
+fn make_printer() {
+    let p = Printer::new(false, true, "folder/somefile.txt");
+    assert_eq!(p.base_dir, "folder".to_string());
 }
