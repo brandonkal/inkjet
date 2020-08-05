@@ -569,12 +569,33 @@ mod main_tests {
         assert!(o.inkfile_opt.contains("simple_case/inkjet.md"));
     }
     #[test]
-    fn implicit_inkfile_param() {
+    fn implicit_inkfile_flag() {
         let (o, a) = pre_parse(svec!("inkjet", "tests/simple_case/inkjet.md", "--flag"));
         assert_eq!(
             a,
             svec!(
                 "inkjet",
+                "--inkfile",
+                "tests/simple_case/inkjet.md",
+                "default",
+                "--flag"
+            )
+        );
+        assert!(o.inkfile_opt.contains("simple_case/inkjet.md"));
+    }
+    #[test]
+    fn implicit_inkfile_param() {
+        let (o, a) = pre_parse(svec!(
+            "inkjet",
+            "-p",
+            "tests/simple_case/inkjet.md",
+            "--flag"
+        ));
+        assert_eq!(
+            a,
+            svec!(
+                "inkjet",
+                "-p",
                 "--inkfile",
                 "tests/simple_case/inkjet.md",
                 "default",
