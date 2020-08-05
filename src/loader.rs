@@ -9,7 +9,7 @@ pub fn read_stdin() -> Result<String, String> {
     let mut buffer = String::new();
     let r = io::stdin().read_to_string(&mut buffer);
     if r.is_err() {
-        Err("failed to read stdin".to_string())
+        Err("failed to read stdin".to_string()) // cov:ignore (unusual)
     } else {
         Ok(buffer)
     }

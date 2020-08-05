@@ -60,7 +60,7 @@ fn run_bat(source: String, lang: &str) -> io::Result<process::Child> {
             child_stdin.write_all(source.as_bytes())?;
             io::Result::Ok(child)
         }
-        Err(err) => io::Result::Err(err),
+        Err(err) => io::Result::Err(err), // cov:include
     }
 }
 
@@ -94,8 +94,8 @@ pub fn execute_command(
         match run_bat(source.clone(), &cmd.script.executor) {
             Ok(mut child) => Some(child.wait()),
             Err(_) => {
-                print!("{}", source);
-                None
+                print!("{}", source); // cov:include (bat exists)
+                None // cov:include
             }
         }
     } else {
