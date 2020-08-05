@@ -114,10 +114,14 @@ pub fn execute_command(
         let spawned_child = child.spawn();
         match spawned_child {
             Err(err) => {
-                delete_file(&tempfile);
-                Some(io::Result::Err(err))
+                delete_file(&tempfile); // cov:include (unusual)
+                Some(io::Result::Err(err)) // cov:include
             }
-            Ok(mut child) => Some(child.wait()),
+            Ok(mut child) => {
+                let r = child.wait();
+                delete_file(&tempfile);
+                Some(r)
+            }
         }
     }
 }
