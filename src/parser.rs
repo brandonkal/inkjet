@@ -304,7 +304,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
         // Takes a subcommand name like this:
         // "#### db flush postgres (required_arg_name)"
         // and returns "postgres (required_arg_name)" as the actual name
-        text.split(' ')
+        text.split_whitespace()
             .collect::<Vec<&str>>()
             // Get subcommand after the parent command name
             .split_at(heading_level as usize - 2)
@@ -335,7 +335,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
 
     if !args.is_empty() {
         let args = args.join("");
-        let args: Vec<&str> = args.split(' ').collect();
+        let args: Vec<&str> = args.split_whitespace().collect();
         for arg in &args {
             if arg.ends_with('?') {
                 let mut arg = (*arg).to_lowercase();
