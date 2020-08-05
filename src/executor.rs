@@ -183,7 +183,7 @@ fn prepare_command(
             // If no language is specified, we use the default shell
             "" | "sh" | "bash" | "zsh" | "dash" => {
                 if executor == "" {
-                    executor = "sh".to_owned() // cov:ignore (already added by execute_command)
+                    executor = "sh".to_string() // cov:ignore (already added by execute_command)
                 }
                 let mut child = process::Command::new(executor);
                 let top = "set -e"; // a sane default for scripts
@@ -208,7 +208,7 @@ fn get_parent_dir(inkfile_path: &str) -> String {
         .expect("unable to find parent path for inkfile")
         .to_str()
         .expect("inkfile parent path contains invalid UTF-8 characters")
-        .to_owned()
+        .to_string()
 }
 
 /// Add some useful environment variables that scripts can use

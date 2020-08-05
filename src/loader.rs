@@ -48,7 +48,7 @@ pub fn read_inkfile(inkfile: &str) -> (Result<String, String>, String, bool) {
             }
         }
         return (
-            Err("Could not locate an inkjet.md file".to_owned()),
+            Err("Could not locate an inkjet.md file".to_string()),
             filename,
             true,
         );

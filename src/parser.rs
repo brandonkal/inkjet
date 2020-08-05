@@ -60,7 +60,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                 Tag::Heading(heading_level) => {
                     let (name, aliases, args) = parse_heading_to_cmd(heading_level, text.clone());
                     if name.is_empty() {
-                        return Err("unexpected empty heading name".to_owned());
+                        return Err("unexpected empty heading name".to_string());
                     }
                     current_command.name = name;
                     current_command.args = args;
@@ -109,7 +109,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                                     let name = word.get(1..2).unwrap_or("");
                                     current_option_flag.short = name.to_string();
                                 } else if word.starts_with('|') && word.ends_with('|') {
-                                    let mut kind = word.to_owned();
+                                    let mut kind = word.to_string();
                                     kind.pop();
                                     kind.remove(0);
                                     match kind.as_str() {
@@ -311,7 +311,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
             .1
             .join(" ")
     } else if heading_level == 1 {
-        text.split_whitespace().next().unwrap().to_owned()
+        text.split_whitespace().next().unwrap().to_string()
     } else {
         text
     };
