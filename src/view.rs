@@ -52,8 +52,6 @@ impl Printer {
 
     /// Parses a given markdown string and renders it to the terminal.
     pub fn print_markdown(&self, input: &str) -> Result<(), Box<dyn Error>> {
-        let parser = create_markdown_parser(&input);
-
         mdcat::push_tty(
             &mut stderr(),
             &self.terminal_capabilities,
@@ -61,13 +59,11 @@ impl Printer {
                 // width: self.size.width.to_string(),
                 ..self.size
             },
-            parser,
+            create_markdown_parser(&input),
             Path::new(&self.base_dir),
             self.resource_access,
             self.syntax_set.clone(),
-        )?;
-
-        Ok(())
+        )
     }
 }
 
