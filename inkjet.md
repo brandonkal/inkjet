@@ -270,6 +270,8 @@ $INKJET cov collect
 
 ### cov build
 
+> Run tests to build coverage report. This may need to be run several times
+
 ```sh
 export CARGO_INCREMENTAL=0
 export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort -Z unstable-options"
