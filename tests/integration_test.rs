@@ -9,10 +9,20 @@ use common::InkjetCommandExt;
 pub use common::*;
 
 #[test]
-fn help_has_usage() {
+fn help_has_usage_and_no_hidden() {
     let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## foo
+
+```
+echo "foo"
+```
+
+## _hidden//default
+
+```
+echo "hidden"
+```
 
 <!-- a few more details -->
 "#,
@@ -22,6 +32,9 @@ fn help_has_usage() {
         .arg("--help")
         .assert()
         .stdout(contains("USAGE:"))
+        .stdout(contains("foo").count(1))
+        .stdout(contains("hidden").count(0))
+        .stdout(contains("default").count(0))
         .success();
 }
 
