@@ -299,7 +299,7 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
         if i == inkfile_index {
             opts.inkfile_opt = canonical_path(arg);
             if i == args.len() - 1 {
-                // No default was called.
+                default_index = 1000; // prevent duplicate default insertions
                 args.insert(i + 1, "default".to_string());
                 break;
             }
@@ -526,6 +526,19 @@ mod main_tests {
                 "--inkfile",
                 "tests/simple_case/inkjet.md",
                 "-p",
+                "default"
+            )
+        );
+    }
+    #[test]
+    fn no_leak_to_positional_args() {
+        let (_, o) = pre_parse(svec!("inkjet", "tests/simple_case/inkjet.md"));
+        assert_eq!(
+            o,
+            svec!(
+                "inkjet",
+                "--inkfile",
+                "tests/simple_case/inkjet.md",
                 "default"
             )
         );
