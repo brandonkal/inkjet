@@ -273,7 +273,6 @@ $INKJET cov collect
 export CARGO_INCREMENTAL=0
 export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort -Z unstable-options"
 export RUSTDOCFLAGS="-Cpanic=abort"
-cargo +nightly build --profile coverage -Z unstable-options
 cargo +nightly test --profile coverage -Z unstable-options
 ```
 
@@ -286,8 +285,8 @@ v=$($INKJET utils v)
 rm -rf target/cov || :
 mkdir -p target/cov || :
 zip -0 target/cov/cov.zip `find target/coverage \( -name "${PWD##*/}*.gc*" \) -print`
-grcov target/cov/cov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o target/cov/inkjet.info \
-  --excl-start '#\[cfg\(test\)\]' --excl-stop '#\[cfg\(covexcludestop\)\]' --excl-line '@cov-ignore'
+grcov target/cov/cov.zip -s . -t lcov --llvm --ignore-not-existing --ignore "/*" -o target/cov/inkjet.info \
+  --excl-start '#\[cfg\(test\)\]' --excl-stop '#\[cfg\(cov:end-exclude\)\]'
 genhtml -o target/cov/ --show-details --highlight --ignore-errors source  --title "inkjet-$v" \
   --legend target/cov/inkjet.info --no-function-coverage
 mv target/cov/src/* target/cov

@@ -38,14 +38,14 @@ pub fn execute_merge_command(inkfile_path: &str) -> Result<String, String> {
     {
         Ok(out) => {
             if !out.status.success() {
-                return Err("Inkjet import command failed".to_string());
+                return Err("Inkjet import command failed".to_string()); //cov:ignore
             }
             match String::from_utf8(out.stdout) {
                 Ok(result) => Ok(result),
-                Err(_) => Err("Injet import command failed to convert to UTF-8".to_string()),
+                Err(_) => Err("Injet import command failed to convert to UTF-8".to_string()), //cov:ignore
             }
         }
-        Err(_) => Err("Inkjet import command failed to start".to_string()),
+        Err(_) => Err("Inkjet import command failed to start".to_string()), //cov:ignore
     }
 }
 
@@ -183,7 +183,7 @@ fn prepare_command(
             // If no language is specified, we use the default shell
             "" | "sh" | "bash" | "zsh" | "dash" => {
                 if executor == "" {
-                    executor = "sh".to_owned() //@cov-ignore (already added by execute_command)
+                    executor = "sh".to_owned() //cov:ignore (already added by execute_command)
                 }
                 let mut child = process::Command::new(executor);
                 let top = "set -e"; // a sane default for scripts
@@ -193,9 +193,9 @@ fn prepare_command(
             }
             // Any other executor that supports -c (sh, bash, zsh, fish, dash, etc...)
             _ => {
-                let mut child = process::Command::new(executor); //@cov-ignore
-                child.arg("-c").arg(source); //@cov-ignore
-                child //@cov-ignore
+                let mut child = process::Command::new(executor); //cov:ignore
+                child.arg("-c").arg(source); //cov:ignore
+                child //cov:ignore
             }
         }
     }
