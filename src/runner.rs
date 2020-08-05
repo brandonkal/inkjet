@@ -285,7 +285,10 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     // This allows us to use it as an interpreter without specifying '--inkfile'
     #[allow(clippy::indexing_slicing)]
     {
-        if args.len() > 1 && (args[1] == "-" || args[1].ends_with(".md")) {
+        if args.len() > 1
+            && (args[1] == "-" || args[1].ends_with(".md"))
+            && !args[1].starts_with('-')
+        {
             args.insert(1, "--inkfile".to_string());
         }
     }
@@ -305,12 +308,12 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
             }
         } else if arg == "-i" || arg == "--interactive" {
             opts.interactive = true;
-        } else if arg == "--inkfile" || arg == "-c" {
-            if let Some(idx) = arg.find('=') {
+        } else if arg.starts_with("--inkfile") || arg.starts_with("-c") {
+            if let Some(eq_idx) = arg.find('=') {
                 #[allow(clippy::indexing_slicing)]
-                let part2 = &arg[(idx + 1)..];
+                let part2 = &arg[(eq_idx + 1)..];
                 opts.inkfile_opt = canonical_path(part2);
-                inkfile_index = 999; // we've found it
+                inkfile_index = 999; // we've found it. No need to insert
             } else {
                 inkfile_index = i + 1
             }
@@ -322,7 +325,9 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
             opts.print_all = true;
             default_index = 1000;
             break;
-        } else if arg.ends_with(".md") && inkfile_index != 1000 {
+        } else if arg.ends_with(".md") && inkfile_index == 1000 {
+            // we found a markdown filename without it being preceeded by `--inkfile`
+            // we will insert that after the loop if required.
             opts.inkfile_opt = canonical_path(arg);
             inkfile_index = i
         // if it is not a flag or early exit:
@@ -345,7 +350,8 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
             args.insert(default_index, "default".to_string());
         }
     }
-    if inkfile_index < args.len() {
+    // if it is within the range, check to see if we need to insert the flag.
+    if inkfile_index <= args.len() {
         let flag = args.get(inkfile_index - 1).unwrap();
         if !(flag == "-c" || flag == "--inkfile") {
             args.insert(inkfile_index, "--inkfile".to_string());
@@ -518,9 +524,9 @@ mod main_tests {
     }
     #[test]
     fn modify_args() {
-        let (_, o) = pre_parse(svec!("inkjet", "tests/simple_case/inkjet.md", "-p"));
+        let (_, a) = pre_parse(svec!("inkjet", "tests/simple_case/inkjet.md", "-p"));
         assert_eq!(
-            o,
+            a,
             svec!(
                 "inkjet",
                 "--inkfile",
@@ -532,9 +538,9 @@ mod main_tests {
     }
     #[test]
     fn no_leak_to_positional_args() {
-        let (_, o) = pre_parse(svec!("inkjet", "tests/simple_case/inkjet.md"));
+        let (_, a) = pre_parse(svec!("inkjet", "tests/simple_case/inkjet.md"));
         assert_eq!(
-            o,
+            a,
             svec!(
                 "inkjet",
                 "--inkfile",
@@ -553,5 +559,42 @@ mod main_tests {
     fn preview() {
         let args = svec!["inkjet", "tests/simple_case/inkjet.md", "-p"];
         run(args, false);
+    }
+    #[test]
+    fn inkfile_with_equals() {
+        let (o, a) = pre_parse(svec!("inkjet", "--inkfile=tests/simple_case/inkjet.md"));
+        assert_eq!(
+            a,
+            svec!("inkjet", "--inkfile=tests/simple_case/inkjet.md", "default")
+        );
+        assert!(o.inkfile_opt.contains("simple_case/inkjet.md"));
+    }
+    #[test]
+    fn implicit_inkfile_param() {
+        let (o, a) = pre_parse(svec!("inkjet", "tests/simple_case/inkjet.md", "--flag"));
+        assert_eq!(
+            a,
+            svec!(
+                "inkjet",
+                "--inkfile",
+                "tests/simple_case/inkjet.md",
+                "default",
+                "--flag"
+            )
+        );
+        assert!(o.inkfile_opt.contains("simple_case/inkjet.md"));
+    }
+
+    #[test]
+    fn inkfile_is_contents() {
+        let contents = r#"
+## default
+```
+echo "This is the default"
+```
+"#;
+        let args = svec!("inkjet", "--inkfile", contents);
+        let (rc, _, _) = run(args, false);
+        assert_eq!(0, rc);
     }
 }
