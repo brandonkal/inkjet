@@ -1,0 +1,46 @@
+#!/bin/bash
+# This script provides mocks for node,python,ruby,php,deno, and yaegi
+# This allows us to test the runtime without installing all language runtimes.
+
+node_snippet=$'const { name } = process.env;
+console.log(`Hello, ${name}!`);'
+
+python_snippet=$'import os
+name = os.getenv("name", "WORLD")
+print("Hello, " + name + "!")'
+
+ruby_snippet=$'name = ENV["name"] || "WORLD"
+puts "Hello, #{name}!"'
+
+read -r -d '' php_snippet <<'EOF'
+$name = getenv("name") ?: "WORLD";
+
+echo "Hello, " . $name . "!\n";
+EOF
+
+ts_snippet=$'const name: string = Deno.env.get("name")!;
+console.log(`Hello ${name}!`);'
+
+go_snippet=$'package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello from Go!")
+}'
+
+if [ "$1" = "-e" ] && [ "$2" = "$node_snippet" ]; then
+  echo "Hello, World!"
+elif [ "$1" = "-c" ] && [ "$2" = "$python_snippet" ]; then
+  echo "Hello, World!"
+elif [ "$1" = "-e" ] && [ "$2" = "$ruby_snippet" ]; then
+  echo "Hello, World!"
+elif [ "$1" = "-r" ] && [ "$2" = "$php_snippet" ]; then
+  echo "Hello, World!"
+elif [ "$1" = "eval" ] && [ "$2" = "-T" ] && [ "$3" = "$ts_snippet" ]; then
+  echo "Hello Brandon!"
+elif [ "$1" = "-e" ] && [ "$2" = "$go_snippet" ]; then
+  echo "Hello from Go!"
+else
+  exit 1
+fi

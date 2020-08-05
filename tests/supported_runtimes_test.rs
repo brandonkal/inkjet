@@ -131,6 +131,7 @@ fn php() {
 $name = getenv("name") ?: "WORLD";
 
 echo "Hello, " . $name . "!\n";
+
 ~~~
 "#,
     );
@@ -150,7 +151,7 @@ fn typescript_deno() {
 ## check (name)
 ```ts
 const name: string = Deno.env.get("name")!;
-console.log(`Hello ${name}`);
+console.log(`Hello ${name}!`);
 ```
 "#,
     );
@@ -158,7 +159,7 @@ console.log(`Hello ${name}`);
         .command("check")
         .arg("Brandon")
         .assert()
-        .stdout(contains("Hello Brandon"))
+        .stdout(contains("Hello Brandon!"))
         .success();
 }
 
@@ -175,7 +176,7 @@ package main
 import "fmt"
 
 func main() {
-    fmt.Println("Hello from Go")
+    fmt.Println("Hello from Go!")
 }
 ```
 "#,
@@ -183,7 +184,7 @@ func main() {
     common::run_inkjet(&inkfile_path)
         .command("go")
         .assert()
-        .stdout(contains("Hello from Go"))
+        .stdout(contains("Hello from Go!"))
         .success();
 }
 
