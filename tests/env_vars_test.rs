@@ -7,7 +7,7 @@ pub use common::*;
 
 // NOTE: This test suite depends on the inkjet binary being available in the current shell
 
-// Using current_dir(".github") to make sure the default inkjet.md can't be found
+// Using current_dir("/tmp") to make sure the default inkjet.md can't be found
 mod env_var_inkjet {
     use super::*;
 
@@ -30,7 +30,7 @@ echo "tests passed"
         );
 
         common::run_inkjet(&inkfile_path)
-            .current_dir(".github")
+            .current_dir("/tmp")
             .command("ci")
             .assert()
             .stdout(contains("tests passed"))
@@ -50,7 +50,7 @@ echo "inkjet = $INKJET"
         );
 
         common::run_inkjet(&inkfile_path)
-            .current_dir(".github")
+            .current_dir("/tmp")
             .command("run")
             .assert()
             // Absolute inkfile path starts with /
@@ -61,7 +61,7 @@ echo "inkjet = $INKJET"
     }
 }
 
-// Using current_dir(".github") to make sure the default inkjet.md can't be found
+// Using current_dir("/tmp") to make sure the default inkjet.md can't be found
 mod env_var_inkfile_dir {
     use super::*;
 
@@ -78,7 +78,7 @@ echo "inkfile_dir = $INKJET_DIR"
         );
 
         common::run_inkjet(&inkfile_path)
-            .current_dir(".github")
+            .current_dir("/tmp")
             .command("run")
             .assert()
             // Absolute inkfile path starts with /
