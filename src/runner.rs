@@ -286,8 +286,7 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     #[allow(clippy::indexing_slicing)]
     {
         if args.len() > 1
-            && (args[1] == "-" || args[1].ends_with(".md"))
-            && !args[1].starts_with('-')
+            && (args[1] == "-" || (args[1].ends_with(".md") && !args[1].starts_with('-')))
         {
             args.insert(1, "--inkfile".to_string());
         }

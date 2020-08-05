@@ -73,7 +73,7 @@ fn read_stdin() {
         .arg("-c")
         .arg(script)
         .assert()
-        .stdout("expected output\n")
+        .stdout(contains("expected output"))
         .success();
 }
 
