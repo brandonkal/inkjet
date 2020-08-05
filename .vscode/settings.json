@@ -8,5 +8,6 @@
     "**/node_modules/**": true,
     "**/.hg/store/**": true,
     "**/target/**": true
-  }
+  },
+  "coverage-gutters.coverageBaseDir": "target"
 }
