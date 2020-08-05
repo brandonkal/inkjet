@@ -174,7 +174,7 @@ mod when_no_inkfile_found_in_current_directory {
 
     #[test]
     fn logs_warning_about_missing_inkfile() {
-        common::run_inkjet(&PathBuf::from("./inkjet.md"))
+        common::run_inkjet(&PathBuf::from(""))
             .current_dir("/tmp")
             .command("-V")
             .assert()
