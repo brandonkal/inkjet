@@ -128,7 +128,7 @@ pub fn execute_command(
 
 fn delete_file(file: &str) {
     if file != "" && std::fs::remove_file(&file).is_err() {
-        eprintln!("{} Failed to delete file {}", "ERROR:".red(), file);
+        eprintln!("{} Failed to delete file {}", "ERROR:".red(), file); // cov:ignore (unusual)
     }
 }
 
