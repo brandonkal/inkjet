@@ -46,6 +46,7 @@ console.log("Hello World!")
 
 #[test]
 fn default_args() {
+    // This tests for default args and support for capitalization of the default value.
     let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## foo//default (name=World)

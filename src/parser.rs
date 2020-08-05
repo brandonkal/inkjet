@@ -300,7 +300,7 @@ fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
 fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Vec<Arg>) {
     // Why heading_level > 2? Because level 1 is the root command title (unused)
     // and level 2 can't be a subcommand so no need to split.
-    let name = (if heading_level > 2 {
+    let name = if heading_level > 2 {
         // Takes a subcommand name like this:
         // "#### db flush postgres (required_arg_name)"
         // and returns "postgres (required_arg_name)" as the actual name
@@ -314,8 +314,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
         text.split_whitespace().next().unwrap().to_owned()
     } else {
         text
-    })
-    .to_lowercase();
+    };
 
     // Find any required arguments. They look like this: (required_arg_name)
     let name_and_args: Vec<&str> = name.split(|c| c == '(' || c == ')').collect();
@@ -324,11 +323,11 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
     let name = name.join(" ");
     let mut name_and_alias = name.trim().splitn(2, "//");
     let name = match name_and_alias.next() {
-        Some(n) => String::from(n),
+        Some(n) => n.to_lowercase(),
         _ => "".to_string(), // cov:ignore
     };
     let alias = match name_and_alias.next() {
-        Some(a) => a.to_string(),
+        Some(a) => a.to_lowercase(),
         _ => "".to_string(),
     };
 
@@ -339,7 +338,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
         let args: Vec<&str> = args.split(' ').collect();
         for arg in &args {
             if arg.ends_with('?') {
-                let mut arg = (*arg).to_string();
+                let mut arg = (*arg).to_lowercase();
                 arg.pop(); // remove `?`
                 out_args.push(Arg::new(arg, false, None));
             } else if arg.contains('=') {
@@ -347,12 +346,13 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
                 // will always have >= 2 parts
                 #[allow(clippy::indexing_slicing)]
                 out_args.push(Arg::new(
-                    parts[0].to_string(),
+                    parts[0].to_lowercase(),
                     false,
+                    // All words are lowercased but the default
                     Some(parts[1].to_string()),
                 ));
             } else {
-                out_args.push(Arg::new((*arg).to_string(), true, None));
+                out_args.push(Arg::new((*arg).to_lowercase(), true, None));
             }
         }
     }
