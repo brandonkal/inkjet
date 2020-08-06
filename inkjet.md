@@ -11,7 +11,7 @@ inkjet_import: all
 **OPTIONS**
 
 - file
-  - flags: -n --num
+  - flag: -n --num
   - type: number
   - desc: Echo description
 
@@ -26,8 +26,8 @@ echo "Task complete."
 
 **OPTIONS**
 
-- flags: -f --file |string| Only run tests from a specific filename
-- flags: -nc --no-check Test with dash replacement
+- flag: -f --file |string| Only run tests from a specific filename
+- flag: -nc --no-check Test with dash replacement
 
 ```sh
 echo "Hello $name! Optional arg is $optional. File is $file"
@@ -46,7 +46,7 @@ echo "Task complete."
 **OPTIONS**
 
 - watch
-  - flags: -w --watch
+  - flag: -w --watch
   - desc: Rebuild on file change
 
 ```bash
@@ -133,7 +133,7 @@ While YAML is typically not executable, you can use shebangs to invoke kubectl, 
 **OPTIONS**
 
 - file
-  - flags: -f --file
+  - flag: -f --file
   - type: string
   - desc: Only run tests from a specific filename
 
@@ -175,7 +175,7 @@ cargo update
 **OPTIONS**
 
 - check
-  - flags: -c --check
+  - flag: -c --check
   - desc: Show which files are not formatted correctly
 
 ```bash
@@ -219,7 +219,7 @@ console.log(JSON.stringify(Deno.args))
 **OPTIONS**
 
 - file
-  - flags: -f --file
+  - flag: -f --file
   - type: string
   - desc: Only run tests from a specific filename
 
@@ -236,9 +236,9 @@ Run this with and without specific options specified.
 
 **OPTIONS**
 
-- flags: -s --string |string| First option
-- flags: --bool Second option
-- flags: --number |number| Enter a number
+- flag: -s --string |string| First option
+- flag: --bool Second option
+- flag: --number |number| Enter a number
 
 ```sh
 echo "The values are one=$one two=$two three=$three"

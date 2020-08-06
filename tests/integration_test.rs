@@ -126,7 +126,7 @@ fn fails_on_bad_flag_type() {
         r#"
 ## check
 OPTIONS
-- flags: -b |invalid| An invalid type
+- flag: -b |invalid| An invalid type
 ```
 echo "Should not print $b"
 ```
@@ -147,7 +147,7 @@ fn fails_on_invalid_number() {
         r#"
 ## check
 OPTIONS
-- flags: --num |number| A number
+- flag: --num |number| A number
 ```
 echo "Should not print $num"
 ```

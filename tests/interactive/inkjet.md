@@ -4,7 +4,7 @@
 
 **OPTIONS**
 
-- flags: --num |number| A number
+- flag: --num |number| A number
 
 ```
 echo "Hello $name! Optional arg is $optional. Number is $num"

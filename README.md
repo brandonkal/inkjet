@@ -149,7 +149,7 @@ It is important to note that `inkjet` auto injects a very common `boolean` flag 
 **OPTIONS**
 
 - port
-  - flags: -p --port
+  - flag: -p --port
   - type: string
   - desc: Which port to serve on
 
@@ -170,7 +170,7 @@ The above flag can be specified in a single line.
 
 OPTIONS
 
-- flags: -p --port |string| Which port to serve on
+- flag: -p --port |string| Which port to serve on
 
 ```sh
 echo "Hello $name! Port is $port"
@@ -190,7 +190,7 @@ You can also make your flag expect a numerical value by setting its `type` to `n
 **OPTIONS**
 
 - tax
-  - flags: -t --tax
+  - flag: -t --tax
   - type: number
   - desc: What's the tax?
 

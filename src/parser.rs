@@ -97,7 +97,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                     if text.contains(':') {
                         // Shorthand syntax
                         let mut flag_split = text.splitn(2, ':');
-                        if flag_split.next().unwrap_or("").trim() == "flags" {
+                        if flag_split.next().unwrap_or("").trim() == "flag" {
                             let val = flag_split.next().unwrap_or("").trim();
                             let mut desc_words = String::with_capacity(val.len());
                             for word in val.split_whitespace() {
@@ -163,7 +163,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                             }
                         }
                         // Parse out the short and long flag names
-                        "flags" => {
+                        "flag" => {
                             let short_and_long_flags: Vec<&str> = val.splitn(2, ' ').collect();
                             for flag in short_and_long_flags {
                                 // Must be a long flag name
@@ -422,7 +422,7 @@ mod build_command_structure {
 ## boolean
 
 **OPTIONS**
-- flags: -s --set |bool| Which port to serve on
+- flag: -s --set |bool| Which port to serve on
 ~~~
 echo $set
 ~~~
@@ -453,14 +453,14 @@ echo $set
 
 > Should be ignored
 OPTIONS
-- flags: -s --str |bool| A boolean
+- flag: -s --str |bool| A boolean
 ```
 echo "Ignore me"
 ```
 
 ## string
 OPTIONS
-- flags: -s --str |string| A string
+- flag: -s --str |string| A string
         "#,
         )
         .expect("build tree failed");
@@ -612,7 +612,7 @@ echo "abc"
         const FILE: &str = r#"
 ## check (arg?)
 OPTIONS
-- flags: -b |invalid| An invalid type
+- flag: -b |invalid| An invalid type
 ```
 echo "Should not print $b"
 ```
@@ -623,7 +623,7 @@ echo "Should not print $b"
 ## check
 OPTIONS
 * val
-    * flags: --val
+    * flag: --val
     * type: invalid
 ```
 echo "Should not print $val"

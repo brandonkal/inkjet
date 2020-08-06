@@ -50,7 +50,7 @@ fn optional_flags() {
 <!-- You must define OPTIONS right before your list of flags -->
 **OPTIONS**
 * port
-    * flags: -p --port
+    * flag: -p --port
     * type: string
     * desc: Which port to serve on
 
@@ -115,10 +115,10 @@ echo $(($a + $b))
 
 **OPTIONS**
 * a
-    * flags: --a
+    * flag: --a
     * type: string
 * b
-    * flags: --b
+    * flag: --b
     * type: string
 
 ~~~bash
@@ -146,7 +146,7 @@ mod numerical_option_flag {
 
 **OPTIONS**
 * val
-    * flags: --val
+    * flag: --val
     * type: number
 
 ~~~bash
@@ -170,7 +170,7 @@ echo "Value: $val"
 
 **OPTIONS**
 * val
-    * flags: --val
+    * flag: --val
     * type: number
 
 ~~~bash
@@ -194,7 +194,7 @@ echo "Value: $val"
 
 **OPTIONS**
 * val
-    * flags: --val
+    * flag: --val
     * type: number
 
 ~~~bash
@@ -218,7 +218,7 @@ echo "Value: $val"
 
 **OPTIONS**
 * val
-    * flags: --val
+    * flag: --val
     * type: number
 
 ~~~bash
@@ -242,7 +242,7 @@ echo "This shouldn't render $val"
 
 **OPTIONS**
 * val
-    * flags: --val
+    * flag: --val
     * type: number
 
 ~~~bash
