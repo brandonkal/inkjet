@@ -343,7 +343,14 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
             if arg.ends_with('?') {
                 let mut arg = (*arg).to_lowercase();
                 arg.pop(); // remove `?`
-                out_args.push(Arg::new(arg, false, None));
+                if arg.ends_with("...") {
+                    arg.pop();
+                    arg.pop();
+                    arg.pop();
+                    out_args.push(Arg::new(arg, false, None, true));
+                } else {
+                    out_args.push(Arg::new(arg, false, None, false));
+                }
             } else if arg.contains('=') {
                 let parts: Vec<&str> = arg.splitn(2, '=').collect();
                 // will always have >= 2 parts
@@ -353,9 +360,16 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
                     false,
                     // All words are lowercased but the default
                     Some(parts[1].to_string()),
+                    false,
                 ));
+            } else if arg.ends_with("...") {
+                let mut arg = (*arg).to_lowercase();
+                arg.pop();
+                arg.pop();
+                arg.pop();
+                out_args.push(Arg::new(arg, true, None, true));
             } else {
-                out_args.push(Arg::new((*arg).to_lowercase(), true, None));
+                out_args.push(Arg::new((*arg).to_lowercase(), true, None, false));
             }
         }
     }

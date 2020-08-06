@@ -398,7 +398,12 @@ fn build_subcommands<'a, 'b>(
 
         // Add all required and optional arguments
         for a in &c.args {
-            let arg = Arg::with_name(&a.name);
+            let mut arg = Arg::with_name(&a.name).multiple(a.multiple);
+            if !opts.preview && !opts.interactive {
+                if let Some(def) = &a.default {
+                    arg = arg.default_value(def);
+                }
+            }
             // If we are printing, we can't have required args
             subcmd = subcmd.arg(arg.required(if opts.preview || opts.interactive {
                 false
@@ -456,16 +461,17 @@ fn find_command(matches: &ArgMatches, subcommands: &[CommandBlock]) -> Option<Co
     }
     command
 }
+
+/// For a given set of matches, apply those arg values to the chosen CommandBlock
 /// returns the CommandBlock or an error string on Error (number invalid)
 /// If a flag validation error occurs, the validation_error_msg key will be mutated and parsing will stop.
 fn get_command_options(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBlock {
     // Check all required args
     for arg in &mut cmd.args {
-        arg.val = match matches.value_of(arg.name.clone()) {
-            Some(v) => v,
-            _ => "",
-        }
-        .to_string();
+        arg.val = match matches.values_of(arg.name.clone()) {
+            Some(v) => v.collect::<Vec<_>>().join(" "),
+            _ => "".to_string(),
+        };
     }
 
     // Check all optional flags
@@ -473,9 +479,10 @@ fn get_command_options(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBl
         flag.val = if flag.takes_value {
             // Extract the value
             let raw_value = matches
-                .value_of(flag.name.clone())
-                .unwrap_or("")
-                .to_string();
+                .values_of(flag.name.clone())
+                .unwrap_or_default()
+                .collect::<Vec<_>>()
+                .join(" ");
 
             if is_invalid_number(flag.validate_as_number, &raw_value) {
                 cmd.validation_error_msg = not_number_err_msg(&flag.name);

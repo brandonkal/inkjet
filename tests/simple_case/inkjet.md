@@ -17,3 +17,11 @@ echo "expected output"
 ```
 echo "Hello $name! Optional arg is $optional. Number is $num"
 ```
+
+## extras (extra...?)
+
+> Test multiple optional values for extra
+
+```
+echo "Hello $extra"
+```

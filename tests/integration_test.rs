@@ -39,6 +39,36 @@ echo "hidden"
 }
 
 #[test]
+fn infinite_arg_support() {
+    let (_temp, inkfile_path) = common::inkfile(
+        r#"
+## req (extras...)
+
+```
+echo "required infinite $extras"
+```
+
+## opt (extras...?)
+
+```
+echo "optional infinite $extras"
+```
+"#,
+    );
+
+    common::run_inkjet(&inkfile_path)
+        .cli("req first second third")
+        .assert()
+        .stdout(contains("required infinite first second third"))
+        .success();
+    common::run_inkjet(&inkfile_path)
+        .cli("opt")
+        .assert()
+        .stdout(contains("optional infinite"))
+        .success();
+}
+
+#[test]
 fn preview_mod() {
     let (_temp, inkfile_path) = common::inkfile(
         r#"

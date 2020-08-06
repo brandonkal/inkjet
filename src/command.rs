@@ -84,16 +84,18 @@ pub struct Arg {
     pub val: String,
     pub required: bool,
     pub default: Option<String>,
+    pub multiple: bool,
 }
 
 impl Arg {
     #[must_use]
-    pub fn new(name: String, required: bool, default: Option<String>) -> Self {
+    pub fn new(name: String, required: bool, default: Option<String>, multiple: bool) -> Self {
         Arg {
             name,
             val: "".to_string(),
             required,
             default,
+            multiple,
         }
     }
 }
