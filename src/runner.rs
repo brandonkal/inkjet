@@ -1,4 +1,3 @@
-#![warn(clippy::indexing_slicing)]
 use dialoguer::theme::ColoredTheme;
 use dialoguer::{Confirmation, Input, KeyPrompt};
 use std::collections::HashSet;

@@ -1,4 +1,3 @@
-#![warn(clippy::indexing_slicing)]
 use std::fs;
 use std::fs::File;
 use std::io;

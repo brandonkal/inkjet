@@ -1,4 +1,3 @@
-#![warn(clippy::indexing_slicing)]
 use colored::*;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};

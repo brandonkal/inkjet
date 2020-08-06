@@ -1,4 +1,3 @@
-#![warn(clippy::indexing_slicing)]
 use pulldown_cmark::CodeBlockKind::Fenced;
 use pulldown_cmark::{
     Event::{Code, End, Html, Start, Text},
@@ -12,7 +11,7 @@ fn invalid_type_msg(t: &str) -> String {
     format!("Invalid flag type '{}' Expected string | number | bool.", t)
 }
 
-/// The main parsing logic. Takes an inkfile content as a string and returns the parsed CommandBlock.
+/// The main inkjet markdown parsing logic. Takes an inkfile content as a string and returns the parsed CommandBlock tree.
 pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, String> {
     let parser = create_markdown_parser(&inkfile_contents);
     let mut commands = vec![];
@@ -250,6 +249,8 @@ fn create_markdown_parser(inkfile_contents: &str) -> Parser {
     Parser::new_ext(&inkfile_contents, options)
 }
 
+/// `treeify_commands` takes a flat vector of CommandBlocks and recursively builds a tree with subcommands as children.
+/// It is called by the parser.
 fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
     let mut command_tree = vec![];
     let mut current_command = commands.first().expect("command should exist").clone();
