@@ -62,6 +62,9 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                     if name.is_empty() {
                         return Err("unexpected empty heading name".to_string());
                     }
+                    if name.contains(char::is_whitespace) {
+                        return Err(format!("Command names cannot contain spaces. Found '{}'. Did you forget to wrap args in ()?", name));
+                    }
                     current_command.name = name;
                     current_command.args = args;
                     current_command.aliases = aliases;
@@ -478,6 +481,28 @@ OPTIONS
             .find(|cmd| cmd.name == "serve")
             .expect("serve command missing");
         assert_eq!(serve_command.desc, "Serve the app on the `port`");
+    }
+
+    #[test]
+    fn fails_if_name_has_spaces() {
+        let file = r#"
+## sub
+
+### a b c
+
+> description
+
+```
+echo "abc"
+```
+       "#;
+        let tree_result = build_command_structure(file);
+        if let Err(e) = tree_result {
+            assert!(e == "Command names cannot contain spaces. Found 'b c'. Did you forget to wrap args in ()?",
+                "Unexpected error message: \"{}\"", e);
+        } else {
+            panic!("expected a parse error");
+        }
     }
 
     #[test]
