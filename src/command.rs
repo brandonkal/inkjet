@@ -94,6 +94,10 @@ impl Script {
             source: "".to_string(),
         }
     }
+    /// Returns true if the script is non-empty
+    pub fn has_script(&self) -> bool {
+        !self.source.is_empty()
+    }
 }
 
 #[derive(Debug, Clone)]

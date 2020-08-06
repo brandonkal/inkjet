@@ -298,6 +298,10 @@ fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
         }
     }
 
+    // the command or any one of its subcommands must have script to be included in the tree
+    // root level commands must be retained
+    command_tree.retain(|c| c.script.has_script() || !c.subcommands.is_empty() || c.cmd_level == 1);
+
     command_tree
 }
 
@@ -643,5 +647,31 @@ echo "Should not print"
 "#;
         let err_str = build_command_structure(FILE).expect_err("should error on no command name");
         assert_eq!(err_str, "unexpected empty heading name");
+    }
+
+    #[test]
+    fn removes_commands_without_code_blocks() {
+        const FILE: &str = r#"
+# MY COMMANDS
+
+## Docs
+
+Just some documentation.
+
+## cmd
+
+```bash
+echo something
+```
+
+### docs two
+
+#### docs two c
+"#;
+        let tree = build_command_structure(FILE).expect("failed to build tree");
+        let docs_cmd = &tree.subcommands.iter().find(|cmd| cmd.name == "docs");
+        if docs_cmd.is_some() {
+            panic!("docs command should not exist")
+        }
     }
 }
