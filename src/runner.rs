@@ -518,8 +518,21 @@ fn not_number_err_msg(name: &str) -> String {
 }
 
 #[cfg(test)]
-mod main_tests {
+mod runner_tests {
     use super::*;
+    #[test]
+    fn fake_language() {
+        let contents = r#"
+## default
+```fake
+echo "This should not run"
+```
+        "#;
+        let args = svec!("inkjet", "--inkfile", contents);
+        let (rc, err_str, _) = run(args, false);
+        assert_eq!(rc, 10);
+        assert_eq!(err_str, "No such file or directory (os error 2)");
+    }
     #[test]
     fn numbers() {
         let is_f = is_invalid_number(false, "string");

@@ -275,8 +275,14 @@ mod version_flag {
 
     #[test]
     fn exits_with_error_when_subcommand_has_version_flag() {
-        let (_temp, inkfile_path) = common::inkfile("## foo");
-
+        let (_temp, inkfile_path) = common::inkfile(
+            r#"
+## foo
+```
+echo "boo"
+```
+"#,
+        );
         // The setting "VersionlessSubcommands" removes the version flags (-V, --version)
         // from subcommands. Only the root command has a version flag.
 

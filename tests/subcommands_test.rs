@@ -45,6 +45,9 @@ fn exits_with_error_when_missing_subcommand() {
         r#"
 ## service
 ### service start
+```
+echo "starting...
+```
 "#,
     );
 
@@ -90,8 +93,10 @@ echo "system, online"
         common::run_inkjet(&inkfile_path)
             .command("start")
             .assert()
-            .code(10)
-            .stderr(contains("CommandBlock has no script."))
+            .code(1)
+            .stderr(contains(
+                "which wasn't expected, or isn't valid in this context",
+            ))
             .failure();
     }
 }

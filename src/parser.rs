@@ -466,6 +466,9 @@ echo "Ignore me"
 ## string
 OPTIONS
 - flag: -s --str |string| A string
+```
+echo "the string is $str"
+```
         "#,
         )
         .expect("build tree failed");
@@ -600,15 +603,12 @@ echo "abc"
     }
 
     #[test]
-    fn does_not_add_verbose_optional_flag_to_command_with_no_script() {
+    fn excludes_no_script() {
         let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
-        let no_script_command = tree
-            .subcommands
-            .iter()
-            .find(|cmd| cmd.name == "no_script")
-            .expect("no_script command missing");
-
-        assert_eq!(no_script_command.option_flags.len(), 0);
+        let cmd = tree.subcommands.iter().find(|cmd| cmd.name == "no_script");
+        if cmd.is_some() {
+            panic!("docs command should not exist")
+        }
     }
 
     #[test]

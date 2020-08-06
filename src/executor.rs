@@ -72,8 +72,8 @@ pub fn execute_command(
     fixed_dir: bool,
 ) -> Option<io::Result<process::ExitStatus>> {
     if cmd.script.source == "" {
-        let msg = "CommandBlock has no script.";
-        return Some(Err(io::Error::new(io::ErrorKind::Other, msg)));
+        let msg = "CommandBlock has no script."; // cov:include (unusual)
+        return Some(Err(io::Error::new(io::ErrorKind::Other, msg))); // cov:include
     }
 
     if cmd.script.executor == "" && !cmd.script.source.trim().starts_with("#!") {
@@ -251,7 +251,7 @@ fn add_flag_variables(mut child: process::Command, cmd: &CommandBlock) -> proces
     // Add all required args as environment variables
     for arg in &cmd.args {
         let val = if arg.val.is_empty() && arg.default.is_some() {
-            arg.default
+            arg.default // cov:include (tested by default_args integration)
                 .as_ref()
                 .expect("unable to ref command default arg")
         } else {
