@@ -301,6 +301,8 @@ fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
 }
 
 fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Vec<Arg>) {
+    // Anything after double dash is ignored
+    let text = text.splitn(2, "--").next().unwrap();
     // Why heading_level > 2? Because level 1 is the root command title (unused)
     // and level 2 can't be a subcommand so no need to split.
     let name = if heading_level > 2 {
@@ -316,7 +318,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
     } else if heading_level == 1 {
         text.split_whitespace().next().unwrap().to_string()
     } else {
-        text
+        text.to_string()
     };
 
     // Find any required arguments. They look like this: (required_arg_name)
@@ -383,7 +385,7 @@ const TEST_INKJETFILE: &str = r#"
 
 This is an example inkfile for the tests below.
 
-## serve (port)
+## serve (port) -- extra info
 
 > Serve the app on the `port`
 
