@@ -31,6 +31,7 @@ echo "hidden"
     common::run_inkjet(&inkfile_path)
         .arg("--help")
         .assert()
+        .stdout(contains("Brandon Kalinowski"))
         .stdout(contains("USAGE:"))
         .stdout(contains("foo").count(1))
         .stdout(contains("hidden").count(0))

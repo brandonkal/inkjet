@@ -15,6 +15,7 @@ use crate::view;
 /// run attempts to ensure that the process does not exit unless there is a panic or clap --help or --version is matched.
 /// This enables improved integration testing.
 /// Returns exit code, an error string if it should be printed, and if the error should be prefixed with `ERROR`.
+/// Inkjet parser created by Brandon Kalinowski See: https://github.com/brandonkal/inkjet
 #[inline(never)]
 pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
     let (opts, args) = pre_parse(args);
@@ -31,7 +32,8 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         .setting(AppSettings::VersionlessSubcommands)
         .global_setting(color_setting)
         .version(crate_version!())
-        .about("Inkjet is a tool to build interactive CLIs with executable markdown.\nInkjet parser created by Brandon Kalinowski")
+        .about("Inkjet is a tool to build interactive CLIs with executable markdown documents.\nInkjet parser created by Brandon Kalinowski\nSee: https://github.com/brandonkal/inkjet")
+        .after_help("Run 'inkjet COMMAND --help' for more information on a command.")
         .arg(custom_inkfile_path_arg())
         .arg_from_usage(
             "-i --interactive 'Execute the command in the document prompting for arguments'",
@@ -93,7 +95,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         }
     };
     let about_txt = format!(
-        "Generated from {}\nInkjet parser created by Brandon Kalinowski\n\n{}",
+        "Generated from {}\n\nInkjet parser created by Brandon Kalinowski\nInkjet is a tool to build interactive CLIs with executable markdown documents.\nSee: https://github.com/brandonkal/inkjet\n\n{}",
         inkfile_path, root_command.desc
     );
     cli_app = cli_app.about(about_txt.trim());
