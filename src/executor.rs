@@ -159,7 +159,7 @@ fn prepare_command(
                 child
             }
             "py" | "python" => {
-                let mut child = process::Command::new("python");
+                let mut child = process::Command::new("python3");
                 child.arg("-c").arg(source);
                 child
             }
