@@ -1,9 +1,9 @@
+use colored::*;
 use pulldown_cmark::CodeBlockKind::Fenced;
 use pulldown_cmark::{
     Event::{Code, End, Html, Start, Text},
     Options, Parser, Tag,
 };
-use colored::*;
 
 use crate::command::{Arg, CommandBlock, OptionFlag};
 
@@ -38,7 +38,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                         current_command.inkjet_file = current_file.clone();
                         current_command.start = range.start;
                     }
-                    Tag::CodeBlock(cb) => {      
+                    Tag::CodeBlock(cb) => {
                         if let Fenced(lang_code) = cb {
                             current_command.end = range.start;
                             current_command.script.executor = lang_code.to_string();
@@ -225,7 +225,11 @@ fn remove_duplicates(mut cmds: Vec<CommandBlock>) -> Vec<CommandBlock> {
             let mut already_seen = vec![];
             self.retain(|item| {
                 if already_seen.contains(item) {
-                    eprintln!("{} Duplicate command overwritten: {}", "INFO:".yellow(), item.name);
+                    eprintln!(
+                        "{} Duplicate command overwritten: {}",
+                        "INFO:".yellow(),
+                        item.name
+                    );
                     false
                 } else {
                     already_seen.push(item.clone());
@@ -418,6 +422,18 @@ console.log(`Hello, ${name}!`);
 ## no_script
 
 This command has no source/script.
+
+## no_space
+> this should be the description
+**OPTIONS**
+* whatever
+    * flags: -w --whatever
+    * desc: Whatever
+
+~~~bash
+echo "the description is wrong..."
+~~~
+
 "#;
 
 #[cfg(test)]
@@ -446,7 +462,8 @@ echo $set
         assert_eq!(boolean_command.name, "boolean");
         assert!(
             !boolean_command
-                .option_flags.first()
+                .option_flags
+                .first()
                 .expect("option flag not attached")
                 .takes_value
         );
@@ -482,13 +499,15 @@ echo "the string is $str"
         assert_eq!(string_command.name, "string");
         assert!(
             string_command
-                .option_flags.first()
+                .option_flags
+                .first()
                 .expect("option flag not attached")
                 .takes_value
         );
         assert!(
             !string_command
-                .option_flags.first()
+                .option_flags
+                .first()
                 .expect("option flag not attached")
                 .validate_as_number
         );
@@ -503,6 +522,17 @@ echo "the string is $str"
             .find(|cmd| cmd.name == "serve")
             .expect("serve command missing");
         assert_eq!(serve_command.desc, "Serve the app on the `port`");
+    }
+
+    #[test]
+    fn parses_no_space_command_description() {
+        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
+        let serve_command = &tree
+            .subcommands
+            .iter()
+            .find(|cmd| cmd.name == "no_space")
+            .expect("no_space command missing");
+        assert_eq!(serve_command.desc, "this should be the description");
     }
 
     #[test]
