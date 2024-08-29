@@ -33,7 +33,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         .global_setting(color_setting)
         .version(crate_version!())
         .about("Inkjet is a tool to build interactive CLIs with executable markdown documents.\nInkjet parser created by Brandon Kalinowski\nSee: https://github.com/brandonkal/inkjet")
-        .after_help("Run 'inkjet COMMAND --help' for more information on a command.")
+        .after_help("Run 'inkjet --inkjet-print-all' if you wish to view the complete merged inkjet definition.\nRun 'inkjet COMMAND --help' for more information on a command.")
         .arg(custom_inkfile_path_arg())
         .arg_from_usage(
             "-i --interactive 'Execute the command in the document prompting for arguments'",

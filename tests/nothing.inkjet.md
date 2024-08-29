@@ -1,4 +1,4 @@
-# test for nothing
+# something for nothing
 
 ## ping
 

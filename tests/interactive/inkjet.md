@@ -1,4 +1,4 @@
-## echo//default (name) (optional=default)
+## echointeractive//default (name) (optional=default)
 
 > Echo something
 

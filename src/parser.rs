@@ -3,6 +3,7 @@ use pulldown_cmark::{
     Event::{Code, End, Html, Start, Text},
     Options, Parser, Tag,
 };
+use colored::*;
 
 use crate::command::{Arg, CommandBlock, OptionFlag};
 
@@ -214,20 +215,23 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
 
 // remove duplicate commands to enable override function
 fn remove_duplicates(mut cmds: Vec<CommandBlock>) -> Vec<CommandBlock> {
-    trait Dedup<T: PartialEq + Clone> {
+    trait Dedup {
         fn clear_duplicates(&mut self);
     }
-    impl<T: PartialEq + Clone> Dedup<T> for Vec<T> {
+
+    // Implement Dedup for Vec<CommandBlock>
+    impl Dedup for Vec<CommandBlock> {
         fn clear_duplicates(&mut self) {
             let mut already_seen = vec![];
             self.retain(|item| {
                 if already_seen.contains(item) {
+                    eprintln!("{} Duplicate command overwritten: {}", "INFO:".yellow(), item.name);
                     false
                 } else {
                     already_seen.push(item.clone());
                     true
                 }
-            })
+            });
         }
     }
     cmds.reverse();
