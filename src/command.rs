@@ -111,7 +111,7 @@ pub struct Arg {
     pub required: bool,
     /// If this Arg has a default value, we keep track of it here.
     pub default: Option<String>,
-    /// Whether or not this Arg can be supplied multiple times. Values will be collected into a space-seperated string.
+    /// Whether or not this Arg can be supplied multiple times. Values will be collected into a space-separated string.
     pub multiple: bool,
 }
 

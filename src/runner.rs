@@ -327,7 +327,7 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
             default_index = 1000;
             break;
         } else if arg.ends_with(".md") && inkfile_index == 1000 {
-            // we found a markdown filename without it being preceeded by `--inkfile`
+            // we found a markdown filename without it being proceeded by `--inkfile`
             // we will insert that after the loop if required.
             opts.inkfile_opt = canonical_path(arg);
             inkfile_index = i
