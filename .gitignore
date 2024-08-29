@@ -39,3 +39,6 @@ node_modules
 .inkjet-order*
 .devbox
 .rustup
+# Build outputs
+/inkjet
+/inkjet*.gz

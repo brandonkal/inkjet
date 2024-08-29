@@ -3,7 +3,7 @@ IMPORT github.com/earthly/lib/rust:3.0.1 AS rust
 
 FROM rust:slim-bookworm
 RUN apt-get update && apt-get install -y binutils pkg-config openssl libssl-dev && apt-get clean
-WORKDIR /rustexample
+WORKDIR /build
 
 # build creates the binary target/release/example-rust
 build:
@@ -12,5 +12,5 @@ build:
     DO rust+INIT --keep_fingerprints=true
     COPY --keep-ts --dir src Cargo.lock Cargo.toml .
     DO rust+CARGO --args="build --release --bin inkjet" --output="release/[^/\.]+"
-    RUN strip releasae/inkjet
+    RUN strip target/release/inkjet
     SAVE ARTIFACT target/release/inkjet AS LOCAL inkjet
