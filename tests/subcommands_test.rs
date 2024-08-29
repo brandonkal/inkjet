@@ -2,7 +2,6 @@ use assert_cmd::prelude::*;
 use predicates::str::contains;
 
 mod common;
-use common::InkjetCommandExt;
 pub use common::*;
 
 #[test]

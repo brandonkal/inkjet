@@ -36,7 +36,7 @@ pub fn read_inkfile(inkfile: &str) -> (Result<String, String>, String, bool) {
         let contents = read_stdin();
         return (contents, stdin_name(), false);
     }
-    if filename == "" {
+    if filename.is_empty() {
         let p = std::env::current_dir().expect("cannot determine current directory");
         for ancestor in p.ancestors() {
             let check = ancestor.join("inkjet.md");
@@ -70,7 +70,7 @@ fn read_and_return(file: Result<std::fs::File, std::io::Error>) -> String {
 
 /// Finds an inkfile and returns its contents and inkfile_path
 pub fn find_inkfile(inkfile_opt: &str) -> (Result<String, String>, String) {
-    let (contents, inkfile_path, is_file) = read_inkfile(&inkfile_opt);
+    let (contents, inkfile_path, is_file) = read_inkfile(inkfile_opt);
     if contents.is_err() {
         (contents, "".to_string())
     } else if is_file {
@@ -122,13 +122,13 @@ mod read_inkfile {
     #[test]
     fn stdin_name_works() {
         let sn = stdin_name();
-        assert_eq!(sn.contains("stdin"), true)
+        assert!(sn.contains("stdin"))
     }
 
     #[test]
     fn reads_stdin() {
         let (_inkfile, inkfile_path, is_file) = read_inkfile("");
-        assert_eq!(inkfile_path.contains("inkjet.md"), true);
-        assert_eq!(is_file, true);
+        assert!(inkfile_path.contains("inkjet.md"));
+        assert!(is_file);
     }
 }

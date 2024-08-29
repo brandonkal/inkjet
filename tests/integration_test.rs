@@ -5,7 +5,6 @@ use clap::{crate_name, crate_version};
 use predicates::str::contains;
 
 mod common;
-use common::InkjetCommandExt;
 pub use common::*;
 
 #[test]

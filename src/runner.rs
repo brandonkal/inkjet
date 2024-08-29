@@ -41,7 +41,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         .arg_from_usage("-p --preview 'Preview the command source and exit'");
     let (inkfile, inkfile_path) = crate::loader::find_inkfile(&opts.inkfile_opt);
     if inkfile.is_err() {
-        if opts.inkfile_opt == "" || opts.inkfile_opt == "./inkjet.md" {
+        if opts.inkfile_opt.is_empty() || opts.inkfile_opt == "./inkjet.md" {
             // Just log a warning and let the process continue
             eprintln!("{} no inkjet.md found", "WARNING:".yellow());
             // If the inkfile can't be found, at least parse for --version or --help
@@ -128,7 +128,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         let portion = &mdtxt
             .get(chosen_cmd.start..chosen_cmd.end)
             .expect("portion out of bounds");
-        let print_err = p.print_markdown(&portion);
+        let print_err = p.print_markdown(portion);
         if let Err(err) = print_err {
             return (10, format!("printing markdown: {}", err), true); // cov:include (unusual error)
         }
@@ -203,7 +203,7 @@ fn interactive_params(
         }
     }
     for arg in chosen_cmd.args.iter_mut() {
-        if arg.val == "" {
+        if arg.val.is_empty() {
             let rv: String = Input::with_theme(&ColoredTheme::default())
                 .with_prompt(&format!(
                     "{}: Enter value for {}{}",
@@ -233,7 +233,7 @@ fn interactive_params(
                     flag.val = "true".to_string();
                 }
             }
-        } else if flag.val == "" {
+        } else if flag.val.is_empty() {
             let mut rv: String;
             loop {
                 let name = flag.name.clone();
@@ -393,7 +393,7 @@ fn build_subcommands<'a, 'b>(
         if !c.subcommands.is_empty() {
             subcmd = build_subcommands(subcmd, opts, &c.subcommands);
             // If this parent command has no script source, require a subcommand.
-            if c.script.source == "" {
+            if c.script.source.is_empty() {
                 subcmd = subcmd.setting(AppSettings::SubcommandRequired);
             }
         }
@@ -427,10 +427,10 @@ fn build_subcommands<'a, 'b>(
         if c.name.starts_with('_') {
             subcmd = subcmd.setting(AppSettings::Hidden);
         }
-        if c.aliases != "" {
+        if !c.aliases.is_empty() {
             let parts = c.aliases.split("//");
             for s in parts {
-                subcmd = subcmd.visible_alias(&*s);
+                subcmd = subcmd.visible_alias(s);
             }
         }
         cli_app = cli_app.subcommand(subcmd);
@@ -449,7 +449,7 @@ fn find_command(matches: &ArgMatches, subcommands: &[CommandBlock]) -> Option<Co
                 if c.name == subcommand_name {
                     // Check if a subcommand was called, otherwise return this command
                     command = find_command(matches, &c.subcommands)
-                        .or_else(|| Some(c.clone()).map(|c| get_command_options(c, &matches)));
+                        .or_else(|| Some(c.clone()).map(|c| get_command_options(c, matches)));
                     // early exit on validation error (e.g. number required and not supplied)
                     if command
                         .as_ref()
@@ -506,7 +506,7 @@ fn get_command_options(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBl
 }
 /// returns true if flag is set and the string should parse as number and does not
 fn is_invalid_number(is_num: bool, raw_value: &str) -> bool {
-    if !is_num || raw_value == "" {
+    if !is_num || raw_value.is_empty() {
         return false;
     }
     // Try converting to an integer or float to validate it
@@ -536,11 +536,11 @@ echo "This should not run"
     #[test]
     fn numbers() {
         let is_f = is_invalid_number(false, "string");
-        assert_eq!(is_f, false);
+        assert!(!is_f);
         let is_f = is_invalid_number(true, "42");
-        assert_eq!(is_f, false);
+        assert!(!is_f);
         let is_t = is_invalid_number(true, "abc");
-        assert_eq!(is_t, true);
+        assert!(is_t);
         not_number_err_msg("flag");
     }
     #[test]

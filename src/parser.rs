@@ -14,7 +14,7 @@ fn invalid_type_msg(t: &str) -> String {
 
 /// The main inkjet markdown parsing logic. Takes an inkfile content as a string and returns the parsed CommandBlock tree.
 pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, String> {
-    let parser = create_markdown_parser(&inkfile_contents);
+    let parser = create_markdown_parser(inkfile_contents);
     let mut commands = vec![];
     let mut current_command = CommandBlock::new(1);
     let mut current_option_flag = OptionFlag::new();
@@ -38,7 +38,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                         current_command.inkjet_file = current_file.clone();
                         current_command.start = range.start;
                     }
-                    Tag::CodeBlock(cb) => {
+                    Tag::CodeBlock(cb) => {      
                         if let Fenced(lang_code) = cb {
                             current_command.end = range.start;
                             current_command.script.executor = lang_code.to_string();
@@ -90,7 +90,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                 _ => (),
             },
             Text(body) => {
-                text += &body.to_string();
+                text += body.as_ref();
 
                 // Options level 1 is the flag name
                 if list_level == 1 {
@@ -192,7 +192,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                 if html.starts_with(s) {
                     current_file = html.replace(s, "").replace(" -->", "");
                 }
-                text += &html.to_string();
+                text += html.as_ref();
             }
             Code(inline_code) => {
                 text += &format!("`{}`", inline_code);
@@ -250,7 +250,7 @@ fn create_markdown_parser(inkfile_contents: &str) -> Parser {
     // and we therefore must enable it explicitly.
     let mut options = Options::empty();
     options.insert(Options::ENABLE_STRIKETHROUGH);
-    Parser::new_ext(&inkfile_contents, options)
+    Parser::new_ext(inkfile_contents, options)
 }
 
 /// `treeify_commands` takes a flat vector of CommandBlocks and recursively builds a tree with subcommands as children.
@@ -311,7 +311,7 @@ fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
 
 fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Vec<Arg>) {
     // Anything after double dash is ignored
-    let text = text.splitn(2, "--").next().unwrap();
+    let text = text.split("--").next().unwrap();
     // Why heading_level > 2? Because level 1 is the root command title (unused)
     // and level 2 can't be a subcommand so no need to split.
     let name = if heading_level > 2 {
@@ -444,13 +444,11 @@ echo $set
             .find(|cmd| cmd.name == "boolean")
             .expect("boolean command missing");
         assert_eq!(boolean_command.name, "boolean");
-        assert_eq!(
-            boolean_command
-                .option_flags
-                .get(0)
+        assert!(
+            !boolean_command
+                .option_flags.first()
                 .expect("option flag not attached")
-                .takes_value,
-            false
+                .takes_value
         );
     }
 
@@ -482,21 +480,17 @@ echo "the string is $str"
             .find(|cmd| cmd.name == "string")
             .expect("string command missing");
         assert_eq!(string_command.name, "string");
-        assert_eq!(
+        assert!(
             string_command
-                .option_flags
-                .get(0)
+                .option_flags.first()
                 .expect("option flag not attached")
-                .takes_value,
-            true
+                .takes_value
         );
-        assert_eq!(
-            string_command
-                .option_flags
-                .get(0)
+        assert!(
+            !string_command
+                .option_flags.first()
                 .expect("option flag not attached")
-                .validate_as_number,
-            false
+                .validate_as_number
         );
     }
 
@@ -542,7 +536,7 @@ echo "abc"
             .find(|cmd| cmd.name == "serve")
             .expect("serve command missing");
         assert_eq!(serve_command.args.len(), 1);
-        assert_eq!(serve_command.args.get(0).unwrap().name, "port");
+        assert_eq!(serve_command.args.first().unwrap().name, "port");
     }
 
     #[test]
@@ -602,8 +596,8 @@ echo "abc"
         );
         assert_eq!(node_command.option_flags[0].short, "v");
         assert_eq!(node_command.option_flags[0].long, "verbose");
-        assert_eq!(node_command.option_flags[0].multiple, false);
-        assert_eq!(node_command.option_flags[0].takes_value, false);
+        assert!(!node_command.option_flags[0].multiple);
+        assert!(!node_command.option_flags[0].takes_value);
     }
 
     #[test]

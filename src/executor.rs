@@ -20,7 +20,7 @@ fn hash_source(s: &str) -> String {
 
 /// we append  `set -e` to these shells as a sensible default
 fn needs_set_e(s: &str) -> bool {
-    s == "sh" || s == "bash" || s == "" || s == "dash" || s == "zsh"
+    s == "sh" || s == "bash" || s.is_empty() || s == "dash" || s == "zsh"
 }
 
 /// Executes a shell function that finds all inkjet.md files in a directory and
@@ -50,7 +50,7 @@ pub fn execute_merge_command(inkfile_path: &str) -> Result<String, String> {
 
 fn run_bat(source: String, lang: &str) -> io::Result<process::Child> {
     match process::Command::new("bat")
-        .args(&["--plain", "--language", lang])
+        .args(["--plain", "--language", lang])
         .stdin(process::Stdio::piped())
         .spawn()
     {
@@ -71,12 +71,12 @@ pub fn execute_command(
     color: bool,
     fixed_dir: bool,
 ) -> Option<io::Result<process::ExitStatus>> {
-    if cmd.script.source == "" {
+    if cmd.script.source.is_empty() {
         let msg = "CommandBlock has no script."; // cov:include (unusual)
         return Some(Err(io::Error::new(io::ErrorKind::Other, msg))); // cov:include
     }
 
-    if cmd.script.executor == "" && !cmd.script.source.trim().starts_with("#!") {
+    if cmd.script.executor.is_empty() && !cmd.script.source.trim().starts_with("#!") {
         cmd.script.executor = String::from("sh"); // default to default shell
     }
     let source = if needs_set_e(&cmd.script.executor) {
@@ -99,7 +99,7 @@ pub fn execute_command(
         }
     } else {
         let mut local_inkfile = cmd.inkjet_file.trim();
-        if local_inkfile == "" {
+        if local_inkfile.is_empty() {
             local_inkfile = inkfile_path
         }
         let parent_dir = get_parent_dir(local_inkfile);
@@ -126,7 +126,7 @@ pub fn execute_command(
 }
 
 fn delete_file(file: &str) {
-    if file != "" && std::fs::remove_file(&file).is_err() {
+    if !file.is_empty() && std::fs::remove_file(file).is_err() {
         eprintln!("{} Failed to delete file {}", "ERROR:".red(), file); // cov:ignore (unusual)
     }
 }
@@ -142,11 +142,14 @@ fn prepare_command(
     if source.starts_with("#!") {
         let hash = hash_source(source);
         *tempfile = format!("{}/.inkjet-order.{}", parent_dir, hash);
+        #[allow(clippy::needless_borrows_for_generic_args)]
         std::fs::write(&tempfile, source)
             .unwrap_or_else(|_| panic!("Unable to write file {}", &tempfile));
+        #[allow(clippy::needless_borrows_for_generic_args)]
         let meta = std::fs::metadata(&tempfile).expect("Unable to read file permissions");
         let mut perms = meta.permissions();
         perms.set_mode(0o775);
+        #[allow(clippy::needless_borrows_for_generic_args)]
         std::fs::set_permissions(&tempfile, perms).expect("Could not set permissions");
 
         process::Command::new(tempfile)
@@ -185,7 +188,7 @@ fn prepare_command(
             }
             // If no language is specified, we use the default shell
             "" | "sh" | "bash" | "zsh" | "dash" => {
-                if executor == "" {
+                if executor.is_empty() {
                     executor = "sh".to_string() // cov:ignore (already added by execute_command)
                 }
                 let mut child = process::Command::new(executor);
@@ -262,7 +265,7 @@ fn add_flag_variables(mut child: process::Command, cmd: &CommandBlock) -> proces
 
     // Add all optional flags as environment variables if they have a value
     for flag in &cmd.option_flags {
-        if flag.val != "" {
+        if !flag.val.is_empty() {
             child.env(flag.name.replace("-", "_"), flag.val.clone());
         }
     }

@@ -60,7 +60,7 @@ impl Printer {
                 // width: self.size.width.to_string(),
                 ..self.size
             },
-            create_markdown_parser(&input),
+            create_markdown_parser(input),
             Path::new(&self.base_dir),
             self.resource_access,
             self.syntax_set.clone(),
@@ -74,7 +74,7 @@ fn create_markdown_parser(contents: &str) -> Parser {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_STRIKETHROUGH);
     options.insert(Options::ENABLE_TASKLISTS);
-    Parser::new_ext(&contents, options)
+    Parser::new_ext(contents, options)
 }
 
 #[test]
