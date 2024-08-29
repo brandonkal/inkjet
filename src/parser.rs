@@ -4,6 +4,7 @@ use pulldown_cmark::{
     Event::{Code, End, Html, Start, Text},
     Options, Parser, Tag,
 };
+use regex::Regex;
 
 use crate::command::{Arg, CommandBlock, OptionFlag};
 
@@ -22,6 +23,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
     let mut list_level = 0;
     let mut first_was_pushed = false;
     let mut current_file = "".to_string();
+    let mut in_block_quote = false;
 
     for (event, range) in parser.into_offset_iter() {
         match event {
@@ -50,11 +52,16 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                             list_level += 1;
                         }
                     }
+                    Tag::BlockQuote => {
+                        in_block_quote = true;
+                    }
                     _ => (),
                 };
 
                 // Reset all state
+                // if !in_block_quote {
                 text = "".to_string();
+                // }
             }
             End(tag) => match tag {
                 Tag::Heading(heading_level) => {
@@ -70,7 +77,11 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                     current_command.aliases = aliases;
                 }
                 Tag::BlockQuote => {
-                    current_command.desc = text.clone();
+                    // current_command.desc.push_str(&text);
+                    if in_block_quote {
+                        // current_command.desc.push_str(&text);
+                        in_block_quote = false;
+                    }
                 }
                 Tag::CodeBlock(_) => {
                     current_command.script.source = text.to_string();
@@ -91,6 +102,11 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
             },
             Text(body) => {
                 text += body.as_ref();
+
+                if in_block_quote {
+                    current_command.desc.push_str(body.as_ref());
+                    current_command.desc.push(' ');
+                }
 
                 // Options level 1 is the flag name
                 if list_level == 1 {
@@ -196,6 +212,10 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
             }
             Code(inline_code) => {
                 text += &format!("`{}`", inline_code);
+                if in_block_quote {
+                    current_command.desc.push_str(&format!("`{}`", inline_code));
+                    current_command.desc.push(' ');
+                }
             }
             _ => (),
         };
@@ -257,6 +277,17 @@ fn create_markdown_parser(inkfile_contents: &str) -> Parser {
     Parser::new_ext(inkfile_contents, options)
 }
 
+fn trim_and_remove_options(input: &str) -> String {
+    let trimmed = input.trim();
+    let re = Regex::new(r"\s+").unwrap();
+    let normalized = re.replace_all(trimmed, " ");
+    if let Some(result) = normalized.strip_suffix("OPTIONS") {
+        result.trim().to_string()
+    } else {
+        normalized.to_string()
+    }
+}
+
 /// `treeify_commands` takes a flat vector of CommandBlocks and recursively builds a tree with subcommands as children.
 /// It is called by the parser.
 fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
@@ -270,6 +301,8 @@ fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
     for i in 0..num_commands {
         let mut c = commands.get(i).unwrap().clone();
         let is_last_cmd = i == num_commands - 1;
+
+        c.desc = trim_and_remove_options(&c.desc);
 
         // We allow virtually increasing the command level if multiple h1s are found with subcommands
         // This enables us to cat multiple inkjet.md files together and have it function as a larger CLI

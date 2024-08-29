@@ -25,6 +25,7 @@ colored = "2.0.0" # https://github.com/mackwic/colored
 pulldown-cmark = { version = "0.7.2", default-features = false } # https://github.com/raphlinus/pulldown-cmark
 dialoguer = { git = "https://github.com/brandonkal/dialoguer" }
 mdcat = "= 0.16.0"
+regex = "1.10.6"
 
 [dependencies.clap] # https://github.com/clap-rs/clap
 version = "2.33.1"

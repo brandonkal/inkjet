@@ -65,7 +65,9 @@ echo "optional infinite $extras"
         .cli("req")
         .assert()
         .stdout(contains(""))
-        .stderr(contains("error: The following required arguments were not provided:\n    <extras>..."))
+        .stderr(contains(
+            "error: The following required arguments were not provided:\n    <extras>...",
+        ))
         .failure();
     common::run_inkjet(&inkfile_path)
         .cli("opt")
