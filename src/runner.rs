@@ -68,7 +68,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
 
     // If import directive is included,
     // merge all files first and then parse resulting text output
-    if mdtxt.contains("inkjet_import:") {
+    if mdtxt.contains("inkjet_import: all") {
         match execute_merge_command(&inkfile_path) {
             Ok(txt) => {
                 mdtxt = txt;
