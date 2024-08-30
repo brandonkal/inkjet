@@ -230,7 +230,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
     // Convert the flat commands array and to a tree of subcommands based on level
     let all = treeify_commands(commands);
     let all = remove_duplicates(all);
-    let root_command = all.first().expect("root command must exist");
+    let root_command = all.first().expect("Inkjet: root command must exist");
     let has_duplicate_aliases = validate_no_duplicate_aliases(root_command.clone());
     if has_duplicate_aliases {
         return Err("Please update inkjet files to remove duplicate aliases".to_string());
@@ -253,7 +253,7 @@ fn validate_no_duplicate_aliases(cmd: CommandBlock) -> bool {
                     errors.push(alias.to_string());
                     eprintln!(
                         "{} Duplicate command alias found: {}",
-                        "ERROR:".red(),
+                        "ERROR (inkjet):".red(),
                         alias
                     );
                 } else if !alias.is_empty() {
@@ -282,7 +282,7 @@ fn remove_duplicates(mut cmds: Vec<CommandBlock>) -> Vec<CommandBlock> {
                 if already_seen.contains(item) {
                     eprintln!(
                         "{} Duplicate command overwritten: {}",
-                        "INFO:".yellow(),
+                        "INFO (inkjet):".yellow(),
                         item.name
                     );
                     false

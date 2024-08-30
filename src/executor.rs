@@ -104,7 +104,7 @@ pub fn execute_command(
         }
         let parent_dir = get_parent_dir(local_inkfile);
         let mut tempfile = String::new();
-        let mut child = prepare_command(&cmd, &parent_dir, &mut tempfile);
+        let (mut child, mut executor) = prepare_command(&cmd, &parent_dir, &mut tempfile);
         child = add_utility_variables(child, inkfile_path, local_inkfile);
         child = add_flag_variables(child, &cmd);
         if fixed_dir {
@@ -113,6 +113,16 @@ pub fn execute_command(
         let spawned_child = child.spawn();
         match spawned_child {
             Err(err) => {
+                if err.kind() == io::ErrorKind::NotFound {
+                    if executor.is_empty() {
+                        executor = String::from("the executor")
+                    }
+                    eprintln!(
+                        "{} Please check if {} is installed to run the command.",
+                        "ERROR (inkjet):".red(),
+                        executor
+                    );
+                }
                 delete_file(&tempfile); // cov:include (unusual)
                 Some(io::Result::Err(err)) // cov:include
             }
@@ -127,7 +137,11 @@ pub fn execute_command(
 
 fn delete_file(file: &str) {
     if !file.is_empty() && std::fs::remove_file(file).is_err() {
-        eprintln!("{} Failed to delete file {}", "ERROR:".red(), file); // cov:ignore (unusual)
+        eprintln!(
+            "{} Failed to delete temporary file {}",
+            "ERROR (inkjet):".red(),
+            file
+        ); // cov:ignore (unusual)
     }
 }
 
@@ -136,7 +150,7 @@ fn prepare_command(
     cmd: &CommandBlock,
     parent_dir: &str,
     tempfile: &mut String,
-) -> process::Command {
+) -> (process::Command, String) {
     let mut executor = cmd.script.executor.clone();
     let source = cmd.script.source.trim();
     if source.starts_with("#!") {
@@ -144,64 +158,67 @@ fn prepare_command(
         *tempfile = format!("{}/.inkjet-order.{}", parent_dir, hash);
         #[allow(clippy::needless_borrows_for_generic_args)]
         std::fs::write(&tempfile, source)
-            .unwrap_or_else(|_| panic!("Unable to write file {}", &tempfile));
+            .unwrap_or_else(|_| panic!("Inkjet: Unable to write file {}", &tempfile));
         #[allow(clippy::needless_borrows_for_generic_args)]
-        let meta = std::fs::metadata(&tempfile).expect("Unable to read file permissions");
+        let meta = std::fs::metadata(&tempfile).expect("Inkjet: Unable to read file permissions");
         let mut perms = meta.permissions();
         perms.set_mode(0o775);
         #[allow(clippy::needless_borrows_for_generic_args)]
-        std::fs::set_permissions(&tempfile, perms).expect("Could not set permissions");
+        std::fs::set_permissions(&tempfile, perms).expect("Inkjet: Could not set permissions");
 
-        process::Command::new(tempfile)
+        (
+            process::Command::new(tempfile),
+            String::from("the executor"),
+        )
     } else {
         match executor.as_ref() {
             "js" | "javascript" => {
                 let mut child;
                 child = process::Command::new("node");
                 child.arg("-e").arg(source);
-                child
+                (child, String::from("node"))
             }
-            "py" | "python" => {
+            "py" | "python" | "python3" => {
                 let mut child = process::Command::new("python3");
                 child.arg("-c").arg(source);
-                child
+                (child, String::from("python3"))
             }
             "rb" | "ruby" => {
                 let mut child = process::Command::new("ruby");
                 child.arg("-e").arg(source);
-                child
+                (child, String::from("ruby"))
             }
             "php" => {
                 let mut child = process::Command::new("php");
                 child.arg("-r").arg(source);
-                child
+                (child, String::from("php"))
             }
             "ts" | "typescript" => {
                 let mut child = process::Command::new("deno");
-                child.arg("eval").arg("-T").arg(source);
-                child
+                child.arg("eval").arg("--ext=ts").arg(source);
+                (child, String::from("deno"))
             }
             "go" => {
                 let mut child = process::Command::new("yaegi");
                 child.arg("-e").arg(source);
-                child
+                (child, String::from("yaegi"))
             }
             // If no language is specified, we use the default shell
             "" | "sh" | "bash" | "zsh" | "dash" => {
                 if executor.is_empty() {
                     executor = "sh".to_string() // cov:ignore (already added by execute_command)
                 }
-                let mut child = process::Command::new(executor);
+                let mut child = process::Command::new(&executor);
                 let top = "set -e"; // a sane default for scripts
                 let src = format!("{}\n{}", top, source);
                 child.arg("-c").arg(src);
-                child
+                (child, executor)
             }
-            // Any other executor that supports -c (sh, bash, zsh, fish, dash, etc...)
+            // Any other executor that supports -c (fish, etc...)
             _ => {
-                let mut child = process::Command::new(executor); // cov:ignore
+                let mut child = process::Command::new(&executor); // cov:ignore
                 child.arg("-c").arg(source); // cov:ignore
-                child // cov:ignore
+                (child, executor) // cov:ignore
             }
         }
     }
@@ -211,9 +228,9 @@ fn prepare_command(
 fn get_parent_dir(inkfile_path: &str) -> String {
     Path::new(&inkfile_path)
         .parent()
-        .expect("unable to find parent path for inkfile")
+        .expect("Inkjet: unable to find parent path for inkfile")
         .to_str()
-        .expect("inkfile parent path contains invalid UTF-8 characters")
+        .expect("Inkjet: inkfile parent path contains invalid UTF-8 characters")
         .to_string()
 }
 

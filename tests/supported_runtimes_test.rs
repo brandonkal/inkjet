@@ -144,6 +144,29 @@ echo "Hello, " . $name . "!\n";
 }
 
 #[test]
+fn missing_runtime() {
+    let (_temp, inkfile_path) = common::inkfile(
+        r#"
+## missing
+```missingbinary
+$name = getenv("name") ?: "WORLD";
+
+echo "Hello, " . $name . "!\n";
+
+```
+"#,
+    );
+
+    common::run_inkjet(&inkfile_path)
+        .command("missing")
+        .assert()
+        .stderr(contains(
+            "ERROR (inkjet): Please check if missingbinary is installed to run the command.\n",
+        ))
+        .failure();
+}
+
+#[test]
 fn typescript_deno() {
     let (_temp, inkfile_path) = common::inkfile(
         r#"

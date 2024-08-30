@@ -43,7 +43,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
     if inkfile.is_err() {
         if opts.inkfile_opt.is_empty() || opts.inkfile_opt == "./inkjet.md" {
             // Just log a warning and let the process continue
-            eprintln!("{} no inkjet.md found", "WARNING:".yellow());
+            eprintln!("{} no inkjet.md found", "WARNING (inkjet):".yellow());
             // If the inkfile can't be found, at least parse for --version or --help
             if let Err(err) = cli_app.get_matches_from_safe(args) {
                 let rc = if err.kind == clap::ErrorKind::VersionDisplayed

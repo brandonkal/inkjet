@@ -8,7 +8,7 @@ fn main() {
     let (rc, err_str, prefix) = inkjet::runner::run(args, color);
     if !err_str.is_empty() {
         if prefix {
-            eprintln!("{}: {}", "ERROR".red(), err_str);
+            eprintln!("{} {}", "ERROR (inkjet):".red(), err_str);
         } else if rc == 0 {
             println!("{}", err_str);
         } else {
