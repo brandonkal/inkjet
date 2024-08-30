@@ -5,6 +5,7 @@ use pulldown_cmark::{
     Options, Parser, Tag,
 };
 use regex::Regex;
+use std::collections::HashSet;
 
 use crate::command::{Arg, CommandBlock, OptionFlag};
 
@@ -74,7 +75,9 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                     }
                     current_command.name = name;
                     current_command.args = args;
-                    current_command.aliases = aliases;
+                    if !aliases.is_empty() {
+                        current_command.aliases = aliases;
+                    }
                 }
                 Tag::BlockQuote => {
                     // current_command.desc.push_str(&text);
@@ -228,9 +231,41 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
     let all = treeify_commands(commands);
     let all = remove_duplicates(all);
     let root_command = all.first().expect("root command must exist");
-
+    let has_duplicate_aliases = validate_no_duplicate_aliases(root_command.clone());
+    if has_duplicate_aliases {
+        return Err("Please update inkjet files to remove duplicate aliases".to_string());
+    }
     // The command root and a possible init script
     Ok(root_command.clone())
+}
+
+fn validate_no_duplicate_aliases(cmd: CommandBlock) -> bool {
+    let mut duplicates_found = false;
+    let mut seen_aliases: HashSet<String> = HashSet::new();
+    let mut errors: Vec<String> = Vec::new();
+
+    if !cmd.subcommands.is_empty() {
+        for subcommand in cmd.subcommands {
+            let aliases = subcommand.aliases.split("//");
+            for alias in aliases {
+                if seen_aliases.contains(alias) {
+                    duplicates_found = true;
+                    errors.push(alias.to_string());
+                    eprintln!(
+                        "{} Duplicate command alias found: {}",
+                        "ERROR:".red(),
+                        alias
+                    );
+                } else if !alias.is_empty() {
+                    seen_aliases.insert(alias.to_string());
+                }
+            }
+            if !subcommand.subcommands.is_empty() {
+                duplicates_found = validate_no_duplicate_aliases(subcommand)
+            }
+        }
+    }
+    return duplicates_found;
 }
 
 // remove duplicate commands to enable override function
@@ -544,6 +579,36 @@ echo "the string is $str"
                 .expect("option flag not attached")
                 .validate_as_number
         );
+    }
+
+    #[test]
+    fn errors_on_duplicate_alias() {
+        let result = build_command_structure(
+            r#"
+## first//default
+
+> Should be ignored
+OPTIONS
+- flag: -s --str |bool| A boolean
+```
+echo "Ignore me"
+```
+
+## second//default
+OPTIONS
+- flag: -s --str |string| A string
+```
+echo "the string is $str"
+```
+        "#,
+        );
+        assert!(result.is_err());
+        if let Err(ref message) = result {
+            assert_eq!(
+                message,
+                "Please update inkjet files to remove duplicate aliases"
+            );
+        }
     }
 
     #[test]
