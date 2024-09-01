@@ -235,7 +235,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
     if has_duplicate_aliases {
         return Err("Please update inkjet files to remove duplicate aliases".to_string());
     }
-    // The command root and a possible init script
+    // The command root
     Ok(root_command.clone())
 }
 

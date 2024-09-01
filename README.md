@@ -77,7 +77,7 @@ You can also write documentation anywhere you want. Only certain types
 of markdown patterns are parsed to determine the command structure.
 
 ```js
-console.log("running project's tests")
+console.log("running project's tests");
 ```
 ````
 
@@ -307,8 +307,8 @@ echo "Hello, $name!"
 Valid lang codes: js, javascript
 
 ```js
-const { name } = process.env
-console.log(`Hello, ${name}!`)
+const { name } = process.env;
+console.log(`Hello, ${name}!`);
 ```
 
 ## python (name)
@@ -604,7 +604,7 @@ If inkjet is useful to you, please consider authoring one of these features.
 
 ## Author
 
-[Brandon Kalinowski](https://brandonkalinowski.com). This is based on the mask project by [Jake Deichert](https://github.com/jakedeichert).
+[Brandon Kalinowski](https://brandonkalinowski.com). This is based on the mask project by [Jacob Deichert](https://github.com/jacobdeichert).
 This started as a fork of that project and I've added many features such as aliases, interactive execution, preview mode, optional arguments, dash support, default shell with `set -e`, a fixed working directory by default, golang support, shebang support, complete code coverage, and more.
 
 This is my first foray into the realm of Rust programming.
