@@ -1,0 +1,10 @@
+pre-commit:
+  parallel: true
+  commands:
+    cargofmt:
+      stage_fixed: true
+      run: cargo fmt --all
+    prettier:
+      stage_fixed: true
+      exclude: '*.rs'
+      run: prettier --write -u {staged_files}
