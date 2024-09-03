@@ -19,8 +19,8 @@ pub struct CommandBlock {
     pub subcommands: Vec<CommandBlock>,
     /// args represents positional args for this command.
     pub args: Vec<Arg>,
-    /// option_flags contains a collection of all option flags that should exist for this command.
-    pub option_flags: Vec<OptionFlag>,
+    /// option_flags contains a collection of all named flags that should exist for this command.
+    pub named_flags: Vec<NamedFlag>,
     /// start represents the start location of this CommandBlock in the source markdown document.
     pub start: usize,
     /// end represents the end location of this CommandBlock in the source markdown document.
@@ -30,7 +30,7 @@ pub struct CommandBlock {
     /// from this value, the working directory is derived if required.
     pub inkjet_file: String,
     /// validation_error_msg is typically empty. When it contains a value, it typically means that the user tried to provide
-    /// an incorrect type to an option flag.
+    /// an incorrect type to an named flag.
     pub validation_error_msg: String,
 }
 
@@ -52,7 +52,7 @@ impl CommandBlock {
             script: Script::new(),
             subcommands: vec![],
             args: vec![],
-            option_flags: vec![],
+            named_flags: vec![],
             start: 0,
             end: 0,
             inkjet_file: "".to_string(),
@@ -64,7 +64,7 @@ impl CommandBlock {
     pub fn build(mut self) -> Self {
         // Auto add common flags like verbose for commands that have a script source
         if !self.script.source.is_empty() {
-            self.option_flags.push(OptionFlag {
+            self.named_flags.push(NamedFlag {
                 name: "verbose".to_string(),
                 desc: "Sets the level of verbosity".to_string(),
                 short: "v".to_string(),
@@ -72,6 +72,8 @@ impl CommandBlock {
                 multiple: false,
                 takes_value: false,
                 validate_as_number: false,
+                choices: vec![],
+                required: false,
                 val: "".to_string(),
             });
         }
@@ -134,7 +136,7 @@ impl Arg {
 
 #[derive(Debug, Clone, Default)]
 /// OptionFlag is an intermediate representation of an optional flag
-pub struct OptionFlag {
+pub struct NamedFlag {
     /// The name of the flag.
     /// This determines under what environment variable name the flag value will be exposed to a script target.
     pub name: String,
@@ -150,11 +152,15 @@ pub struct OptionFlag {
     pub takes_value: bool,
     /// Set to true if we should validate the flag as a number. Must be set with takes_value=true.
     pub validate_as_number: bool,
+    /// Choices of flag value.
+    pub choices: Vec<String>,
+    /// required is true if the script should fail without the flag
+    pub required: bool,
     /// The value of the flag. Is empty after parsing a markdown document. This value is populated when applying matches.
     pub val: String,
 }
 
-impl OptionFlag {
+impl NamedFlag {
     #[must_use]
     /// Create a new OptionFlag
     pub fn new() -> Self {
@@ -166,6 +172,8 @@ impl OptionFlag {
             multiple: false,
             takes_value: false,
             validate_as_number: false,
+            choices: vec![],
+            required: false,
             val: "".to_string(),
         }
     }

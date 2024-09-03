@@ -43,7 +43,7 @@ echo "Testing $test_case in $file"
 }
 
 #[test]
-fn optional_flags() {
+fn named_flags() {
     let (_temp, inkfile_path) = common::inkfile(
         r#"
 ## serve

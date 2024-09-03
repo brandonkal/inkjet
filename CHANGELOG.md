@@ -31,7 +31,7 @@
 
 ### Added
 
-- Add support for type=number in option flags for numerical validation [#35](https://github.com/jakedeichert/mask/pull/35)
+- Add support for type=number in named flags for numerical validation [#35](https://github.com/jakedeichert/mask/pull/35)
 
 ### Fixed
 

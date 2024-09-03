@@ -168,7 +168,7 @@ fn interactive_params(
 ) -> (Option<CommandBlock>, i32, String) {
     // We sort here as sorted args are only required for interactive prompts
     chosen_cmd.args.sort_by(|a, b| a.name.cmp(&b.name));
-    chosen_cmd.option_flags.sort_by(|a, b| a.name.cmp(&b.name));
+    chosen_cmd.named_flags.sort_by(|a, b| a.name.cmp(&b.name));
     // cov:begin-include
     loop {
         let rv = KeyPrompt::with_theme(&ColoredTheme::default())
@@ -221,7 +221,7 @@ fn interactive_params(
             arg.val = rv
         }
     }
-    for flag in &mut chosen_cmd.option_flags {
+    for flag in &mut chosen_cmd.named_flags {
         if !flag.takes_value {
             if flag.name == "verbose" {
                 continue;
@@ -418,7 +418,7 @@ fn build_subcommands<'a, 'b>(
         }
 
         // Add all optional flags
-        for f in &c.option_flags {
+        for f in &c.named_flags {
             let arg = Arg::with_name(&f.name)
                 .help(&f.desc)
                 .short(&f.short)
@@ -480,7 +480,7 @@ fn get_command_options(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBl
     }
 
     // Check all optional flags
-    for flag in &mut cmd.option_flags {
+    for flag in &mut cmd.named_flags {
         flag.val = if flag.takes_value {
             // Extract the value
             let raw_value = matches

@@ -10,7 +10,7 @@ use pulldown_cmark::{
 use regex::Regex;
 use std::collections::HashSet;
 
-use crate::command::{Arg, CommandBlock, OptionFlag};
+use crate::command::{Arg, CommandBlock, NamedFlag};
 
 /// Creates the message that is returned on an error
 fn invalid_type_msg(t: &str) -> String {
@@ -22,7 +22,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
     let parser = create_markdown_parser(inkfile_contents);
     let mut commands = vec![];
     let mut current_command = CommandBlock::new(1);
-    let mut current_option_flag = OptionFlag::new();
+    let mut current_named_flag = NamedFlag::new();
     let mut text = "".to_string();
     let mut list_level = 0;
     let mut first_was_pushed = false;
@@ -99,10 +99,8 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                     // Must be finished parsing the current option
                     if list_level == 1 {
                         // Add the current one to the list and start a new one
-                        current_command
-                            .option_flags
-                            .push(current_option_flag.clone());
-                        current_option_flag = OptionFlag::new();
+                        current_command.named_flags.push(current_named_flag.clone());
+                        current_named_flag = NamedFlag::new();
                     }
                 }
                 _ => (),
@@ -126,46 +124,45 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                             for word in val.split_whitespace() {
                                 if word.starts_with("--") {
                                     let name = word.split("--").collect::<Vec<&str>>().join("");
-                                    current_option_flag.long = name.clone();
-                                    current_option_flag.name = name;
+                                    current_named_flag.long = name.clone();
+                                    current_named_flag.name = name;
 
                                 // Must be a short flag name
                                 } else if word.starts_with('-') {
                                     // Get the single char
                                     let name = word.get(1..2).unwrap_or("");
-                                    current_option_flag.short = name.to_string();
+                                    current_named_flag.short = name.to_string();
                                 } else if word.starts_with('|') && word.ends_with('|') {
                                     let mut kind = word.to_string();
                                     kind.pop();
                                     kind.remove(0);
                                     match kind.as_str() {
                                         "string" => {
-                                            current_option_flag.takes_value = true;
+                                            current_named_flag.takes_value = true;
                                         }
                                         "number" => {
-                                            current_option_flag.takes_value = true;
-                                            current_option_flag.validate_as_number = true;
+                                            current_named_flag.takes_value = true;
+                                            current_named_flag.validate_as_number = true;
                                         }
                                         "bool" | "boolean" => {}
                                         t => {
                                             return Err(invalid_type_msg(t));
                                         }
                                     }
+                                } else if word == "required" {
                                 } else {
                                     desc_words.push(' ');
                                     desc_words.push_str(word)
                                 }
                             }
-                            current_option_flag.desc = desc_words.trim().to_string();
+                            current_named_flag.desc = desc_words.trim().to_string();
                         }
 
                         // Add the current one to the list and start a new one
-                        current_command
-                            .option_flags
-                            .push(current_option_flag.clone());
-                        current_option_flag = OptionFlag::new();
+                        current_command.named_flags.push(current_named_flag.clone());
+                        current_named_flag = NamedFlag::new();
                     } else {
-                        current_option_flag.name = text.clone();
+                        current_named_flag.name = text.clone();
                     }
                 }
                 // Options level 2 is the flag config
@@ -174,12 +171,12 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                     let param = config_split.next().unwrap_or("").trim();
                     let val = config_split.next().unwrap_or("").trim();
                     match param {
-                        "desc" => current_option_flag.desc = val.to_string(),
+                        "desc" => current_named_flag.desc = val.to_string(),
                         "type" => {
                             if val == "string" || val == "number" {
-                                current_option_flag.takes_value = true;
+                                current_named_flag.takes_value = true;
                                 if val == "number" {
-                                    current_option_flag.validate_as_number = true;
+                                    current_named_flag.validate_as_number = true;
                                 }
                             } else {
                                 return Err(invalid_type_msg(val));
@@ -192,15 +189,24 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                                 // Must be a long flag name
                                 if flag.starts_with("--") {
                                     let name = flag.split("--").collect::<Vec<&str>>().join("");
-                                    current_option_flag.long = name;
+                                    current_named_flag.long = name;
                                 }
                                 // Must be a short flag name
                                 else if flag.starts_with('-') {
                                     // Get the single char
                                     let name = flag.get(1..2).unwrap_or("");
-                                    current_option_flag.short = name.to_string();
+                                    current_named_flag.short = name.to_string();
                                 }
                             }
+                        }
+                        "choices" => {
+                            current_named_flag.choices = val
+                                .split(',')
+                                .map(|choice| choice.trim().to_owned())
+                                .collect();
+                        }
+                        "required" => {
+                            current_named_flag.required = true;
                         }
                         _ => (),
                     };
@@ -534,9 +540,9 @@ echo $set
         assert_eq!(boolean_command.name, "boolean");
         assert!(
             !boolean_command
-                .option_flags
+                .named_flags
                 .first()
-                .expect("option flag not attached")
+                .expect("named flag not attached")
                 .takes_value
         );
     }
@@ -571,16 +577,16 @@ echo "the string is $str"
         assert_eq!(string_command.name, "string");
         assert!(
             string_command
-                .option_flags
+                .named_flags
                 .first()
-                .expect("option flag not attached")
+                .expect("named flag not attached")
                 .takes_value
         );
         assert!(
             !string_command
-                .option_flags
+                .named_flags
                 .first()
-                .expect("option flag not attached")
+                .expect("named flag not attached")
                 .validate_as_number
         );
     }
@@ -712,7 +718,7 @@ echo "abc"
 
     #[test]
     #[allow(clippy::indexing_slicing)]
-    fn adds_verbose_optional_flag_to_command_with_script() {
+    fn adds_verbose_named_flag_to_command_with_script() {
         let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
         let node_command = tree
             .subcommands
@@ -720,16 +726,16 @@ echo "abc"
             .find(|cmd| cmd.name == "node")
             .expect("node command missing");
 
-        assert_eq!(node_command.option_flags.len(), 1);
-        assert_eq!(node_command.option_flags[0].name, "verbose");
+        assert_eq!(node_command.named_flags.len(), 1);
+        assert_eq!(node_command.named_flags[0].name, "verbose");
         assert_eq!(
-            node_command.option_flags[0].desc,
+            node_command.named_flags[0].desc,
             "Sets the level of verbosity"
         );
-        assert_eq!(node_command.option_flags[0].short, "v");
-        assert_eq!(node_command.option_flags[0].long, "verbose");
-        assert!(!node_command.option_flags[0].multiple);
-        assert!(!node_command.option_flags[0].takes_value);
+        assert_eq!(node_command.named_flags[0].short, "v");
+        assert_eq!(node_command.named_flags[0].long, "verbose");
+        assert!(!node_command.named_flags[0].multiple);
+        assert!(!node_command.named_flags[0].takes_value);
     }
 
     #[test]
