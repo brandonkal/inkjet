@@ -69,7 +69,12 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
             }
             End(tag) => match tag {
                 Tag::Heading(heading_level) => {
-                    let (name, aliases, args) = parse_heading_to_cmd(heading_level, text.clone());
+                    let mut virtual_heading_level = heading_level;
+                    if first_was_pushed && heading_level == 1 {
+                        virtual_heading_level = 2; // This case occurs during a merge
+                    }
+                    let (name, aliases, args) =
+                        parse_heading_to_cmd(virtual_heading_level, text.clone());
                     if name.is_empty() {
                         return Err("unexpected empty heading name".to_string());
                     }
@@ -802,5 +807,32 @@ echo something
         if docs_cmd.is_some() {
             panic!("docs command should not exist")
         }
+    }
+
+    #[test]
+    fn errors_if_merged_h1_has_spaces() {
+        let contents = r#"
+<!-- inkfile: /home/ubuntu/code/github.com/brandonkal/inkjet/tests/spaces/inkjet.md -->
+# Tests for Spaces
+
+inkjet_import: all
+
+## before
+
+```
+echo "This has spaces"
+```
+<!-- inkfile: /home/ubuntu/code/github.com/brandonkal/inkjet/tests/spaces/merged.inkjet.md -->
+# Tests for Spaces
+
+## merged
+
+```
+echo "This has spaces"
+```
+```
+    "#;
+        let tree = build_command_structure(contents);
+        tree.expect_err("Command names cannot contain spaces. Found 'tests for spaces'. Did you forget to wrap args in ()?");
     }
 }

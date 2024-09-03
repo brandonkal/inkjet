@@ -536,6 +536,7 @@ echo "This should not run"
         assert_eq!(rc, 10);
         assert_eq!(err_str, "No such file or directory (os error 2)");
     }
+
     #[test]
     fn numbers() {
         let is_f = is_invalid_number(false, "string");
@@ -546,6 +547,7 @@ echo "This should not run"
         assert!(is_t);
         not_number_err_msg("flag");
     }
+
     #[test]
     fn modify_args() {
         let (_, a) = pre_parse(svec!("inkjet", "tests/simple_case/inkjet.md", "-p"));
@@ -560,6 +562,7 @@ echo "This should not run"
             )
         );
     }
+
     #[test]
     fn no_leak_to_positional_args() {
         let (_, a) = pre_parse(svec!("inkjet", "tests/simple_case/inkjet.md"));
@@ -573,17 +576,20 @@ echo "This should not run"
             )
         );
     }
+
     #[test]
     fn modify_args2() {
         let x2 = svec!("inkjet", "-p", "--inkfile", "file.txt", "-", "something");
         let (_, o) = pre_parse(x2.clone());
         assert_eq!(o, x2);
     }
+
     #[test]
     fn preview() {
         let args = svec!["inkjet", "tests/simple_case/inkjet.md", "-p"];
         run(args, false);
     }
+
     #[test]
     fn inkfile_with_equals() {
         let (o, a) = pre_parse(svec!("inkjet", "--inkfile=tests/simple_case/inkjet.md"));
@@ -593,6 +599,7 @@ echo "This should not run"
         );
         assert!(o.inkfile_opt.contains("simple_case/inkjet.md"));
     }
+
     #[test]
     fn implicit_inkfile_flag() {
         let (o, a) = pre_parse(svec!("inkjet", "tests/simple_case/inkjet.md", "--flag"));
@@ -608,6 +615,7 @@ echo "This should not run"
         );
         assert!(o.inkfile_opt.contains("simple_case/inkjet.md"));
     }
+
     #[test]
     fn implicit_inkfile_param() {
         let (o, a) = pre_parse(svec!(
