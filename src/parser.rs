@@ -63,9 +63,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                 };
 
                 // Reset all state
-                // if !in_block_quote {
                 text = "".to_string();
-                // }
             }
             End(tag) => match tag {
                 Tag::Heading(heading_level) => {
@@ -88,9 +86,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                     }
                 }
                 Tag::BlockQuote => {
-                    // current_command.desc.push_str(&text);
                     if in_block_quote {
-                        // current_command.desc.push_str(&text);
                         in_block_quote = false;
                     }
                 }
