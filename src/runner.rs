@@ -119,7 +119,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
     };
 
     let mut chosen_cmd = find_command(&matches, &root_command.subcommands)
-        .expect("SubcommandRequired failed to work");
+        .expect("Inkjet: SubcommandRequired failed to work");
     if !chosen_cmd.validation_error_msg.is_empty() {
         return (1, chosen_cmd.validation_error_msg, true);
     }
@@ -130,7 +130,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
 
         let portion = &mdtxt
             .get(chosen_cmd.start..chosen_cmd.end)
-            .expect("portion out of bounds");
+            .expect("Inkjet: portion out of bounds");
         let print_err = p.print_markdown(portion);
         if let Err(err) = print_err {
             return (10, format!("printing markdown: {}", err), true); // cov:include (unusual error)
@@ -176,7 +176,7 @@ fn interactive_params(
             .items(&['y', 'n', 'p'])
             .default(0)
             .interact()
-            .expect("unable to read response");
+            .expect("Inkjet: unable to read response");
         if rv == 'y' {
             break;
         } else if rv == 'p' {
@@ -217,7 +217,7 @@ fn interactive_params(
                 .allow_empty(!arg.required)
                 .default(arg.default.clone())
                 .interact()
-                .expect("unable to read input");
+                .expect("Inkjet: unable to read input");
             arg.val = rv
         }
     }
@@ -231,7 +231,7 @@ fn interactive_params(
                     .with_text(&format!("{}: Set {} option?", chosen_cmd.name, flag.name))
                     .default(false)
                     .interact()
-                    .expect("unable to confirm option");
+                    .expect("Inkjet: unable to confirm option");
                 if rv {
                     flag.val = "true".to_string();
                 }
@@ -244,7 +244,7 @@ fn interactive_params(
                     .with_prompt(&format!("{}: Enter option for {}", chosen_cmd.name, name,))
                     .allow_empty(true)
                     .interact()
-                    .expect("unable to read option");
+                    .expect("Inkjet: unable to read option");
                 if is_invalid_number(flag.validate_as_number, &rv) {
                     eprintln!("{}: {}", "INVALID".red(), not_number_err_msg(&name));
                     continue;
@@ -368,7 +368,7 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
 fn canonical_path(p: &str) -> String {
     Path::new(p)
         .to_str()
-        .expect("could not canonicalize path")
+        .expect("Inkjet: could not canonicalize path")
         .to_string()
 }
 

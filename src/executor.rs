@@ -58,7 +58,10 @@ fn run_bat(source: String, lang: &str) -> io::Result<process::Child> {
         .spawn()
     {
         Ok(mut child) => {
-            let mut child_stdin = child.stdin.take().expect("unable to build stdin");
+            let mut child_stdin = child
+                .stdin
+                .take()
+                .expect("Inkjet (bat): unable to build stdin");
             child_stdin.write_all(source.as_bytes())?;
             io::Result::Ok(child)
         }
@@ -276,7 +279,7 @@ fn add_flag_variables(mut child: process::Command, cmd: &CommandBlock) -> proces
         let val = if arg.val.is_empty() && arg.default.is_some() {
             arg.default // cov:include (tested by default_args integration)
                 .as_ref()
-                .expect("unable to ref command default arg")
+                .expect("Inkjet: unable to ref command default arg")
         } else {
             arg.val.as_str()
         };
