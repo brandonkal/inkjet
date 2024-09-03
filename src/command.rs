@@ -1,3 +1,6 @@
+// Copyright 2020 Brandon Kalinowski (brandonkal)
+// SPDX-License-Identifier: MIT
+
 /// CommandBlock represents a target constructed from the inkjet file parsing process.
 /// It provides all the options required to then execute the target.
 #[derive(Debug, Clone)]

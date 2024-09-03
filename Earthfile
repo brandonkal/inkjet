@@ -1,3 +1,6 @@
+# Copyright 2020 Brandon Kalinowski (brandonkal)
+# SPDX-License-Identifier: MIT
+
 VERSION 0.8
 IMPORT github.com/earthly/lib/rust:3.0.1 AS rust
 

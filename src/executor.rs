@@ -1,3 +1,6 @@
+// Copyright 2020 Brandon Kalinowski (brandonkal)
+// SPDX-License-Identifier: MIT
+
 use colored::*;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};

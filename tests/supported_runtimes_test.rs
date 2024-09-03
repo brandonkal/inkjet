@@ -1,3 +1,6 @@
+// Copyright 2020 Brandon Kalinowski (brandonkal)
+// SPDX-License-Identifier: MIT
+
 use assert_cmd::prelude::*;
 use predicates::str::contains;
 

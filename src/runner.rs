@@ -1,3 +1,6 @@
+// Copyright 2020 Brandon Kalinowski (brandonkal)
+// SPDX-License-Identifier: MIT
+
 use dialoguer::theme::ColoredTheme;
 use dialoguer::{Confirmation, Input, KeyPrompt};
 use std::collections::HashSet;

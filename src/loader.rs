@@ -1,3 +1,6 @@
+// Copyright 2020 Brandon Kalinowski (brandonkal)
+// SPDX-License-Identifier: MIT
+
 use std::fs;
 use std::fs::File;
 use std::io;

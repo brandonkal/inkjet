@@ -1,3 +1,6 @@
+# Copyright 2020 Brandon Kalinowski (brandonkal)
+# SPDX-License-Identifier: MIT
+
 pre-commit:
   parallel: true
   commands:
@@ -6,5 +9,5 @@ pre-commit:
       run: cargo fmt --all
     prettier:
       stage_fixed: true
-      exclude: '*.rs'
+      exclude: "*.rs"
       run: prettier --write -u {staged_files}

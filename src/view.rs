@@ -1,3 +1,6 @@
+// Copyright 2020 Brandon Kalinowski (brandonkal)
+// SPDX-License-Identifier: MIT
+
 use mdcat::{ResourceAccess, TerminalCapabilities, TerminalSize};
 use pulldown_cmark::{Options, Parser};
 use std::error::Error;

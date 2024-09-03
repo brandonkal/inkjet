@@ -1,3 +1,6 @@
+// Copyright 2020 Brandon Kalinowski (brandonkal)
+// SPDX-License-Identifier: MIT
+
 use colored::*;
 use pulldown_cmark::CodeBlockKind::Fenced;
 use pulldown_cmark::{

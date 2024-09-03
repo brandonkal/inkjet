@@ -1,4 +1,7 @@
 #![warn(clippy::indexing_slicing)]
+// Copyright 2020 Brandon Kalinowski (brandonkal)
+// SPDX-License-Identifier: MIT
+
 use assert_cmd::{cargo, crate_name, prelude::*};
 use assert_fs::prelude::*;
 use std::path::PathBuf;
