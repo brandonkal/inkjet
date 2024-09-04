@@ -59,6 +59,7 @@ pub fn cargo_bin() -> String {
 pub fn temp_path() -> String {
     #[cfg(not(windows))]
     let temp_dir = "/tmp";
+
     #[cfg(windows)]
     let temp_dir = env::var("TEMP").expect("Test error: Could not read %TEMP%");
 

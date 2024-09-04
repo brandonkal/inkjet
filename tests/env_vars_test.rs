@@ -54,6 +54,7 @@ echo "inkjet = $INKJET"
 
         #[cfg(not(windows))]
         let pattern = "inkjet = inkjet --inkfile /";
+
         #[cfg(windows)]
         let pattern = "inkjet = inkjet --inkfile \\\\?\\C:\\Users\\User\\AppData\\Local\\Temp\\";
 
@@ -87,6 +88,7 @@ echo "inkfile_dir = $INKJET_DIR"
 
         #[cfg(not(windows))]
         let pattern = "inkfile_dir = /";
+
         #[cfg(windows)]
         let pattern = "inkfile_dir = \\\\?\\C:\\Users\\User\\AppData\\Local\\Temp";
 

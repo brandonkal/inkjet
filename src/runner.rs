@@ -562,10 +562,13 @@ echo "This should not run"
         let args = svec!("inkjet", "--inkfile", contents);
         let (rc, err_str, _) = run(args, false);
         assert_eq!(rc, 10);
+
         #[cfg(windows)]
         let no_file_error = "program not found";
+
         #[cfg(not(windows))]
         let no_file_error = "No such file or directory (os error 2)";
+
         assert_eq!(err_str, no_file_error);
     }
 
