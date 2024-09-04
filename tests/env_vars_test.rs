@@ -33,7 +33,7 @@ echo "tests passed"
         );
 
         common::run_inkjet(&inkfile_path)
-            .current_dir("/tmp")
+            .current_dir(common::temp_path())
             .command("ci")
             .assert()
             .stdout(contains("tests passed"))
@@ -53,7 +53,7 @@ echo "inkjet = $INKJET"
         );
 
         common::run_inkjet(&inkfile_path)
-            .current_dir("/tmp")
+            .current_dir(common::temp_path())
             .command("run")
             .assert()
             // Absolute inkfile path starts with /
@@ -81,7 +81,7 @@ echo "inkfile_dir = $INKJET_DIR"
         );
 
         common::run_inkjet(&inkfile_path)
-            .current_dir("/tmp")
+            .current_dir(common::temp_path())
             .command("run")
             .assert()
             // Absolute inkfile path starts with /

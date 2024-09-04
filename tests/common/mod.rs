@@ -4,6 +4,7 @@
 
 use assert_cmd::{cargo, crate_name, prelude::*};
 use assert_fs::prelude::*;
+use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -52,4 +53,14 @@ pub fn cargo_bin() -> String {
         return path.to_string_lossy().to_string();
     }
     panic!("Could not locate cargo_bin {:?}", path)
+}
+
+/// Returns temp directory to support Windows testing
+pub fn temp_path() -> String {
+    #[cfg(not(windows))]
+    let temp_dir = "/tmp";
+    #[cfg(windows)]
+    let temp_dir = env::var("TEMP").expect("Test error: Could not read %TEMP%");
+
+    temp_dir.to_string()
 }

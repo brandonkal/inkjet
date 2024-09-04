@@ -12,10 +12,7 @@ echo "Value: $val"
 ```
 
 ```powershell
-param (
-    $in = $env:val
-)
-Write-Output "Value: $in"
+Write-Output "Value: $env:val"
 ```
 
 ## another (necessary)
