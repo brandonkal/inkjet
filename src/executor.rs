@@ -6,7 +6,6 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
 use std::io::Write;
-use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process;
 
@@ -167,10 +166,15 @@ fn prepare_command(
             .unwrap_or_else(|_| panic!("Inkjet: Unable to write file {}", &tempfile));
         #[allow(clippy::needless_borrows_for_generic_args)]
         let meta = std::fs::metadata(&tempfile).expect("Inkjet: Unable to read file permissions");
-        let mut perms = meta.permissions();
-        perms.set_mode(0o775);
-        #[allow(clippy::needless_borrows_for_generic_args)]
-        std::fs::set_permissions(&tempfile, perms).expect("Inkjet: Could not set permissions");
+
+        #[cfg(not(windows))]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = meta.permissions();
+            perms.set_mode(0o775);
+            #[allow(clippy::needless_borrows_for_generic_args)]
+            std::fs::set_permissions(&tempfile, perms).expect("Inkjet: Could not set permissions");
+        }
 
         (
             process::Command::new(tempfile),

@@ -37,6 +37,7 @@ impl Printer {
         // On Windows 10 we need to enable ANSI term explicitly.
         #[cfg(windows)]
         {
+            use ansi_term;
             ansi_term::enable_ansi_support().ok();
         }
 
