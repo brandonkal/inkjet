@@ -241,7 +241,12 @@ fn interactive_params(
             loop {
                 let name = flag.name.clone();
                 rv = Input::with_theme(&ColoredTheme::default())
-                    .with_prompt(&format!("{}: Enter option for {}", chosen_cmd.name, name,))
+                    .with_prompt(&format!(
+                        "{}: Enter option for {}{}",
+                        chosen_cmd.name,
+                        name,
+                        if flag.required { " *" } else { "" }
+                    ))
                     .allow_empty(!flag.required)
                     .interact()
                     .expect("Inkjet: unable to read option");
@@ -450,6 +455,7 @@ fn build_subcommands<'a, 'b>(
                 subcmd = subcmd.visible_alias(s);
             }
         }
+        cli_app = cli_app.subcommand(subcmd);
     }
 
     cli_app

@@ -290,7 +290,7 @@ fn validate_no_duplicate_aliases(cmd: CommandBlock) -> bool {
             }
         }
     }
-    return duplicates_found;
+    duplicates_found
 }
 
 // remove duplicate commands to enable override function

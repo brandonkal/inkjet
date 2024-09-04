@@ -5,8 +5,10 @@ mod common;
 pub use common::*;
 use rexpect::errors::*;
 use rexpect::spawn;
+use std::env;
 
 fn do_interactive() -> Result<()> {
+    env::set_var("NO_COLOR", "1");
     let exec = format!(
         "{} --inkfile tests/simple_case/inkjet.md -i echo",
         cargo_bin()
@@ -15,13 +17,20 @@ fn do_interactive() -> Result<()> {
     p.exp_string("Execute step echo?")?;
     p.send("y")?;
     p.flush()?;
-    p.exp_string("Enter value for name")?;
+    p.exp_string("Enter value for name *")?;
     p.send_line("Brandon")?;
-    p.exp_string("Enter value for optional")?;
+    p.exp_string("Enter value for not_required")?;
     p.send_line("")?;
+    p.exp_string("Enter value for optional (default)")?;
+    p.send_line("")?;
+    p.exp_string("Enter option for any")?;
+    p.send_line("any_value")?;
     p.exp_string("Enter option for num")?;
     p.send_line("42")?;
-    p.exp_string("Hello Brandon! Optional arg is default. Number is 42")?;
+    p.exp_string("Enter option for required *")?;
+    p.send_line("this_was_required")?;
+    p.flush()?;
+    p.exp_string("Hello Brandon! Optional arg is default. Number is 42. Required is this_was_required. Any is any_value.")?;
     Ok(())
 }
 
