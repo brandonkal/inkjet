@@ -3,11 +3,11 @@
 
 mod common;
 pub use common::*;
-use rexpect::errors::*;
+use rexpect::error::Error;
 use rexpect::spawn;
 use std::env;
 
-fn do_interactive() -> Result<()> {
+fn do_interactive() -> Result<(), Error> {
     env::set_var("NO_COLOR", "1");
     let exec = format!(
         "{} --inkfile tests/simple_case/inkjet.md -i echo",
@@ -34,7 +34,7 @@ fn do_interactive() -> Result<()> {
     Ok(())
 }
 
-fn do_interactive_preview() -> Result<()> {
+fn do_interactive_preview() -> Result<(), Error> {
     let exec = format!(
         "{} --inkfile tests/simple_case/inkjet.md -i echo",
         cargo_bin()
@@ -47,7 +47,7 @@ fn do_interactive_preview() -> Result<()> {
     Ok(())
 }
 
-fn do_interactive_skip() -> Result<()> {
+fn do_interactive_skip() -> Result<(), Error> {
     let exec = format!(
         "{} --inkfile tests/simple_case/inkjet.md -i echo",
         cargo_bin()
