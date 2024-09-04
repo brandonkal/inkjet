@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use assert_cmd::prelude::*;
-use predicates::str::contains;
+use predicates::str::{contains, is_match};
 
 mod common;
 pub use common::*;
@@ -57,9 +57,7 @@ echo "starting...
         .command("service")
         .assert()
         .code(1)
-        .stderr(contains(
-            "error: 'inkjet service' requires a subcommand, but one was not provided",
-        ))
+        .stderr(is_match(r"error: 'inkjet(?:\.exe)? service' requires a subcommand, but one was not provided").unwrap())
         .failure();
 }
 
