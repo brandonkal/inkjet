@@ -47,4 +47,6 @@ features = ["parsing", "assets", "dump-load"]
 assert_cmd = "2.0.16" # https://github.com/assert-rs/assert_cmd
 assert_fs = "1.0.0"  # https://github.com/assert-rs/assert_fs
 predicates = "3.1.2"  # https://github.com/assert-rs/predicates-rs
+
+[target.'cfg(not(windows))'.dev-dependencies]
 rexpect = "0.5.0"
