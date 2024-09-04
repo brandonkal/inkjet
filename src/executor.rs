@@ -183,12 +183,13 @@ fn prepare_command(
         #[allow(clippy::needless_borrows_for_generic_args)]
         std::fs::write(&tempfile, source)
             .unwrap_or_else(|_| panic!("Inkjet: Unable to write file {}", &tempfile));
-        #[allow(clippy::needless_borrows_for_generic_args)]
-        let meta = std::fs::metadata(&tempfile).expect("Inkjet: Unable to read file permissions");
 
         #[cfg(not(windows))]
         {
             use std::os::unix::fs::PermissionsExt;
+            #[allow(clippy::needless_borrows_for_generic_args)]
+            let meta =
+                std::fs::metadata(&tempfile).expect("Inkjet: Unable to read file permissions");
             let mut perms = meta.permissions();
             perms.set_mode(0o775);
             #[allow(clippy::needless_borrows_for_generic_args)]

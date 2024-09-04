@@ -34,13 +34,6 @@ impl Printer {
         };
         let syntax_set = SyntaxSet::load_defaults_newlines();
 
-        // On Windows 10 we need to enable ANSI term explicitly.
-        #[cfg(windows)]
-        {
-            use ansi_term;
-            ansi_term::enable_ansi_support().ok();
-        }
-
         Printer {
             size: TerminalSize::detect().unwrap_or_default(),
             terminal_capabilities,
