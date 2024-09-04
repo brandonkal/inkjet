@@ -119,10 +119,12 @@ echo "Hello $name"
 
 #[test]
 fn read_stdin() {
-    let script = format!(
-        "cat tests/simple_case/inkjet.md | {} -",
-        common::cargo_bin()
-    );
+    let bin_path = common::cargo_bin();
+
+    #[cfg(windows)]
+    let bin_path = common::convert_windows_path_to_unix(&bin_path);
+
+    let script = format!("cat tests/simple_case/inkjet.md | {} -", bin_path);
     std::process::Command::new("bash")
         .arg("-c")
         .arg(script)

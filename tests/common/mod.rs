@@ -64,3 +64,17 @@ pub fn temp_path() -> String {
 
     temp_dir.to_string()
 }
+
+/// When we use Git bash on Windows we need to convert the path
+pub fn convert_windows_path_to_unix(windows_path: &str) -> String {
+    // Replace backslashes with slashes
+    let unix_path = windows_path.replace("\\", "/");
+
+    // Replace the drive letter (e.g., C:) with its Unix equivalent (/c)
+    let unix_path = unix_path
+        .strip_prefix("C:")
+        .map(|s| format!("/c{}", s))
+        .unwrap_or(unix_path.to_string());
+
+    unix_path
+}
