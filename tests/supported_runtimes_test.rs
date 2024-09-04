@@ -189,6 +189,7 @@ console.log(`Hello ${name}!`);
 }
 
 #[test]
+#[cfg(not(windows))]
 fn go() {
     let (_temp, inkfile_path) = common::inkfile(
         r#"
@@ -214,6 +215,7 @@ func main() {
 }
 
 #[test]
+#[cfg(not(windows))]
 fn shebang() {
     let (_temp, inkfile_path) = common::inkfile(
         r#"
