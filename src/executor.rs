@@ -209,9 +209,15 @@ fn prepare_command(
                 (child, String::from("node"))
             }
             "py" | "python" | "python3" => {
-                let mut child = process::Command::new("python3");
+                #[cfg(not(windows))]
+                let the_executor = "python3";
+
+                #[cfg(windows)]
+                let the_executor = "python";
+
+                let mut child = process::Command::new(the_executor);
                 child.arg("-c").arg(source);
-                (child, String::from("python3"))
+                (child, String::from(the_executor))
             }
             "rb" | "ruby" => {
                 let mut child = process::Command::new("ruby");
