@@ -562,7 +562,11 @@ echo "This should not run"
         let args = svec!("inkjet", "--inkfile", contents);
         let (rc, err_str, _) = run(args, false);
         assert_eq!(rc, 10);
-        assert_eq!(err_str, "No such file or directory (os error 2)");
+        #[cfg(windows)]
+        let noFileError = "program not found";
+        #[cfg(not(windows))]
+        let no_file_error = "No such file or directory (os error 2)";
+        assert_eq!(err_str, no_file_error);
     }
 
     #[test]
@@ -672,6 +676,12 @@ echo "This should not run"
 ## default
 ```
 echo "This is the default"
+```
+```powershell
+param (
+    $in = $env:val
+)
+Write-Output "Value: $in"
 ```
 "#;
         let args = svec!("inkjet", "--inkfile", contents);
