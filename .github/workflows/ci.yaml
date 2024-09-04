@@ -20,15 +20,9 @@ jobs:
       CLICOLOR_FORCE: 1
     steps:
       - uses: actions/checkout@v4
-      - name: Add Ruby for a test that requires it
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: 2.6
       - name: Fetch dependencies
         run: cargo fetch
       - name: Build in test mode
         run: cargo build --tests --frozen
-      # - name: Make inkjet available globally (windows)
-      #   run: copy ./target/debug/inkjet.exe ~/.cargo/bin/
       - name: Run tests
         run: cargo test --frozen
