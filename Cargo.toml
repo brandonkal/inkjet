@@ -32,6 +32,7 @@ pulldown-cmark = { version = "0.7.2", default-features = false } # https://githu
 dialoguer = { git = "https://github.com/brandonkal/dialoguer" }
 mdcat = "= 0.16.0"
 regex = "1.10.6"
+walkdir = "2"
 
 [dependencies.clap] # https://github.com/clap-rs/clap
 version = "2.33.1"

@@ -3,11 +3,13 @@
 
 use colored::*;
 use std::collections::hash_map::DefaultHasher;
+use std::fs;
 use std::hash::{Hash, Hasher};
 use std::io;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process;
+use walkdir::WalkDir;
 
 use clap::crate_name;
 
@@ -30,24 +32,41 @@ fn needs_set_e(s: &str) -> bool {
 /// returns the output of the merge operation: a new inkfile content String
 pub fn execute_merge_command(inkfile_path: &str) -> Result<String, String> {
     let parent_dir = get_parent_dir(inkfile_path);
-    let convert_code = "for f in $(find \"$(pwd -P)\" -name inkjet.md -o -name '*.inkjet.md' | awk -F/ '{print NF-1 \" \" $0 }' | sort -n | cut -d ' ' -f 2-); do printf '<!-- inkfile: %s -->\n' \"$f\"; cat \"$f\"; done";
-    match process::Command::new("sh")
-        .arg("-c")
-        .arg(convert_code)
-        .current_dir(parent_dir)
-        .output()
-    {
-        Ok(out) => {
-            if !out.status.success() {
-                return Err("Inkjet import command failed".to_string()); // cov:ignore
+    // Collect paths that match the criteria
+    let mut inkjet_files: Vec<PathBuf> = vec![];
+
+    // Traverse the directory and find matching files
+    for entry in WalkDir::new(parent_dir) {
+        match entry {
+            Ok(path) => {
+                let filename = path.file_name().to_string_lossy();
+
+                if filename == "inkjet.md" || filename.ends_with(".inkjet.md") {
+                    inkjet_files.push(path.into_path());
+                }
             }
-            match String::from_utf8(out.stdout) {
-                Ok(result) => Ok(result),
-                Err(_) => Err("Injet import command failed to convert to UTF-8".to_string()), // cov:ignore
-            }
+            _ => continue,
         }
-        Err(_) => Err("Inkjet import command failed to start".to_string()), // cov:ignore
     }
+
+    // Sort files by the number of directories in their path
+    inkjet_files.sort_by_key(|path| path.components().count());
+
+    // Prepare a String to collect the combined text
+    let mut combined_text = String::new();
+
+    // Append the content of each file with the required format
+    for file in inkjet_files {
+        let file_str = file.to_string_lossy();
+        combined_text.push_str(&format!("<!-- inkfile: {} -->\n", file_str));
+
+        match fs::read_to_string(&file) {
+            Ok(content) => combined_text.push_str(&content),
+            Err(e) => return Err(format!("Error reading file {}: {}", file_str, e)),
+        }
+    }
+
+    Ok(combined_text)
 }
 
 fn run_bat(source: String, lang: &str) -> io::Result<process::Child> {
@@ -228,13 +247,13 @@ fn prepare_command(
             "cmd" | "batch" => {
                 let mut child = process::Command::new("cmd.exe");
                 child.arg("/c").arg(source);
-                child
+                (child, "cmd.exe".to_string())
             }
             #[cfg(windows)]
             "powershell" => {
                 let mut child = process::Command::new("powershell.exe");
                 child.arg("-c").arg(source);
-                child
+                (child, "powershell.exe".to_string())
             }
             // Any other executor that supports -c (fish, etc...)
             _ => {

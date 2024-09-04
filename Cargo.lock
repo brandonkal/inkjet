@@ -770,6 +770,7 @@ dependencies = [
  "regex",
  "rexpect",
  "syntect",
+ "walkdir",
 ]
 
 [[package]]
