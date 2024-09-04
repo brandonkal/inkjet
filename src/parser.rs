@@ -44,11 +44,17 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                         current_command.inkjet_file = current_file.clone();
                         current_command.start = range.start;
                     }
-                    Tag::CodeBlock(cb) => {
-                        if let Fenced(lang_code) = cb {
+                    #[cfg(not(windows))]
+                    Tag::CodeBlock(Fenced(lang_code)) => {
+                        let lc = lang_code.to_string();
+                        if lc != "powershell" && lc != "batch" && lc != "cmd" {
                             current_command.end = range.start;
-                            current_command.script.executor = lang_code.to_string();
+                            current_command.script.executor = lc;
                         }
+                    }
+                    #[cfg(windows)]
+                    Tag::CodeBlock(Fenced(lang_code)) => {
+                        current_command.script.executor = lang_code.to_string();
                     }
                     Tag::List(_) => {
                         // We're in an options list if the current text above it is "OPTIONS"
@@ -90,6 +96,14 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                         in_block_quote = false;
                     }
                 }
+                #[cfg(not(windows))]
+                Tag::CodeBlock(Fenced(lang_code)) => {
+                    let lc = lang_code.to_string();
+                    if lc != "powershell" && lc != "batch" && lc != "cmd" {
+                        current_command.script.source = text.to_string();
+                    }
+                }
+                #[cfg(windows)]
                 Tag::CodeBlock(_) => {
                     current_command.script.source = text.to_string();
                 }
@@ -150,6 +164,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                                         }
                                     }
                                 } else if word == "required" {
+                                    current_named_flag.required = true;
                                 } else {
                                     desc_words.push(' ');
                                     desc_words.push_str(word)

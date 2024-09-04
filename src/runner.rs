@@ -242,9 +242,18 @@ fn interactive_params(
                 let name = flag.name.clone();
                 rv = Input::with_theme(&ColoredTheme::default())
                     .with_prompt(&format!("{}: Enter option for {}", chosen_cmd.name, name,))
-                    .allow_empty(true)
+                    .allow_empty(!flag.required)
                     .interact()
                     .expect("Inkjet: unable to read option");
+                if !flag.choices.is_empty() && !flag.choices.contains(&rv) {
+                    eprintln!(
+                        "{}: {} flag expects one of {:?}",
+                        "INVALID".red(),
+                        flag.name,
+                        flag.choices
+                    );
+                    continue;
+                }
                 if is_invalid_number(flag.validate_as_number, &rv) {
                     eprintln!("{}: {}", "INVALID".red(), not_number_err_msg(&name));
                     continue;
@@ -401,7 +410,7 @@ fn build_subcommands<'a, 'b>(
             }
         }
 
-        // Add all required and optional arguments
+        // Add all positional arguments
         for a in &c.args {
             let mut arg = Arg::with_name(&a.name).multiple(a.multiple);
             if !opts.preview && !opts.interactive {
@@ -417,14 +426,19 @@ fn build_subcommands<'a, 'b>(
             }));
         }
 
-        // Add all optional flags
+        // Add all named flags
         for f in &c.named_flags {
             let arg = Arg::with_name(&f.name)
                 .help(&f.desc)
                 .short(&f.short)
                 .long(&f.long)
                 .takes_value(f.takes_value)
-                .multiple(f.multiple);
+                .multiple(f.multiple)
+                .required(if opts.preview || opts.interactive {
+                    false
+                } else {
+                    f.required
+                });
             subcmd = subcmd.arg(arg);
         }
         if c.name.starts_with('_') {
@@ -436,7 +450,6 @@ fn build_subcommands<'a, 'b>(
                 subcmd = subcmd.visible_alias(s);
             }
         }
-        cli_app = cli_app.subcommand(subcmd);
     }
 
     cli_app
@@ -479,7 +492,7 @@ fn get_command_options(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBl
         };
     }
 
-    // Check all optional flags
+    // Check all named flags
     for flag in &mut cmd.named_flags {
         flag.val = if flag.takes_value {
             // Extract the value
@@ -488,6 +501,15 @@ fn get_command_options(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBl
                 .unwrap_or_default()
                 .collect::<Vec<_>>()
                 .join(" ");
+            if !flag.choices.is_empty() && !flag.choices.contains(&flag.val) {
+                cmd.validation_error_msg = format!(
+                    "{}: {} flag expects one of {:?}",
+                    "INVALID".red(),
+                    flag.name,
+                    flag.choices
+                );
+                break;
+            }
 
             if is_invalid_number(flag.validate_as_number, &raw_value) {
                 cmd.validation_error_msg = not_number_err_msg(&flag.name);

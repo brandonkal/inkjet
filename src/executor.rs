@@ -220,6 +220,18 @@ fn prepare_command(
                 child.arg("-c").arg(src);
                 (child, executor)
             }
+            #[cfg(windows)]
+            "cmd" | "batch" => {
+                let mut child = process::Command::new("cmd.exe");
+                child.arg("/c").arg(source);
+                child
+            }
+            #[cfg(windows)]
+            "powershell" => {
+                let mut child = process::Command::new("powershell.exe");
+                child.arg("-c").arg(source);
+                child
+            }
             // Any other executor that supports -c (fish, etc...)
             _ => {
                 let mut child = process::Command::new(&executor); // cov:ignore
@@ -286,7 +298,7 @@ fn add_flag_variables(mut child: process::Command, cmd: &CommandBlock) -> proces
         child.env(arg.name.replace("-", "_"), val);
     }
 
-    // Add all optional flags as environment variables if they have a value
+    // Add all named flags as environment variables if they have a value
     for flag in &cmd.named_flags {
         if !flag.val.is_empty() {
             child.env(flag.name.replace("-", "_"), flag.val.clone());

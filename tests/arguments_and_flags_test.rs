@@ -299,3 +299,69 @@ echo "boo"
             .failure();
     }
 }
+
+mod required_option_flag {
+    use inkjet::parser::build_command_structure;
+
+    use super::*;
+
+    #[test]
+    fn properly_runs_when_required_option_is_supplied() {
+        let contents = r#"
+## required_val
+**OPTIONS**
+* val
+    * flags: --val
+    * type: string
+    * required
+~~~bash
+echo "Value: $val"
+~~~
+~~~powershell
+param (
+    $in = $env:val
+)
+Write-Output "Value: $in"
+~~~
+"#;
+
+        let tree = build_command_structure(contents).expect("failed to build required option tree");
+        let required_val_command = &tree
+            .subcommands
+            .iter()
+            .find(|cmd| cmd.name == "required_val")
+            .expect("serve command missing");
+        assert!(!required_val_command.script.source.is_empty());
+        let the_flag = required_val_command.named_flags.first().unwrap();
+        assert!(the_flag.name == "val");
+        assert!(the_flag.required);
+    }
+
+    #[test]
+    fn errors_when_val_is_not_supplied() {
+        let (_temp, inkfile_path) = common::inkfile(
+            r#"
+## required_val
+**OPTIONS**
+* val
+    * flag: --val
+    * type: string
+    * required
+~~~bash
+echo "This shouldn't render"
+~~~
+~~~powershell
+Write-Output "This shouldn't render"
+~~~
+"#,
+        );
+
+        common::run_inkjet(&inkfile_path)
+            .cli("required_val")
+            .assert()
+            .stderr(contains(
+                "error: The following required arguments were not provided:\n    --val <val>",
+            ))
+            .failure();
+    }
+}

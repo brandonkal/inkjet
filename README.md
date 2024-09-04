@@ -26,7 +26,7 @@ Inkjet works really well as a command runner for projects and sharing snippets a
 
 Here's the [inkjet.md](/inkjet.md) that `inkjet` uses to build itself and run tests!
 
-To get started, follow the guide below or check out the more [advanced features](#features) `inkjet` has such as **positional args**, **optional flags**, **subcommands**, other **scripting runtimes** and more!
+To get started, follow the guide below or check out the more [advanced features](#features) `inkjet` has such as **positional args**, **named flags**, **subcommands**, other **scripting runtimes** and more!
 
 ## Installation
 
@@ -154,9 +154,9 @@ cargo test $extra_args
 ```
 ````
 
-### Optional flags
+### Named flags
 
-You can define a list of optional flags for your commands. The flag name is injected into the script's scope as an environment variable. If a flag name includes a `-` it will be replaced with an underscore (i.e. `--no-color` becomes `no_color`)
+You can define a list of named flags for your commands. The flag name is injected into the script's scope as an environment variable. If a flag name includes a `-` it will be replaced with an underscore (i.e. `--no-color` becomes `no_color`)
 
 It is important to note that `inkjet` always injects a very common `boolean` flag called `verbose` into every single command even if it's not declared. This saves a bit of typing for you! This means every command implicitly has a `-v` and `--verbose` flag available. The value of the `$verbose` environment variable is either `"true"` or simply unset/non-existent.
 

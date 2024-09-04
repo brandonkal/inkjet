@@ -135,7 +135,7 @@ impl Arg {
 }
 
 #[derive(Debug, Clone, Default)]
-/// OptionFlag is an intermediate representation of an optional flag
+/// NamedFlag is an intermediate representation of a named flag
 pub struct NamedFlag {
     /// The name of the flag.
     /// This determines under what environment variable name the flag value will be exposed to a script target.

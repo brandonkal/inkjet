@@ -206,10 +206,10 @@ cargo clippy
 ## deno
 
 ```ts
-import './tests/imported.tsx'
-const five: number = 5
-console.log(five)
-console.log(JSON.stringify(Deno.args))
+import "./tests/imported.tsx";
+const five: number = 5;
+console.log(five);
+console.log(JSON.stringify(Deno.args));
 ```
 
 ## opts (name) (optional?)
@@ -274,10 +274,10 @@ $INKJET cov collect
 
 ```sh
 export CARGO_INCREMENTAL=0
-export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort -Z unstable-options"
+export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
 export RUSTDOCFLAGS="-Cpanic=abort"
-cargo +nightly build --profile coverage -Z unstable-options
-cargo +nightly test --profile coverage -Z unstable-options
+cargo +nightly build --profile coverage
+cargo +nightly test --profile coverage
 ```
 
 ### cov collect
