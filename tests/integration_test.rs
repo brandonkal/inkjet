@@ -222,14 +222,14 @@ ls -1 ls-test
         .success();
 }
 
-// Using current_dir("/tmp") to make sure the default inkjet.md can't be found
+// Using current_dir(common::temp_path()) to make sure the default inkjet.md can't be found
 mod when_no_inkfile_found_in_current_directory {
     use super::*;
 
     #[test]
     fn logs_warning_about_missing_inkfile() {
         common::run_inkjet(&PathBuf::from(""))
-            .current_dir("/tmp")
+            .current_dir(common::temp_path())
             .command("-V")
             .assert()
             .stderr(contains("no inkjet.md found"))
@@ -240,7 +240,7 @@ mod when_no_inkfile_found_in_current_directory {
     #[test]
     fn logs_warning_about_missing_inkfile_for_bad_arguments() {
         common::run_inkjet(&PathBuf::from("./inkjet.md"))
-            .current_dir("/tmp")
+            .current_dir(common::temp_path())
             .command("--bad-argument")
             .assert()
             .stderr(contains("no inkjet.md found"))
@@ -250,7 +250,7 @@ mod when_no_inkfile_found_in_current_directory {
     #[test]
     fn exits_without_error_for_help() {
         common::run_inkjet(&PathBuf::from("./inkjet.md"))
-            .current_dir("/tmp")
+            .current_dir(common::temp_path())
             .command("--help")
             .assert()
             .stdout(contains("USAGE:"))
@@ -260,7 +260,7 @@ mod when_no_inkfile_found_in_current_directory {
     #[test]
     fn exits_without_error_for_version() {
         common::run_inkjet(&PathBuf::from("./inkjet.md"))
-            .current_dir("/tmp")
+            .current_dir(common::temp_path())
             .command("--version")
             .assert()
             .stdout(contains(format!("{} {}", crate_name!(), crate_version!())))
