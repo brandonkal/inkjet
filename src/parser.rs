@@ -54,6 +54,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
                     }
                     #[cfg(windows)]
                     Tag::CodeBlock(Fenced(lang_code)) => {
+                        current_command.end = range.start;
                         current_command.script.executor = lang_code.to_string();
                     }
                     Tag::List(_) => {
