@@ -10,6 +10,11 @@ categories = ["command-line-interface", "command-line-utilities", "development-t
 edition = "2018"
 exclude = ["inkjet.md", ".gitignore", "CHANGELOG.md", "test/**", ".circleci/**"]
 license = "MIT"
+build = "build.rs"
+
+[package.metadata.tauri-winres]
+OriginalFilename = "inkjet.exe"
+LegalCopyright = "Copyright © 2024 Brandon Kalinowski"
 
 [lib]
 name = "inkjet"
@@ -50,3 +55,6 @@ predicates = "3.1.2"  # https://github.com/assert-rs/predicates-rs
 
 [target.'cfg(not(windows))'.dev-dependencies]
 rexpect = "0.5.0"
+
+[target.'cfg(windows)'.build-dependencies]
+tauri-winres = "0.1"
