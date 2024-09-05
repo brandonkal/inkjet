@@ -21,6 +21,11 @@ jobs:
       NO_COLOR: 1
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        id: test
+        with:
+          name: inkjet-windows
+          path: inkjet.md
       - name: Fetch dependencies
         run: cargo fetch
       - name: Build in release mode
