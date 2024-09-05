@@ -6,7 +6,7 @@ IMPORT github.com/earthly/lib/rust:3.0.1 AS rust
 
 FROM rust:slim-bookworm
 RUN apt-get update && apt-get install -y binutils pkg-config openssl libssl-dev \
-    && apt-get install -y --no-install-recommends sudo php python3 ruby curl lcov unzip p7zip-full && apt-get clean
+    && apt-get install -y --no-install-recommends sudo php python3 ruby curl lcov unzip zip p7zip-full && apt-get clean
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs
 RUN curl -fsSL https://deno.land/install.sh | sh
 ENV YAEGI_VERSION v0.16.1
@@ -68,8 +68,8 @@ coverage:
     FROM +test
     ARG EARTHLY_GIT_SHORT_HASH
     RUN inkjet cov
-    RUN zip -9 /output/coverage-inkjet-$EARTHLY_GIT_SHORT_HASH.zip /build/target/cov/* \
-        && mv /build/target/lcov.info /output/coverage-inkjet-$EARTHLY_GIT_SHORT_HASH.lcov.info
+    RUN zip -9 /output/inkjet-coverage-$EARTHLY_GIT_SHORT_HASH.zip /build/target/cov/* \
+        && mv /build/target/lcov.info /output/inkjet-coverage-$EARTHLY_GIT_SHORT_HASH.lcov.info
     SAVE ARTIFACT /output
 # all runs all targets in parallel
 all:
