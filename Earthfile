@@ -42,3 +42,8 @@ coverage:
     RUN mkdir -p /output && zip -9 /output/coverage-inkjet-$EARTHLY_GIT_SHORT_HASH.zip /build/target/cov/* && \
         mv /build/target/lcov.info /output/coverage-inkjet-$EARTHLY_GIT_SHORT_HASH.lcov.info
     SAVE ARTIFACT /output
+# all runs all targets in parallel
+all:
+    BUILD +test
+    BUILD +coverage
+    BUILD +build

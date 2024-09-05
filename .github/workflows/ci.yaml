@@ -31,14 +31,15 @@ jobs:
           name: inkjet-windows
           path: .\target\release\inkjet.exe
   linux:
-    name: linux-test
+    name: linux-ci
     runs-on: earthly
     env:
       FORCE_COLOR: 1
       EARTHLY_CI: true
       EARTHLY_ORG: nimbus
       EARTHLY_SATELLITE: nimbus-sat
+      EARTHLY_TOKEN: "${{ secrets.EARTHLY_TOKEN }}"
     steps:
       - uses: actions/checkout@v4
       - name: Earthly build
-        run: earthly --ci +coverage
+        run: earthly --ci +all
