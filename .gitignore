@@ -42,3 +42,4 @@ node_modules
 # Build outputs
 /inkjet
 /inkjet*.gz
+/output
