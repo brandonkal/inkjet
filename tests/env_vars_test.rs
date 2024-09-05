@@ -24,10 +24,22 @@ mod env_var_inkjet {
 $INKJET test
 ~~~
 
+~~~powershell
+$path = $env:INKJET.replace("\\?\", "")
+$pos = $path.IndexOf(" ");
+$arglist = $path.Substring($pos + 1);
+
+Start-Process inkjet.exe -ArgumentList "$arglist test" -wait -NoNewWindow -PassThru
+~~~
+
 ## test
 
 ~~~bash
 echo "tests passed"
+~~~
+
+~~~powershell
+Write-Output "tests passed"
 ~~~
 "#,
         );

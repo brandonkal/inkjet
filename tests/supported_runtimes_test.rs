@@ -25,6 +25,70 @@ echo "this will execute..."
         .success();
 }
 
+#[cfg(windows)]
+#[test]
+fn powershell() {
+    let (_temp, inkfile_path) = common::inkfile(
+        r#"
+## powershell
+~~~powershell
+param (
+    $name = $env:name
+)
+
+Write-Output "Hello, $name!"
+~~~
+"#,
+    );
+
+    common::run_inkjet(&inkfile_path)
+        .command("powershell")
+        .env("name", "World")
+        .assert()
+        .stdout(contains("Hello, World!"))
+        .success();
+}
+
+#[cfg(windows)]
+#[test]
+fn batch() {
+    let (_temp, inkfile_path) = common::inkfile(
+        r#"
+## batch
+~~~batch
+echo "Hello, %name%!"
+~~~
+"#,
+    );
+
+    common::run_inkjet(&inkfile_path)
+        .command("batch")
+        .env("name", "World")
+        .assert()
+        .stdout(contains("Hello, World!"))
+        .success();
+}
+
+#[cfg(windows)]
+#[test]
+fn cmd() {
+    let (_temp, inkfile_path) = common::inkfile(
+        r#"
+## cmd
+~~~cmd
+echo "Hello, %name%!"
+~~~
+"#,
+    );
+
+    common::run_inkjet(&inkfile_path)
+        .command("cmd")
+        .env("name", "World")
+        .assert()
+        .stdout(contains("Hello, World!"))
+        .success();
+}
+
 #[test]
 fn sh() {
     let (_temp, inkfile_path) = common::inkfile(

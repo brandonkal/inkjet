@@ -597,7 +597,7 @@ Check out our [Contribution Guidelines](CONTRIBUTING.md) before creating an issu
 If inkjet is useful to you, please consider authoring one of these features.
 
 1. First-class Import support. Using markdown links, we can import and combine several inkjet files together. For instance, you can link to your main `inkjet.md` file and define project-specific tasks and overrides in the project-specific `inkjet.md` file.
-2. `inkjet --install https://example.com/your-mask-cli.md` support a la Deno.
+2. `inkjet --install https://example.com/your-inkjet-cli.md` support a la Deno.
 3. Investigate dependency management. The one thing we lose migrating from Makefiles is dependency tracking. Most of my makefiles are filled with .PHONY, but having tasks specify their dependencies is still a welcome option.
 4. Compile markdown file to bash or POSIX script a la mdsh.
 5. Ability to execute any markdown file that contains code blocks, stepping through each section.

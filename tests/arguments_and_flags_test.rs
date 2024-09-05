@@ -20,6 +20,15 @@ fn positional_arguments() {
 ~~~bash
 echo "Testing $test_case in $file"
 ~~~
+
+~~~powershell
+param (
+    $test_case = $env:test_case,
+    $file = $env:file
+)
+
+Write-Output "Testing $test_case in $file"
+~~~
 "#,
     );
 
@@ -135,6 +144,76 @@ echo $(($a + $b))
             .assert()
             .stdout(contains("-16"))
             .success();
+    }
+}
+
+mod choices {
+    use super::*;
+
+    #[test]
+    fn properly_validates_flag_with_choices() {
+        let (_temp, inkfile_path) = common::inkfile(
+            r#"
+## color
+
+**OPTIONS**
+* val
+    * flags: --val
+    * type: string
+    * choices: RED, BLUE, GREEN
+
+```bash
+echo "Value: $val"
+```
+
+```powershell
+param (
+    $in = $env:val
+)
+Write-Output "Value: $in"
+```
+"#,
+        );
+
+        common::run_inkjet(&inkfile_path)
+            .cli("color --val RED")
+            .assert()
+            .stdout(contains("Value: RED"))
+            .success();
+    }
+
+    #[test]
+    fn out_of_choices() {
+        let (_temp, inkfile_path) = common::inkfile(
+            r#"
+## color
+
+**OPTIONS**
+* val
+    * flags: --val
+    * type: string
+    * choices: RED, BLUE, GREEN
+
+```bash
+echo "Value: $val"
+```
+
+```powershell
+param (
+    $in = $env:val
+)
+Write-Output "Value: $in"
+```
+"#,
+        );
+
+        common::run_inkjet(&inkfile_path)
+            .cli("color --val YELLOW")
+            .assert()
+            .stderr(contains(
+                "flag `val` expects one of [\"RED\", \"BLUE\", \"GREEN\"]",
+            ))
+            .failure();
     }
 }
 
@@ -363,5 +442,70 @@ Write-Output "This shouldn't render"
                 "error: The following required arguments were not provided:\n    --val <val>",
             ))
             .failure();
+    }
+}
+
+mod optional_args {
+    use predicates::boolean::PredicateBooleanExt;
+
+    use super::*;
+
+    #[test]
+    fn runs_with_optional_args() {
+        let (_temp, inkfile_path) = common::inkfile(
+            r#"
+## with_opt (required) [optional]
+
+~~~bash
+echo "$required" "$optional"
+~~~
+
+~~~powershell
+param(
+    $req = $env:required,
+    $opt = $env:optional
+)
+
+Write-Output "$req $opt"
+~~~
+"#,
+        );
+
+        common::run_inkjet(&inkfile_path)
+            .cli("with_opt")
+            .arg("I am required")
+            .arg("I am optional")
+            .assert()
+            .stdout(contains("I am required I am optional"))
+            .success();
+    }
+
+    #[test]
+    fn does_not_fail_when_optional_arg_is_not_present() {
+        let (_temp, inkfile_path) = common::inkfile(
+            r#"
+## with_opt (required) [optional]
+
+~~~bash
+echo "$required" "$optional"
+~~~
+
+~~~powershell
+param(
+    $req = $env:required,
+    $opt = $env:optional
+)
+
+Write-Output "$req $opt"
+~~~
+"#,
+        );
+
+        common::run_inkjet(&inkfile_path)
+            .cli("with_opt")
+            .arg("I am required")
+            .assert()
+            .stdout(contains("I am optional").not())
+            .success();
     }
 }
