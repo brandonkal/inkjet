@@ -2,17 +2,39 @@
   <img height="180" width="180" src="https://user-images.githubusercontent.com/4714862/80295323-cf9e8180-8726-11ea-9919-2bbe1de7f5e5.png">
 </p>
 
-# Inkjet --The Executable Markdown and CLI Tool
+# Inkjet --The Executable Markdown and interactive CLI Tool
 
-How long is your README.md?
+With `inkjet` you can build interactive CLIs from your existing Markdown. These CLIs can be as simple as a list of common tasks such as `test`, `build`, and `lint` or as complex applications with subcommands, flags, and options. All of this defined in a simple Markdown file that is both a **human-readable document** and a **command definition**! Your code is documentation and your documentation is code. Because Markdown is documentation focused, the format encourages descriptive text. You can add additional information. This allows others to easily get started with your project's development setup by simply reading your `inkjet.md`.
 
-As developers, we create great new things. We use iterative development to reach new targets. But often the README.md falls behind. In other areas, we work to automate as much as possible. Using tools such as Ansible, Docker, Kubernetes, and Terraform, we aim for "infrastructure as code." Doing this means our infrastructure is well documented and we can create and teardown environments quickly.
+## Use cases
 
-But with all these tools, project set up becomes more complex. Gone are the days of just a `git clone`. The "Getting Started" section of our READMEs resemble long lists of manual tasks that a new developer is expected to execute, often by copying and pasting snippets of code into the terminal.
+Here are just some scenarios enhanced by `inkjet`.
 
-My last young project currently has a README.md that started out as a pasteboard of code snippets to run to reproduce an environment. The document expands with the project. It is reproducible, but it is not yet automated. Using it requires a lot of reading and copy-and-paste into the terminal. Eventually I had planned to move these scripts into a combination of Ansible playbooks, Makefiles, and shell scripts. Automation! But those new scripts would then require additional markdown documentation on how to use them.
+### Rapid CLI development
 
-Open source projects that I respect have extremely complex README files. We automate everything else. Why not the bootstrap process?
+Inkjet is the fastest path to building and distributing custom command line apps. Because you ship a single Markdown file, you can distribute it with any web server. You can quickly convert your bash aliases to a CLI interface or use multiple languages to build an advanced app. It is all wrapped up with your documentation in a single readable file.
+
+### Project specific tasks
+
+You have a project with a bunch of random build and development scripts or an unwieldy `Makefile`. Simplify by having a single, readable file for your team members to add and modify existing tasks.
+
+### Global system utility
+
+You want a global utility CLI for various system tasks such as backing up directories or renaming multiple files. This is easily possible by making a bash alias for `inkjet --inkfile ~/my-global-inkjet.md`.
+
+### Executable interactive tutorials and guides
+
+Blog posts and tutorials often contain text with blocks of code walking the reader through the process of creating or installing an application or using a project. Markdown is commonly used as the authoring format for these guides. Using Inkjet's interactive capabilities, it is simple to take an existing tutorial and distribute an executable documentation file. Users can download your tutorial and read it, preview code blocks, and execute each step inside their terminals.
+
+## Motivation
+
+As developers, we create great new things. We use iterative development to reach new targets. But often the README.md falls behind. In other areas, we work to automate as much as possible. Using tools such as Ansible, Docker, Kubernetes, and Terraform, we aim for "infrastructure as code." Doing this means our infrastructure is well documented, and we can create and teardown environments quickly.
+
+But with all these tools, project set up becomes more complex. Gone are the days of just a `git clone`. The "Getting Started" section of our READMEs resemble long lists of manual tasks that a new developer is expected to execute, typically by copying and pasting snippets of code into the terminal.
+
+My last young project currently has a README.md that started out as a pasteboard of code snippets to run to reproduce an environment. The document expands with the project. It is reproducible, but it is not yet automated. Using it requires a lot of reading and copy-and-paste into the terminal. Eventually, I had planned to move these scripts into a combination of Ansible playbooks, Makefiles, and shell scripts. Automation! But those new scripts would then require additional Markdown documentation on how to use them.
+
+Open-source projects that I respect have extremely complex README files. We automate everything else. Why not the bootstrap process?
 
 That's when it occurred to me -- we need executable documentation. Markdown is well suited for this task because it renders well nearly everywhere with syntax highlighting of code blocks.
 
@@ -20,13 +42,9 @@ Inkjet helps you automate those complex (and currently manual) bootstrap guides.
 
 We can replace Makefiles with inkjet.md files. Inkjet supports many languages, so you can write your tasks in Go, Ruby, TypeScript, bash, Python, etc. More extravagant interpreters are supported by using a shebang at the start of your code block.
 
-With `inkjet` you can build interactive CLIs from your existing markdown. These CLIs can be as simple as a list of common tasks such as `test`, `build`, and `lint` or as complex applications with subcommands, flags, and options. All of this defined in a simple markdown file that is both a **human-readable document** and a **command definition**! Your code is documentation and your documentation is code. Because markdown is documentation focused, the format encourages descriptive text. You can add additional information. This allows others to easily get started with your project's development setup by simply reading your `inkjet.md`.
-
-Inkjet works really well as a command runner for projects and sharing snippets as CLIs. In the fullness of time, inkjet can expand into a general-purpose executable markdown tool.
-
 Here's the [inkjet.md](/inkjet.md) that `inkjet` uses to build itself and run tests!
 
-To get started, follow the guide below or check out the more [advanced features](#features) `inkjet` has such as **positional args**, **named flags**, **subcommands**, other **scripting runtimes** and more!
+To get started, follow the guide below or check out the more [advanced features](#features "Features") `inkjet` has such as **positional args**, **named flags**, **subcommands**, other **scripting runtimes** and more!
 
 ## Installation
 
@@ -38,13 +56,13 @@ Homebrew is the preferred method to install `inkjet` and keep it updated on macO
 brew install brandonkal/tap/inkjet
 ```
 
-### Pre-compiled binaries for linux and macOS
+### Pre-compiled binaries for Linux, macOS, and Windows
 
-Head to the [Releases page][releases] and look for the latest published version. Under **Assets** you'll see zips available for download for linux and macOS. Once downloaded, you can unzip them and then move the `inkjet` binary to somewhere accessible in your `$PATH` like `mv inkjet /usr/local/bin`.
+Head to the [Releases page][releases] and look for the latest published version. Under **Assets** you'll see zips available for download for Linux, macOS, and Windows. Once downloaded, you can extract them and then move the `inkjet` binary to somewhere accessible in your `$PATH` like `mv inkjet /usr/local/bin`.
 
 ### From source
 
-If you prefer to build from source, clone this repo. The entire build script is in [inkjet.md](/inkjet.md).
+If you prefer to build from source, clone this repo. The entire build script is in [inkjet.md](/inkjet.md). The Linux build can also be run via the Earthfile script.
 
 ## Getting started
 
@@ -74,14 +92,14 @@ echo "building project..."
 > Tests my project
 
 You can also write documentation anywhere you want. Only certain types
-of markdown patterns are parsed to determine the command structure.
+of Markdown patterns are parsed to determine the command structure.
 
 ```js
 console.log("running project's tests");
 ```
 ````
 
-Note this code block above is defined as js. By default, inkjet supports sh, bash, zsh, fish, dash, JavaScript (node),
+Note this code block above is defined as js. By default, Inkjet supports sh, bash, zsh, fish, dash, JavaScript (node),
 Python, Ruby, PHP, Go (yaegi), and TypeScript (deno) as scripting runtimes! Using shebang syntax, you can use any other interpreter to execute your scripts.
 
 Then, try running one of your commands!
@@ -93,12 +111,11 @@ inkjet test
 
 ## Name
 
-Why the name inkjet?
+Why the name Inkjet?
 
 - I needed a name that is short and could work with a short alias. I have `alias i=inkjet` in my bashrc. This works well: `i test`, `i build`.
 - Inkjet printers made desktop publishing economical and fast. In the same way, **brandonkal/inkjet** makes building a CLI for project tasks fast and economical.
-- Like the printer, it is well suited for documentation.
-- The name was available. I needed a filename that identifies itself to what it does. Looking through GitHub, there are only a couple of repositories that contain an inkjet.md file and those have to do with the printer.
+- I needed a filename that identifies itself to what it does.
 
 ## Features
 
@@ -108,8 +125,8 @@ Prefixing a subcommand with the interactive flag `-i` executes the command inter
 
 In interactive mode:
 
-1. The task's markdown is rendered to the terminal as rich text with image and link support.
-2. If any flags or options are specified in the spec, inkjet will prompt the user for those parameters.
+1. The task's Markdown is rendered to the terminal as rich text with image and link support.
+2. If any flags or options are specified in the spec, Inkjet will prompt the user for those parameters.
 3. The user will be given the option to execute the step or preview the code block.
 
 Interactive execution mode is useful for tutorial guides or when you are not sure what options or flag parameters are required.
@@ -158,7 +175,7 @@ cargo test $extra_args
 
 You can define a list of named flags for your commands. The flag name is injected into the script's scope as an environment variable. If a flag name includes a `-` it will be replaced with an underscore (i.e. `--no-color` becomes `no_color`)
 
-It is important to note that `inkjet` always injects a very common `boolean` flag called `verbose` into every single command even if it's not declared. This saves a bit of typing for you! This means every command implicitly has a `-v` and `--verbose` flag available. The value of the `$verbose` environment variable is either `"true"` or simply unset/non-existent.
+It is important to note that `inkjet` always injects a very common `boolean` flag called `verbose` into every single command even if it's not declared. This saves a bit of typing for you! This means every command implicitly has a `-v` and `--verbose` flag available. Like all `boolean` flags, the value of the `$verbose` environment variable is either `"true"` or simply unset/non-existent.
 
 **Example:**
 
@@ -176,6 +193,7 @@ It is important to note that `inkjet` always injects a very common `boolean` fla
   - flag: -p --port
   - type: string
   - desc: Which port to serve on
+  - required
 
 ```sh
 PORT=${port:-8080} # Set a fallback port if not supplied
@@ -194,7 +212,7 @@ The above flag can be specified in a single line.
 
 OPTIONS
 
-- flag: -p --port |string| Which port to serve on
+- flag: -p --port |string| required Which port to serve on
 
 ```sh
 echo "Hello $name! Port is $port"
@@ -203,6 +221,8 @@ echo "Task complete."
 ````
 
 You can also make your flag expect a numerical value by setting its `type` to `number`. `inkjet` will automatically validate it as a number for you. If it fails to validate, `inkjet` will exit with a helpful error message.
+
+Flags are optional by default. Note that adding the word "required" to the flag list or shorthand definition will mark the flag a required parameter.
 
 **Example:**
 
@@ -226,7 +246,7 @@ echo "Total: $(($price * $TAX))"
 
 ### Subcommands
 
-Nested command structures can easily be created since they are simply defined by the level of markdown heading. H2 (`##`) is where you define your top-level commands. Every level after that is a subcommand. The only requirement is that subcommands must have all ancestor commands present in their heading.
+Nested command structures can easily be created since they are simply defined by the level of Markdown heading. H2 (`##`) is where you define your top-level commands. Every level after that is a subcommand. The only requirement is that subcommands must have all ancestor commands present in their heading.
 
 **Example:**
 
@@ -264,7 +284,7 @@ echo "Stopping everything"
 
 Simply prefix a subcommand's name with an underscore to make that command hidden. It will not be included in the generated CLI help pages.
 
-This is useful for blocks of code that need to shared for several tasks but should not define a visible user-callable command.
+This is useful for blocks of code that need to be shared by several tasks but should not define a visible user-callable command.
 
 ### Aliases and default target
 
@@ -286,6 +306,8 @@ In the above example, simply calling `inkjet` with no arguments will call the li
 
 On top of shell/bash scripts, `inkjet` also supports using node,
 Python, Ruby, PHP, yaegi, and deno as scripting runtimes. This gives you the freedom to choose the right tool for the specific task at hand. For example, let's say you have a `serve` command and a `snapshot` command. You could choose python to `serve` a simple directory and maybe node to run a puppeteer script that generates a png `snapshot` of each page. If required, you can even specify a custom shebang.
+
+For Python, Linux and Mac will search for a `python3` binary while on Windows, Inkjet expects a `python` binary.
 
 **Example:**
 
@@ -374,6 +396,26 @@ While YAML is typically not executable, you could use shebangs to invoke kubectl
 ```
 ````
 
+### Windows support
+
+If bash is available in your PATH (for example via Git Bash), Inkjet can use it. Alternatively, you can add Powershell, Batch, or Cmd code blocks alongside the Linux/macOS code block. Depending on which platform this runs on, the correct code block will be executed.
+
+**Example:**
+
+````markdown
+## link
+
+> Build and link the binary globally
+
+```bash
+cargo install --force --path .
+```
+
+```powershell
+[Diagnostics.Process]::Start("cargo", "install --force --path .").WaitForExit()
+```
+````
+
 ### Automatic help and usage output
 
 You don't have to spend time writing out help info manually. `inkjet` uses your command descriptions and options to automatically generate help output. For every command, it adds the `-h, --help` flags.
@@ -406,31 +448,31 @@ ARGS:
 
 ### Directives
 
-You can change how parsing occurs by including some special directives in the markdown file.
+You can change how parsing occurs by including some special directives in the Markdown file.
 
 #### inkjet_sort: false
 
-By default subcommands in the help output are listed in the same order
-they are defined in the markdown file. Users can choose to instead have subcommands sorted alphabetically by defining this directive. As an example, if you are using inkjet to distribute a CLI of code snippets, sorted help would make sense. For projects, you may want the order to be as defined (e.g. publish comes after test).
+By default, subcommands in the help output are listed in the same order
+they are defined in the Markdown file. Users can decide to instead have subcommands sorted alphabetically by defining this directive. As an example, if you are using inkjet to distribute a CLI of code snippets, sorted help would make sense. For projects, you may want the order to be as defined (e.g., publish comes after test).
 
 #### inkjet_fixed_dir: false
 
-When you run an inkjet command from a project subdirectory, inkjet will by default search up the tree to find a `inkjet.md` file. In order for commands to work as expected, scripts execute as if their working directory was the same as the location of the `inkjet.md` file that defined them. Similarly, if you call inkjet with `--inkfile tests/inkjet.md`, your commands will execute as if the working directory was `tests`. If this is not desired, simply include the `inkjet_fixed_dir: false` directive in the file to have the working directory match your current directory.
+When you run an inkjet command from a project subdirectory, inkjet will by default search up the tree to find an `inkjet.md` file. In order for commands to work as expected, scripts execute as if their working directory was the same as the location of the `inkjet.md` file that defined them. Similarly, if you call Inkjet with `--inkfile tests/inkjet.md`, your commands will execute as if the working directory was `tests`. If this is not desired, simply include the `inkjet_fixed_dir: false` directive in the file to have the working directory match your current directory.
 
 #### inkjet_import: all
 
 It's often the case that large projects will have multiple `inkjet.md` files.
-For instance, each service may have its own `inkjet.md` file to define how to build and test that component. To enable the import feature, include the text directive `inkjet_import: all` somewhere within your main `inkjet.md` file. If inkjet discovers this directive in the text, it will find all other `inkjet.md` files within the current folder and merge them together before parsing and building out the command tree. If the imported file has an h1 heading, its commands will appear as a subcommand of that heading. If only h2 and below headings are available in the imported file, those commands will become sibling commands for the parent. See [a merged example here](tests/merged-example.md).
+For instance, each service may have its own `inkjet.md` file to define how to build and test that component. To enable the import feature, include the text directive `inkjet_import: all` somewhere within your main `inkjet.md` file. If Inkjet discovers this directive in the text, it will find all other `inkjet.md` files within the current folder and merge them together before parsing and building out the command tree. If the imported file has a H1 heading, its commands will appear as a subcommand of that heading. If only H2 and below headings are available in the imported file, those commands will become sibling commands for the parent. See [a merged example here](tests/merged-example.md).
 
 The merge behavior is as follows:
 
 1. Locate `inkjet.md` files and files ending in `.inkjet.md` within the current folder.
 2. Found `inkjet.md` files are first sorted by directory depth and then alphabetically.
-3. Merged definitions can override previously-defined definitions.
+3. Merged definitions can override previously defined definitions.
 
 The override behavior is useful as it enables you to share generic commands, and then override the generic on a project-by-project basis.
 
-All imported inkjet.md files are run as if they were called directly. Namely, if `inkjet_fixed_dir` is not set to false, imported commands will run with their working directory set to the parent directory of its `inkjet.md` file.
+All imported `inkjet.md` files are run as if they were called directly. Namely, if `inkjet_fixed_dir` is not set to false, imported commands will run with their working directory set to the parent directory of its `inkjet.md` file.
 
 **Example:**
 
@@ -465,9 +507,9 @@ Release
 
 Note that in the above example `.` works because as the docker build is run from frontend directory.
 
-### Running inkjet from within a script
+### Running Inkjet from within a script
 
-You can easily call `inkjet` within scripts if you need to chain commands together. However, if you plan on [running inkjet with a different inkfile](#running-inkjet-with-a-different-inkfile), you should consider using the `$INK` utility instead which allows your scripts to be location-agnostic.
+You can easily call `inkjet` within scripts if you need to chain commands together. However, if you plan on [running inkjet with a different inkfile](#), you should consider using the `$INK` utility instead which allows your scripts to be location-agnostic.
 
 Shell scripts execute as if `set -e` is set.
 
@@ -528,7 +570,7 @@ alias snippet="inkjet --inkfile ~/inkjet.md"
 snippet <subcommand>
 ```
 
-**Tip:** The shorthand alternative to `--inkfile` is `-c`. This flag also accepts the text contents of the inkfile or `-` to read stdin. This is enabled in order to use inkjet as an interpreter similar to other shells. If the value of this flag contains multiple lines, it is interpreted as the contents, otherwise it is parsed as a filename as usual.
+**Tip:** The shorthand alternative to `--inkfile` is `-c`. This flag also accepts the text contents of the inkfile or `-` to read stdin. This allows for using Inkjet as an interpreter similar to other shells. If the value of this flag contains multiple lines, it is interpreted as the contents. Otherwise, it is parsed as a filename as usual.
 
 ```bash
 inkjet -c "$(cat inkjet.md)"
@@ -536,77 +578,39 @@ inkjet -c "$(cat inkjet.md)"
 
 ### Environment variable utilities
 
-Inside of each script's execution environment, `inkjet` injects a few environment variable helpers that might come in handy.
+Inside each script's execution environment, `inkjet` injects a few environment variable helpers.
 
 **`$INK`**
 
-This is useful when [running inkjet within a script](#running-inkjet-from-within-a-script). This variable allows us to call `$INK command` instead of `inkjet --inkfile <path> command` inside scripts so that they can be location-agnostic (not care where they are called from). This is especially handy for global inkfiles which you may call from anywhere.
+This is useful when [running inkjet within a script](#running-inkjet-from-within-a-script "Running Inkjet from within a script"). This variable allows us to call `$INK command` instead of `inkjet --inkfile <path> command` inside scripts so that they can be location-agnostic (not care where they are called from). This is especially handy for global inkfiles which you may call from anywhere.
 
 **`$INKJET`**
 
-This is similar to `INK` above but it always resolves to the original `inkjet.md` file. For instance, You may have some common scripts in the project's main `inkjet.md` file and call those scripts in imported `inkjet.md` files throughout the project. Note that if you call the imported inkfile directly, it will resolve the same as `$INK` above. For this reason, you will see different behavior depending on where you call the script.
+This is similar to `INK` above, except it always resolves to the original `inkjet.md` file. For instance, You may have some common scripts in the project's main `inkjet.md` file and call those scripts in imported `inkjet.md` files throughout the project. Note that if you call the imported inkfile directly, it will resolve the same as `$INK` above. For this reason, you will see different behavior depending on where you call the script.
 
 **`$INK_DIR`**
 
-This variable is an absolute path to the inkfile's parent directory. Having the parent directory available allows us to load files relative to the inkfile itself which can be useful when you have commands that depend on other external files.
+This variable is an absolute path to the inkfile's parent directory. Having the parent directory available allows us to load files relative to the inkfile itself, which can be useful when you have commands that depend on other external files.
 
 **`$INKJET_DIR`**
 
-This is much like `INK_DIR` but it always resolves to the main `inkjet.md` file's parent directory.
+This is much like `INK_DIR` except it always resolves to the main `inkjet.md` file's parent directory.
 
 **`$INKET_IMPORTED`**
 
 A helper utility that is set to "true" if the script was imported by another `inkjet.md` file.
 
-## Use cases
-
-Here's some example scenarios where `inkjet` might be handy.
-
-### Project specific tasks
-
-You have a project with a bunch of random build and development scripts or an unwieldy `Makefile`. Simplify by having a single, readable file for your team members to add and modify existing tasks.
-
-### Global system utility
-
-You want a global utility CLI for a variety of system tasks such as backing up directories or renaming a bunch of files. This is easily possible by making a bash alias for `inkjet --inkfile ~/my-global-inkjet.md`.
-
-### Rapid CLI development
-
-While inkjet is suitable for project tasks, it can also be used to build and distribute custom command line apps. Because you ship a markdown file, you can distribute it with any web server.
-
-### Executable interactive tutorials and guides
-
-Blog posts and tutorials often contain text with blocks of code walking the reader through the process of creating or installing an application or using a project. Markdown is commonly used as the authoring format for these guides. Using inkjet's interactive capabilities, it is simple to take an existing tutorial and distribute an executable documentation file. Users can download your tutorial and read it, preview code blocks, and execute each step inside their terminals.
-
 ## FAQ
-
-### Windows support?
-
-You should prefer WSL2. I don't publish pre-built binaries for Windows. If you really need this, a PR is welcome.
 
 ### Is `inkjet` available as a lib?
 
-Yes. You can call `inkjet::runner::run()` which performs much of the logic. No breaking library changes are planned. If you need inkjet as a library, please let me know and I will publish this as a crate.
-
-## Contributing
-
-Check out our [Contribution Guidelines](CONTRIBUTING.md) before creating an issue or submitting a PR 🙌
-
-### Wishlist
-
-If inkjet is useful to you, please consider authoring one of these features.
-
-1. First-class Import support. Using markdown links, we can import and combine several inkjet files together. For instance, you can link to your main `inkjet.md` file and define project-specific tasks and overrides in the project-specific `inkjet.md` file.
-2. `inkjet --install https://example.com/your-inkjet-cli.md` support a la Deno.
-3. Investigate dependency management. The one thing we lose migrating from Makefiles is dependency tracking. Most of my makefiles are filled with .PHONY, but having tasks specify their dependencies is still a welcome option.
-4. Compile markdown file to bash or POSIX script a la mdsh.
-5. Ability to execute any markdown file that contains code blocks, stepping through each section.
+Yes. You can call `inkjet::runner::run()` which performs much of the logic. No breaking library changes are planned.
 
 ## Author
 
 [Brandon Kalinowski](https://brandonkalinowski.com). This is based on the mask project by [Jacob Deichert](https://github.com/jacobdeichert).
-This started as a fork of that project and I've added many features such as aliases, interactive execution, preview mode, optional arguments, dash support, default shell with `set -e`, a fixed working directory by default, golang support, shebang support, complete code coverage, and more.
+This started as a fork of that project, but has grown on its own. I've added many features such as aliases, interactive execution, preview mode, optional arguments, dash support, default shell with `set -e`, a fixed working directory by default, golang support, shebang support, complete code coverage, and more.
 
-This is my first foray into the realm of Rust programming.
+This was my first foray into the realm of Rust programming.
 
 [Website](https://brandonkalinowski.com)
