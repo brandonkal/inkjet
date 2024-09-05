@@ -149,16 +149,16 @@ echo $(($a + $b))
 
 mod choices {
     use super::*;
+    use inkjet::runner;
 
     #[test]
     fn properly_validates_flag_with_choices() {
-        let (_temp, inkfile_path) = common::inkfile(
-            r#"
+        let contents = r#"
 ## color
 
 **OPTIONS**
 * val
-    * flags: --val
+    * flag: --val
     * type: string
     * choices: RED, BLUE, GREEN
 
@@ -172,8 +172,19 @@ param (
 )
 Write-Output "Value: $in"
 ```
-"#,
+"#;
+        let (_temp, inkfile_path) = common::inkfile(contents);
+
+        /// Creates vector of strings, Vec<String>
+        macro_rules! svec {
+        ($($x:expr),*) => (vec![$($x.to_string()),*]);
+    }
+
+        let (rc, _, _) = runner::run(
+            svec!("inkjet", "--inkfile", contents, "color", "--val", "RED"),
+            false,
         );
+        assert_eq!(0, rc);
 
         common::run_inkjet(&inkfile_path)
             .cli("color --val RED")
@@ -190,7 +201,7 @@ Write-Output "Value: $in"
 
 **OPTIONS**
 * val
-    * flags: --val
+    * flag: --val
     * type: string
     * choices: RED, BLUE, GREEN
 
@@ -211,7 +222,7 @@ Write-Output "Value: $in"
             .cli("color --val YELLOW")
             .assert()
             .stderr(contains(
-                "flag `val` expects one of [\"RED\", \"BLUE\", \"GREEN\"]",
+                "val flag expects one of [\"RED\", \"BLUE\", \"GREEN\"]",
             ))
             .failure();
     }
@@ -390,7 +401,7 @@ mod required_option_flag {
 ## required_val
 **OPTIONS**
 * val
-    * flags: --val
+    * flag: --val
     * type: string
     * required
 ~~~bash
@@ -454,7 +465,7 @@ mod optional_args {
     fn runs_with_optional_args() {
         let (_temp, inkfile_path) = common::inkfile(
             r#"
-## with_opt (required) [optional]
+## with_opt (required) (optional?)
 
 ~~~bash
 echo "$required" "$optional"
@@ -484,7 +495,7 @@ Write-Output "$req $opt"
     fn does_not_fail_when_optional_arg_is_not_present() {
         let (_temp, inkfile_path) = common::inkfile(
             r#"
-## with_opt (required) [optional]
+## with_opt (required) (optional?)
 
 ~~~bash
 echo "$required" "$optional"

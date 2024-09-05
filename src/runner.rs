@@ -507,7 +507,7 @@ fn get_command_options(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBl
                 .unwrap_or_default()
                 .collect::<Vec<_>>()
                 .join(" ");
-            if !flag.choices.is_empty() && !flag.choices.contains(&flag.val) {
+            if !flag.choices.is_empty() && !flag.choices.contains(&raw_value) {
                 cmd.validation_error_msg = format!(
                     "{}: {} flag expects one of {:?}",
                     "INVALID".red(),

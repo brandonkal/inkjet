@@ -521,7 +521,7 @@ This command has no source/script.
 > this should be the description
 **OPTIONS**
 * whatever
-    * flags: -w --whatever
+    * flag: -w --whatever
     * desc: Whatever
 
 ~~~bash
