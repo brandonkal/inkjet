@@ -34,18 +34,18 @@ build:
     DO rust+CARGO --args="build --release --locked --target x86_64-unknown-linux-gnu --bin inkjet" --output="release/[^/\.]+"
     ENV BINARY=/build/target/release/inkjet
     RUN strip $BINARY \
-        && cp $BINARY /output
-        && version=$(./$BINARY --version | awk '{print $2}') \
+        && cp $BINARY /output \
+        && version=$($BINARY --version | awk '{print $2}') \
         && tar -czf /output/inkjet-v${version}-x86_64-unknown-linux-gnu.tar.gz $BINARY \
         && shasum -a 256 /output/* > /output/sum.sha256
     SAVE ARTIFACT /output
 build-musl:
     FROM +source
-    DO rust+CARGO --args="build --release --locked --target x86_64-unknown-linux-musl --bin inkjet" --output="release/[^/\.]+"
+    DO rust+CARGO --args="build --release --locked --target x86_64-unknown-linux-musl --bin inkjet" --output="x86_64-unknown-linux-musl/release/[^/\.]+"
     ENV BINARY=/build/target/x86_64-unknown-linux-musl/release/inkjet
     RUN strip $BINARY \
-        && cp $BINARY /output
-        && version=$(./$BINARY --version | awk '{print $2}') \
+        && cp $BINARY /output \
+        && version=$($BINARY --version | awk '{print $2}') \
         && tar -czf /output/inkjet-v${version}-x86_64-unknown-linux-musl.tar.gz $BINARY \
         && shasum -a 256 /output/* > /output/sum.sha256
     SAVE ARTIFACT /output
@@ -79,3 +79,4 @@ all:
     BUILD +coverage
     BUILD +build
     BUILD +build-musl
+

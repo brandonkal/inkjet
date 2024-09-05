@@ -11,3 +11,7 @@ pre-commit:
       stage_fixed: true
       exclude: "*.rs"
       run: prettier --write -u {staged_files}
+  scripts:
+    "earthly-lint.sh":
+      runner: bash
+      args: [{ staged_files }]
