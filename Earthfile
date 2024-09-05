@@ -5,7 +5,8 @@ VERSION 0.8
 IMPORT github.com/earthly/lib/rust:3.0.1 AS rust
 
 FROM rust:slim-bookworm
-RUN apt-get update && apt-get install -y binutils pkg-config openssl libssl-dev sudo php python3 ruby curl lcov && apt-get clean
+RUN apt-get update && apt-get install -y binutils pkg-config openssl libssl-dev \
+    && apt-get install -y --no-install-recommends sudo php python3 ruby curl lcov unzip p7zip-full && apt-get clean
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs
 RUN curl -fsSL https://deno.land/install.sh | sh
 ENV YAEGI_VERSION v0.16.1
@@ -16,6 +17,7 @@ ENV PATH="$DENO_INSTALL/bin:$PATH"
 RUN rustup toolchain install nightly && rustup component add llvm-tools-preview # for coverage
 RUN rustup target add x86_64-unknown-linux-musl
 RUN cargo install grcov rust-covfix
+RUN rustup component add clippy && rustup component add rustfmt # for lint checks
 RUN mkdir -p /output
 WORKDIR /build
 
@@ -29,19 +31,22 @@ source:
 # build creates the binary target/release/inkjet and generates a tar.gz file in /output
 build:
     FROM +source
-    DO rust+CARGO --args="build --release --frozen --target x86_64-unknown-linux-gnu --bin inkjet" --output="release/[^/\.]+"
-    RUN strip target/release/inkjet \
-        && version=$(./target/release/inkjet --version | awk '{print $2}') \
-        && tar -czf /output/inkjet-v${version}-x86_64-unknown-linux-gnu.tar.gz target/release/inkjet \
+    DO rust+CARGO --args="build --release --locked --target x86_64-unknown-linux-gnu --bin inkjet" --output="release/[^/\.]+"
+    ENV BINARY=/build/target/release/inkjet
+    RUN strip $BINARY \
+        && cp $BINARY /output
+        && version=$(./$BINARY --version | awk '{print $2}') \
+        && tar -czf /output/inkjet-v${version}-x86_64-unknown-linux-gnu.tar.gz $BINARY \
         && shasum -a 256 /output/* > /output/sum.sha256
-    SAVE ARTIFACT target/release/inkjet AS LOCAL inkjet
     SAVE ARTIFACT /output
 build-musl:
     FROM +source
-    DO rust+CARGO --args="build --release --frozen --target x86_64-unknown-linux-musl --bin inkjet" --output="release/[^/\.]+"
-    RUN strip target/release/inkjet \
-        && version=$(./target/release/inkjet --version | awk '{print $2}') \
-        && tar -czf /output/inkjet-v${version}-x86_64-unknown-linux-musl.tar.gz target/release/inkjet \
+    DO rust+CARGO --args="build --release --locked --target x86_64-unknown-linux-musl --bin inkjet" --output="release/[^/\.]+"
+    ENV BINARY=/build/target/x86_64-unknown-linux-musl/release/inkjet
+    RUN strip $BINARY \
+        && cp $BINARY /output
+        && version=$(./$BINARY --version | awk '{print $2}') \
+        && tar -czf /output/inkjet-v${version}-x86_64-unknown-linux-musl.tar.gz $BINARY \
         && shasum -a 256 /output/* > /output/sum.sha256
     SAVE ARTIFACT /output
 # test executes all unit and integration tests via Cargo
