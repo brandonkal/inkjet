@@ -22,6 +22,8 @@ source:
     # See https://github.com/earthly/lib/tree/main/rust
     DO rust+INIT --keep_fingerprints=true
     COPY --keep-ts --dir src Cargo.lock Cargo.toml .
+    COPY inkjet-icon.ico .
+    COPY build.rs .
 # build creates the binary target/release/example-rust
 build:
     FROM +source
