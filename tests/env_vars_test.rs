@@ -70,7 +70,7 @@ echo "inkjet = $INKJET"
         let pattern2 = "inkjet --inkfile /";
 
         #[cfg(windows)]
-        let pattern2 = "inkjet = inkjet --inkfile \\\\?\\C:\\Users\\User\\AppData\\Local\\Temp\\";
+        let pattern2 = "inkjet.exe --inkfile \\\\?\\C:\\Users\\User\\AppData\\Local\\Temp\\";
 
         common::run_inkjet(&inkfile_path)
             .current_dir(common::temp_path())
