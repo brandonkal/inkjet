@@ -21,7 +21,7 @@ jobs:
       NO_COLOR: 1
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         id: test
         with:
           name: inkjet-windows
@@ -30,11 +30,11 @@ jobs:
         run: cargo fetch
       - name: Build in release mode
         run: cargo build --release --frozen
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         id: artifact-upload-step
         with:
           name: inkjet-windows
-          path: target/release/inkjet
+          path: target\release\inkjet
   linux:
     name: linux-test
     runs-on: earthly
