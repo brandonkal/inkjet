@@ -1,14 +1,14 @@
 [package]
 name = "inkjet"
 version = "0.15.0"
-description = "Create interactive CLIs with executable markdown with inkjet"
+description = "Create interactive CLIs and execute Markdown with Inkjet"
 authors = ["Brandon Kalinowski <brandon@brandonkalinowski.com>"]
 repository = "https://github.com/brandonkal/inkjet"
 readme = "README.md"
 keywords = ["cli", "task", "command", "make", "markdown"]
 categories = ["command-line-interface", "command-line-utilities", "development-tools::build-utils", "parser-implementations"]
 edition = "2018"
-exclude = ["inkjet.md", ".gitignore", "CHANGELOG.md", "test/**", ".circleci/**"]
+exclude = ["inkjet.md", ".gitignore", "CHANGELOG.md", "test/**", ".github/**", ".devbox"]
 license = "MIT"
 build = "build.rs"
 
