@@ -277,6 +277,7 @@ export CARGO_INCREMENTAL=0
 export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
 export RUSTDOCFLAGS="-Cpanic=abort"
 cargo +nightly build --profile coverage
+export LLVM_PROFILE_FILE="your_name-%p-%m.profraw"
 cargo +nightly test --profile coverage
 ```
 
@@ -285,11 +286,12 @@ cargo +nightly test --profile coverage
 > Collect coverage report as HTML
 
 ```sh
-v=$($INKJET utils v)
+v="${EARTHLY_GIT_SHORT_HASH:-$(inkjet utils v)}"
+echo "Version is: $v"
 rm -rf target/cov || :
 rm target/cov.zip || :
 mkdir -p target/cov || :
-zip -0 target/cov.zip `find target/coverage \( -name "${PWD##*/}*.gc*" \) -print`
+zip -0 target/cov.zip `find target/coverage \( -name "inkjet*.gc*" \) -print`
 grcov target/cov.zip -s . -t lcov --llvm --ignore-not-existing --ignore "/*" -o target/cov/intermediate.info \
   --excl-start '#\[cfg\(test\)\]' --excl-stop '#\[cfg\(cov:end-exclude\)\]'
 rm target/cov.zip

@@ -98,7 +98,7 @@ mod read_inkfile {
     fn reads_root_inkfile() {
         let (inkfile, _, _) = read_inkfile("./inkjet.md");
 
-        assert!(inkfile.is_ok(), "inkfile was ok");
+        assert!(inkfile.is_ok(), "Inkfile is not ok: {:?}", inkfile);
 
         let contents = inkfile.unwrap();
 
