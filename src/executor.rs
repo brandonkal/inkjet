@@ -3,15 +3,13 @@
 
 use colored::*;
 use std::collections::hash_map::DefaultHasher;
-use std::fs;
 use std::hash::{Hash, Hasher};
 use std::io;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process;
+use std::{env, fs};
 use walkdir::WalkDir;
-
-use clap::crate_name;
 
 use crate::command::CommandBlock;
 
@@ -288,19 +286,20 @@ fn add_utility_variables(
     inkfile_path: &str,
     local_inkfile_path: &str,
 ) -> process::Command {
+    let exe_path = match env::current_exe() {
+        Ok(path) => path.to_string_lossy().into_owned(),
+        _ => "inkjet".to_owned(),
+    };
     // This allows us to call "$INKJET command" instead of "inkjet --inkfile <path> command"
     // inside scripts so that they can be location-agnostic (not care where they are
     // called from). This is useful for global inkfiles especially.
     // $INKJET always refers to the root inkjet script
-    child.env(
-        "INKJET",
-        format!("{} --inkfile {}", crate_name!(), inkfile_path),
-    );
+    child.env("INKJET", format!("{} --inkfile {}", exe_path, inkfile_path));
     // $INK is shorthand for "$INKJET command". The difference here is that it resolves to the local inkjet.md which
     // could differ from $INKJET if the file was imported.
     child.env(
         "INK",
-        format!("{} --inkfile {}", crate_name!(), local_inkfile_path),
+        format!("{} --inkfile {}", exe_path, local_inkfile_path),
     );
     // This allows us to refer to the directory the inkfile lives in which can be handy
     // for loading relative files to it.

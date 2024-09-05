@@ -64,18 +64,21 @@ echo "inkjet = $INKJET"
 "#,
         );
 
+        let pattern1 = "inkjet = ";
+
         #[cfg(not(windows))]
-        let pattern = "inkjet = inkjet --inkfile /";
+        let pattern2 = "inkjet --inkfile /";
 
         #[cfg(windows)]
-        let pattern = "inkjet = inkjet --inkfile \\\\?\\C:\\Users\\User\\AppData\\Local\\Temp\\";
+        let pattern2 = "inkjet = inkjet --inkfile \\\\?\\C:\\Users\\User\\AppData\\Local\\Temp\\";
 
         common::run_inkjet(&inkfile_path)
             .current_dir(common::temp_path())
             .command("run")
             .assert()
             // Absolute inkfile path starts with /
-            .stdout(contains(pattern))
+            .stdout(contains(pattern1))
+            .stdout(contains(pattern2))
             // And ends with inkjet.md
             .stdout(contains("inkjet.md"))
             .success();
