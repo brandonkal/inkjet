@@ -25,3 +25,20 @@ jobs:
         run: cargo fetch
       - name: Build in release mode
         run: cargo build --release --frozen
+      - uses: actions/upload-artifact@v4
+        id: artifact-upload-step
+        with:
+          name: inkjet-windows
+          path: target/release/inkjet
+  linux:
+    name: linux-test
+    runs-on: earthly
+    env:
+      FORCE_COLOR: 1
+      EARTHLY_CI: true
+      EARTHLY_ORG: nimbus
+      EARTHLY_SATELLITE: nimbus-sat
+    steps:
+      - uses: actions/checkout@v4
+      - name: Earthly build
+        run: earthly --ci +coverage
