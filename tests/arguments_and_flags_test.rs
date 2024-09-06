@@ -415,7 +415,8 @@ Write-Output "Value: $in"
 ~~~
 "#;
 
-        let tree = build_command_structure(contents).expect("failed to build required option tree");
+        let tree =
+            build_command_structure(contents, true).expect("failed to build required option tree");
         let required_val_command = &tree
             .subcommands
             .iter()

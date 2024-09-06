@@ -44,7 +44,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         .global_setting(AppSettings::TrailingVarArg)
         .version(crate_version!())
         .about("Inkjet parser created by Brandon Kalinowski\nInkjet is a tool to build interactive CLIs with executable markdown documents.\nSee: https://github.com/brandonkal/inkjet")
-        .after_help("Run 'inkjet --inkjet-print-all' if you wish to view the complete merged inkjet definition.\nRun 'inkjet COMMAND --help' for more information on a command.")
+        .after_help("Run 'inkjet --inkjet-print-all' if you wish to view the complete merged inkjet definition.\nRun 'inkjet --inkjet-dynamic-completions fish/bash/zsh/powershell' to generate shell completions.\nThis is called dynamically by the global shell completion scripts.\nRun 'inkjet COMMAND --help' for more information on a command.")
         .arg(custom_inkfile_path_arg())
         .arg_from_usage(
             "-i --interactive 'Execute the command in the document prompting for arguments'",
@@ -99,7 +99,9 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
     if !mdtxt.contains("inkjet_sort: true") {
         cli_app = cli_app.setting(AppSettings::DeriveDisplayOrder);
     }
-    let root_command = match crate::parser::build_command_structure(&mdtxt) {
+    #[allow(clippy::indexing_slicing)]
+    let in_completions_mode = args.len() > 2 && args[1] == "inkjet-dynamic-completions";
+    let root_command = match crate::parser::build_command_structure(&mdtxt, !in_completions_mode) {
         Ok(cmd) => cmd,
         Err(err) => {
             return (10, err, true);
@@ -110,9 +112,42 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         inkfile_path, root_command.desc
     );
     cli_app = cli_app.about(about_txt.trim());
-    let matches = match build_subcommands(cli_app, &opts, &root_command.subcommands)
-        .get_matches_from_safe(args)
-    {
+    cli_app = build_subcommands(cli_app, &opts, &root_command.subcommands);
+
+    // Manual arg parsing for inkjet-dynamic-completions because it should not be required
+    #[allow(clippy::indexing_slicing)]
+    if in_completions_mode {
+        let shell = match args[2].as_str() {
+            "bash" => clap::Shell::Bash,
+            "fish" => clap::Shell::Fish,
+            "zsh" => clap::Shell::Zsh,
+            "powershell" => clap::Shell::PowerShell,
+            _ => {
+                return (1, format!("Unsupported shell: {}", args[2]), false);
+            }
+        };
+        let mut buffer: Vec<u8> = Vec::new();
+        cli_app.gen_completions_to("inkjet", shell, &mut buffer);
+        let mut output = String::from_utf8_lossy(&buffer).into_owned();
+        if args[2].as_str() == "bash" {
+            output = output
+                .lines()
+                .filter(|line| !line.contains("complete"))
+                .collect::<Vec<&str>>()
+                .join("\n")
+        } else if args[2].as_str() == "fish" {
+            // There is a bug in clap where it adds help commands to completions.
+            // So we filter it out here.
+            output = output
+                .lines()
+                .filter(|line| !line.contains("-a \"help\""))
+                .collect::<Vec<&str>>()
+                .join("\n")
+        }
+        return (0, output, false); // Exit after generating completion
+    }
+
+    let matches = match cli_app.clone().get_matches_from_safe(args) {
         Ok(m) => m,
         Err(err) => {
             let rc = if err.kind == clap::ErrorKind::VersionDisplayed
@@ -302,7 +337,14 @@ struct CustomOpts {
 /// We must parse flags first to handle global flags and implicit defaults
 fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
     let mut opts = CustomOpts::default();
-    let early_exit_modifiers = sset!["-h", "--help", "-V", "--version", "--inkjet-print-all"];
+    let early_exit_modifiers = sset![
+        "-h",
+        "--help",
+        "-V",
+        "--version",
+        "--inkjet-print-all",
+        "--inkjet-dynamic-completions"
+    ];
     // Loop through all args and parse
     let mut inkfile_index = 1000;
     // If the first argument is a markdown file or '-' assume it is a inkfile arg

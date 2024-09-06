@@ -18,7 +18,10 @@ fn invalid_type_msg(t: &str) -> String {
 }
 
 /// The main inkjet markdown parsing logic. Takes an inkfile content as a string and returns the parsed CommandBlock tree.
-pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, String> {
+pub fn build_command_structure(
+    inkfile_contents: &str,
+    log_warnings: bool,
+) -> Result<CommandBlock, String> {
     let parser = create_markdown_parser(inkfile_contents);
     let mut commands = vec![];
     let mut current_command = CommandBlock::new(1);
@@ -255,7 +258,7 @@ pub fn build_command_structure(inkfile_contents: &str) -> Result<CommandBlock, S
 
     // Convert the flat commands array and to a tree of subcommands based on level
     let all = treeify_commands(commands);
-    let all = remove_duplicates(all);
+    let all = remove_duplicates(all, log_warnings);
     let root_command = all.first().expect("Inkjet: root command must exist");
     let has_duplicate_aliases = validate_no_duplicate_aliases(root_command.clone());
     if has_duplicate_aliases {
@@ -295,36 +298,32 @@ fn validate_no_duplicate_aliases(cmd: CommandBlock) -> bool {
 }
 
 // remove duplicate commands to enable override function
-fn remove_duplicates(mut cmds: Vec<CommandBlock>) -> Vec<CommandBlock> {
-    trait Dedup {
-        fn clear_duplicates(&mut self);
-    }
-
-    // Implement Dedup for Vec<CommandBlock>
-    impl Dedup for Vec<CommandBlock> {
-        fn clear_duplicates(&mut self) {
-            let mut already_seen = vec![];
-            self.retain(|item| {
-                if already_seen.contains(item) {
+fn remove_duplicates(mut cmds: Vec<CommandBlock>, log_warnings: bool) -> Vec<CommandBlock> {
+    fn clear_duplicates(cmds: &mut Vec<CommandBlock>, log_warnings: bool) {
+        let mut already_seen = vec![];
+        cmds.retain(|item| {
+            if already_seen.contains(item) {
+                if log_warnings {
                     eprintln!(
                         "{} Duplicate command overwritten: {}",
                         "INFO (inkjet):".yellow(),
                         item.name
                     );
-                    false
-                } else {
-                    already_seen.push(item.clone());
-                    true
                 }
-            });
-        }
+                false
+            } else {
+                already_seen.push(item.clone());
+                true
+            }
+        });
     }
+
     cmds.reverse();
-    cmds.clear_duplicates();
+    clear_duplicates(&mut cmds, log_warnings);
     cmds.reverse();
     for c in &mut cmds {
         if !c.subcommands.is_empty() {
-            c.subcommands = remove_duplicates(c.subcommands.clone());
+            c.subcommands = remove_duplicates(c.subcommands.clone(), log_warnings);
         }
     }
     cmds
@@ -572,6 +571,7 @@ mod build_command_structure {
 echo $set
 ~~~
         "#,
+            true,
         )
         .expect("build tree failed");
         let boolean_command = &tree
@@ -609,6 +609,7 @@ OPTIONS
 echo "the string is $str"
 ```
         "#,
+            true,
         )
         .expect("build tree failed");
         let string_command = &tree
@@ -653,6 +654,7 @@ OPTIONS
 echo "the string is $str"
 ```
         "#,
+            true,
         );
         assert!(result.is_err());
         if let Err(ref message) = result {
@@ -665,7 +667,7 @@ echo "the string is $str"
 
     #[test]
     fn parses_serve_command_description() {
-        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
+        let tree = build_command_structure(TEST_INKJETFILE, true).expect("build tree failed");
         let serve_command = &tree
             .subcommands
             .iter()
@@ -676,7 +678,7 @@ echo "the string is $str"
 
     #[test]
     fn parses_no_space_command_description() {
-        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
+        let tree = build_command_structure(TEST_INKJETFILE, true).expect("build tree failed");
         let serve_command = &tree
             .subcommands
             .iter()
@@ -698,7 +700,7 @@ echo "the string is $str"
 echo "abc"
 ```
        "#;
-        let tree_result = build_command_structure(file);
+        let tree_result = build_command_structure(file, true);
         if let Err(e) = tree_result {
             assert!(e == "Command names cannot contain spaces. Found 'b c'. Did you forget to wrap args in ()?",
                 "Unexpected error message: \"{}\"", e);
@@ -709,7 +711,7 @@ echo "abc"
 
     #[test]
     fn parses_serve_required_positional_arguments() {
-        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
+        let tree = build_command_structure(TEST_INKJETFILE, true).expect("build tree failed");
         let serve_command = &tree
             .subcommands
             .iter()
@@ -721,7 +723,7 @@ echo "abc"
 
     #[test]
     fn parses_serve_command_executor() {
-        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
+        let tree = build_command_structure(TEST_INKJETFILE, true).expect("build tree failed");
         let serve_command = &tree
             .subcommands
             .iter()
@@ -732,7 +734,7 @@ echo "abc"
 
     #[test]
     fn parses_serve_command_source_with_tildes() {
-        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
+        let tree = build_command_structure(TEST_INKJETFILE, true).expect("build tree failed");
         let serve_command = &tree
             .subcommands
             .iter()
@@ -746,7 +748,7 @@ echo "abc"
 
     #[test]
     fn parses_node_command_source_with_backticks() {
-        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
+        let tree = build_command_structure(TEST_INKJETFILE, true).expect("build tree failed");
         let node_command = &tree
             .subcommands
             .iter()
@@ -761,7 +763,7 @@ echo "abc"
     #[test]
     #[allow(clippy::indexing_slicing)]
     fn adds_verbose_named_flag_to_command_with_script() {
-        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
+        let tree = build_command_structure(TEST_INKJETFILE, true).expect("build tree failed");
         let node_command = tree
             .subcommands
             .iter()
@@ -782,7 +784,7 @@ echo "abc"
 
     #[test]
     fn excludes_no_script() {
-        let tree = build_command_structure(TEST_INKJETFILE).expect("build tree failed");
+        let tree = build_command_structure(TEST_INKJETFILE, true).expect("build tree failed");
         let cmd = tree.subcommands.iter().find(|cmd| cmd.name == "no_script");
         if cmd.is_some() {
             panic!("docs command should not exist")
@@ -800,7 +802,7 @@ OPTIONS
 echo "Should not print $b"
 ```
 "#;
-        let err_str = build_command_structure(FILE).expect_err("invalid type should be Err");
+        let err_str = build_command_structure(FILE, true).expect_err("invalid type should be Err");
         assert_eq!(err_str, expected_err);
         const FILE2: &str = r#"
 ## check
@@ -811,7 +813,8 @@ OPTIONS
 ```
 echo "Should not print $val"
         "#;
-        let err_str2 = build_command_structure(FILE2).expect_err("invalid type should be Err");
+        let err_str2 =
+            build_command_structure(FILE2, true).expect_err("invalid type should be Err");
         assert_eq!(err_str2, expected_err);
     }
 
@@ -823,7 +826,8 @@ echo "Should not print $val"
 echo "Should not print"
 ```
 "#;
-        let err_str = build_command_structure(FILE).expect_err("should error on no command name");
+        let err_str =
+            build_command_structure(FILE, true).expect_err("should error on no command name");
         assert_eq!(err_str, "unexpected empty heading name");
     }
 
@@ -846,7 +850,7 @@ echo something
 
 #### docs two c
 "#;
-        let tree = build_command_structure(FILE).expect("failed to build tree");
+        let tree = build_command_structure(FILE, true).expect("failed to build tree");
         let docs_cmd = &tree.subcommands.iter().find(|cmd| cmd.name == "docs");
         if docs_cmd.is_some() {
             panic!("docs command should not exist")
@@ -876,7 +880,7 @@ echo "This has spaces"
 ```
 ```
     "#;
-        let tree = build_command_structure(contents);
+        let tree = build_command_structure(contents, true);
         tree.expect_err("Command names cannot contain spaces. Found 'tests for spaces'. Did you forget to wrap args in ()?");
     }
 
@@ -900,7 +904,7 @@ echo "The values are one=$one two=$two three=$three"
 echo "The flag values are string=$string bool=$bool number=$number"
 ```
     "#;
-        let tree = build_command_structure(contents).expect("failed to build tree");
+        let tree = build_command_structure(contents, true).expect("failed to build tree");
         let mut order_cmd = tree
             .subcommands
             .iter()

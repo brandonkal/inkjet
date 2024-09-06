@@ -136,6 +136,10 @@ Interactive execution mode is useful for tutorial guides or when you are not sur
 
 Prefix a subcommand with the preview flag `-p` to extract code from the specified task's code block. If [bat](https://github.com/sharkdp/bat) is available, it will be used to pretty print the block with syntax highlighting using your installed theme. This mode is also useful for copying the block into the pasteboard: `inkjet -p build | pbcopy`.
 
+### Shell completions
+
+Inkjet can generate completions for your shell dynamically. In this way, you'll get helpful tab completions depending on the Markdown file. See the `completions` folder for the bash and fish scripts. For example the fish script calls `inkjet inkjet-dynamic-completions fish | source`. Your shell may cache results in the short term but generally you can navigate to different folders and get project-specific shell-completion.
+
 ### Positional arguments
 
 These are defined beside the command name within `(round_brackets)`. They are required arguments that must be supplied for the command to run. An argument may be made optional by including a question mark: `(optional_arg?)`. The argument name is injected into the script's scope as an environment variable. Defaults can be set with an equals sign: `(port=8080)`. An arg with a default is naturally optional as well.
