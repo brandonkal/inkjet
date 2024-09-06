@@ -100,7 +100,7 @@ console.log("running project's tests");
 ````
 
 Note this code block above is defined as js. By default, Inkjet supports sh, bash, zsh, fish, dash, JavaScript (node),
-Python, Ruby, PHP, Go (yaegi), and TypeScript (deno) as scripting runtimes! Using shebang syntax, you can use any other interpreter to execute your scripts.
+Python, Ruby, PHP, Go ([yaegi](https://github.com/traefik/yaegi)), and TypeScript ([deno](https://deno.com)) as scripting runtimes! Using shebang syntax, you can use any other interpreter to execute your scripts.
 
 Then, try running one of your commands!
 
@@ -125,15 +125,16 @@ Prefixing a subcommand with the interactive flag `-i` executes the command inter
 
 In interactive mode:
 
-1. The task's Markdown is rendered to the terminal as rich text with image and link support.
+1. The command's Markdown is rendered to the terminal as rich text support.
 2. If any flags or options are specified in the spec, Inkjet will prompt the user for those parameters.
 3. The user will be given the option to execute the step or preview the code block.
+4. Required parameters will have "\*" and if a default is set, the user can preview it and hit enter to
 
 Interactive execution mode is useful for tutorial guides or when you are not sure what options or flag parameters are required.
 
 ### Preview mode
 
-Prefix a subcommand with the preview flag `-p` to extract code from the specified task's code block. If bat is available, it will be used to pretty print the block with syntax highlighting. This mode is also useful for copying the block into the pasteboard: `inkjet -p build | pbcopy`.
+Prefix a subcommand with the preview flag `-p` to extract code from the specified task's code block. If [bat](https://github.com/sharkdp/bat) is available, it will be used to pretty print the block with syntax highlighting using your installed theme. This mode is also useful for copying the block into the pasteboard: `inkjet -p build | pbcopy`.
 
 ### Positional arguments
 

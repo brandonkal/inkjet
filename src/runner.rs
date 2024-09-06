@@ -34,8 +34,9 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         .global_setting(AppSettings::DisableHelpSubcommand)
         .setting(AppSettings::VersionlessSubcommands)
         .global_setting(color_setting)
+        .global_setting(AppSettings::TrailingVarArg)
         .version(crate_version!())
-        .about("Inkjet is a tool to build interactive CLIs with executable markdown documents.\nInkjet parser created by Brandon Kalinowski\nSee: https://github.com/brandonkal/inkjet")
+        .about("Inkjet parser created by Brandon Kalinowski\nInkjet is a tool to build interactive CLIs with executable markdown documents.\nSee: https://github.com/brandonkal/inkjet")
         .after_help("Run 'inkjet --inkjet-print-all' if you wish to view the complete merged inkjet definition.\nRun 'inkjet COMMAND --help' for more information on a command.")
         .arg(custom_inkfile_path_arg())
         .arg_from_usage(
@@ -166,9 +167,6 @@ fn interactive_params(
     color: bool,
     fixed_dir: bool,
 ) -> (Option<CommandBlock>, i32, String) {
-    // We sort here as sorted args are only required for interactive prompts
-    chosen_cmd.args.sort_by(|a, b| a.name.cmp(&b.name));
-    chosen_cmd.named_flags.sort_by(|a, b| a.name.cmp(&b.name));
     // cov:begin-include
     loop {
         let rv = KeyPrompt::with_theme(&ColoredTheme::default())
@@ -422,6 +420,10 @@ fn build_subcommands<'a, 'b>(
                 if let Some(def) = &a.default {
                     arg = arg.default_value(def);
                 }
+                // Handle "extras" arg to collect everything after the --
+                if a.last {
+                    arg = arg.last(true)
+                }
             }
             // If we are printing, we can't have required args
             subcmd = subcmd.arg(arg.required(if opts.preview || opts.interactive {
@@ -471,7 +473,7 @@ fn find_command(matches: &ArgMatches, subcommands: &[CommandBlock]) -> Option<Co
                 if c.name == subcommand_name {
                     // Check if a subcommand was called, otherwise return this command
                     command = find_command(matches, &c.subcommands)
-                        .or_else(|| Some(c.clone()).map(|c| get_command_options(c, matches)));
+                        .or_else(|| Some(c.clone()).map(|c| embed_arg_values(c, matches)));
                     // early exit on validation error (e.g. number required and not supplied)
                     if command
                         .as_ref()
@@ -489,7 +491,7 @@ fn find_command(matches: &ArgMatches, subcommands: &[CommandBlock]) -> Option<Co
 /// For a given set of matches, apply those arg values to the chosen CommandBlock
 /// returns the CommandBlock or an error string on Error (number invalid)
 /// If a flag validation error occurs, the validation_error_msg key will be mutated and parsing will stop.
-fn get_command_options(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBlock {
+fn embed_arg_values(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBlock {
     // Check all required args
     for arg in &mut cmd.args {
         arg.val = match matches.values_of(arg.name.clone()) {

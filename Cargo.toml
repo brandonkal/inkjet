@@ -14,7 +14,7 @@ build = "build.rs"
 
 [package.metadata.tauri-winres]
 OriginalFilename = "inkjet.exe"
-LegalCopyright = "Copyright © 2024 Brandon Kalinowski"
+LegalCopyright = "© 2024 Brandon Kalinowski"
 
 [lib]
 name = "inkjet"

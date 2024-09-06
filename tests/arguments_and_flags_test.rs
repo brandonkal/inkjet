@@ -177,8 +177,8 @@ Write-Output "Value: $in"
 
         /// Creates vector of strings, Vec<String>
         macro_rules! svec {
-        ($($x:expr),*) => (vec![$($x.to_string()),*]);
-    }
+            ($($x:expr),*) => (vec![$($x.to_string()),*]);
+        }
 
         let (rc, _, _) = runner::run(
             svec!("inkjet", "--inkfile", contents, "color", "--val", "RED"),

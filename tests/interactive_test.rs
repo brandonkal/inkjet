@@ -29,16 +29,16 @@ mod interactive {
         p.flush()?;
         p.exp_string("Enter value for name *")?;
         p.send_line("Brandon")?;
-        p.exp_string("Enter value for not_required")?;
-        p.send_line("")?;
         p.exp_string("Enter value for optional (default)")?;
         p.send_line("")?;
-        p.exp_string("Enter option for any")?;
-        p.send_line("any_value")?;
+        p.exp_string("Enter value for not_required")?;
+        p.send_line("")?;
         p.exp_string("Enter option for num")?;
         p.send_line("42")?;
         p.exp_string("Enter option for required *")?;
         p.send_line("this_was_required")?;
+        p.exp_string("Enter option for any")?;
+        p.send_line("any_value")?;
         p.flush()?;
         p.exp_string("Hello Brandon! Optional arg is default. Number is 42. Required is this_was_required. Any is any_value.")?;
         Ok(())

@@ -408,29 +408,31 @@ fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
 }
 
 fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Vec<Arg>) {
-    // Anything after double dash is ignored
-    let text = text.split("--").next().unwrap();
+    // Anything after double dash is handled later -- if defined, it is the last arg
+    let mut parts = text.split(" -- ");
+    let main_text = parts.next().unwrap();
     // Why heading_level > 2? Because level 1 is the root command title (unused)
     // and level 2 can't be a subcommand so no need to split.
     let name = if heading_level > 2 {
         // Takes a subcommand name like this:
-        // "#### db flush postgres (required_arg_name)"
-        // and returns "postgres (required_arg_name)" as the actual name
-        text.split_whitespace()
+        // "#### db flush postgres (arg_name)"
+        // and returns "postgres (arg_name)" as the actual name
+        main_text
+            .split_whitespace()
             .collect::<Vec<&str>>()
             // Get subcommand after the parent command name
             .split_at(heading_level as usize - 2)
             .1
             .join(" ")
     } else if heading_level == 1 {
-        text.split_whitespace().next().unwrap().to_string()
+        main_text.split_whitespace().next().unwrap().to_string()
     } else {
-        text.to_string()
+        main_text.to_string()
     };
 
-    // Find any required arguments. They look like this: (required_arg_name)
+    // Find any arguments. They look like this: (arg_name)
     let name_and_args: Vec<&str> = name.split(|c| c == '(' || c == ')').collect();
-    let (name, args) = name_and_args.split_at(1);
+    let (name, args_split) = name_and_args.split_at(1);
 
     let name = name.join(" ");
     let mut name_and_alias = name.trim().splitn(2, "//");
@@ -445,45 +447,69 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
 
     let mut out_args: Vec<Arg> = vec![];
 
-    if !args.is_empty() {
-        let args = args.join("");
+    // Parse the arg strings and push results to output vector
+    if !args_split.is_empty() {
+        let args = args_split.join("");
         let args: Vec<&str> = args.split_whitespace().collect();
-        for arg in &args {
-            if arg.ends_with('?') {
-                let mut arg = (*arg).to_lowercase();
-                arg.pop(); // remove `?`
-                if arg.ends_with("...") {
-                    arg.pop();
-                    arg.pop();
-                    arg.pop();
-                    out_args.push(Arg::new(arg, false, None, true));
-                } else {
-                    out_args.push(Arg::new(arg, false, None, false));
-                }
-            } else if arg.contains('=') {
-                let parts: Vec<&str> = arg.splitn(2, '=').collect();
-                // will always have >= 2 parts
-                #[allow(clippy::indexing_slicing)]
-                out_args.push(Arg::new(
-                    parts[0].to_lowercase(),
-                    false,
-                    // All words are lowercased but the default
-                    Some(parts[1].to_string()),
-                    false,
-                ));
-            } else if arg.ends_with("...") {
-                let mut arg = (*arg).to_lowercase();
-                arg.pop();
-                arg.pop();
-                arg.pop();
-                out_args.push(Arg::new(arg, true, None, true));
-            } else {
-                out_args.push(Arg::new((*arg).to_lowercase(), true, None, false));
-            }
+        for arg_str in args {
+            out_args.push(parse_arg(arg_str));
         }
     }
 
+    let caps = Regex::new(r"-- \(([^)]+)\)").unwrap().captures(&text);
+    if caps.is_some() {
+        let last_arg = caps
+            .expect("Inkjet: regex should match for last arg")
+            .get(1)
+            .unwrap()
+            .as_str();
+        let mut parsed = parse_arg(last_arg);
+        parsed.last = true;
+        out_args.push(parsed);
+    }
+
     (name, alias, out_args)
+}
+
+fn parse_arg(arg_str: &str) -> Arg {
+    if arg_str.ends_with('?') {
+        let mut arg = (*arg_str).to_lowercase();
+        arg.pop(); // remove `?`
+        if arg.ends_with('…') {
+            arg.pop();
+            Arg::new(arg, false, None, true)
+        } else if arg.ends_with("...") {
+            arg.pop();
+            arg.pop();
+            arg.pop();
+            return Arg::new(arg, false, None, true);
+        } else {
+            return Arg::new(arg, false, None, false);
+        }
+    } else if arg_str.contains('=') {
+        let parts: Vec<&str> = arg_str.splitn(2, '=').collect();
+        // will always have >= 2 parts
+        #[allow(clippy::indexing_slicing)]
+        return Arg::new(
+            parts[0].to_lowercase(),
+            false,
+            // All words are lowercased but the default
+            Some(parts[1].to_string()),
+            false,
+        );
+    } else if arg_str.ends_with('…') {
+        let mut arg = (*arg_str).to_lowercase();
+        arg.pop();
+        return Arg::new(arg, true, None, true);
+    } else if arg_str.ends_with("...") {
+        let mut arg = (*arg_str).to_lowercase();
+        arg.pop();
+        arg.pop();
+        arg.pop();
+        return Arg::new(arg, true, None, true);
+    } else {
+        return Arg::new((*arg_str).to_lowercase(), true, None, false);
+    }
 }
 
 #[cfg(test)]
@@ -852,5 +878,39 @@ echo "This has spaces"
     "#;
         let tree = build_command_structure(contents);
         tree.expect_err("Command names cannot contain spaces. Found 'tests for spaces'. Did you forget to wrap args in ()?");
+    }
+
+    #[test]
+    fn preserves_arguments_order() {
+        let contents = r#"
+## order (one) (two) (three?)
+
+> Test interactive mode with three positional args and three flags
+
+Run this with and without specific options specified.
+
+**OPTIONS**
+
+- flag: -s --string |string| First option
+- flag: --bool Second option
+- flag: --number |number| Enter a number
+
+```sh
+echo "The values are one=$one two=$two three=$three"
+echo "The flag values are string=$string bool=$bool number=$number"
+```
+    "#;
+        let tree = build_command_structure(contents).expect("failed to build tree");
+        let mut order_cmd = tree
+            .subcommands
+            .iter()
+            .find(|cmd| cmd.name == "order")
+            .unwrap()
+            .clone();
+        let mut ordered_result = String::new();
+        for arg in order_cmd.args.iter_mut() {
+            ordered_result.push_str(arg.name.clone().as_str())
+        }
+        assert_eq!(ordered_result, "onetwothree");
     }
 }

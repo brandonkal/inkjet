@@ -118,6 +118,8 @@ pub struct Arg {
     pub default: Option<String>,
     /// Whether or not this Arg can be supplied multiple times. Values will be collected into a space-separated string.
     pub multiple: bool,
+    /// Set last to true for the last arg after the -- separator
+    pub last: bool,
 }
 
 impl Arg {
@@ -130,6 +132,7 @@ impl Arg {
             required,
             default,
             multiple,
+            last: false,
         }
     }
 }

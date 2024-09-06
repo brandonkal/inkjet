@@ -6,7 +6,7 @@
 echo "expected output"
 ```
 
-## echo (name) (optional=default) (not_required?)
+## echo (name) (optional=default) (not_required?) -- (extras...?)
 
 > Echo something interactively
 
@@ -16,8 +16,8 @@ echo "expected output"
 - flag: --required -r |string| required This must be specified
 - flag: --any |string| Anything you want
 
-```
-echo "Hello $name! Optional arg is $optional. Number is $num. Required is $required. Any is $any. extras is \"$extras\""
+```bash
+echo "Hello $name! Optional arg is \"$optional\". Number is \"$num\". Required is \"$required\". Any is \"$any\". extras is \"$extras\""
 ```
 
 ## extras (extra...?)
