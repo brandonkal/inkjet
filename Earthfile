@@ -31,23 +31,25 @@ source:
 # build creates the binary target/release/inkjet and generates a tar.gz file in /output
 build:
     FROM +source
-    DO rust+CARGO --args="build --release --locked --target x86_64-unknown-linux-gnu --bin inkjet" --output="release/[^/\.]+"
-    ENV BINARY=/build/target/release/inkjet
+    ARG RUST_TARGET=
+    DO rust+CARGO --args="build --release --locked --target x86_64-unknown-linux-gnu --bin inkjet" --output="x86_64-unknown-linux-gnu/release/[^/\.]+"
+    ENV RUST_TARGET=
+    ENV BINARY=/build/target/x86_64-unknown-linux-gnu/release/inkjet
     RUN strip $BINARY \
-        && cp $BINARY /output \
         && version=$($BINARY --version | awk '{print $2}') \
-        && tar -czf /output/inkjet-v${version}-x86_64-unknown-linux-gnu.tar.gz $BINARY \
-        && shasum -a 256 /output/* > /output/sum.sha256
+        && name=inkjet-v${version}-x86_64-unknown-linux-gnu \
+        && tar -czf /output/${name}.tar.gz $BINARY \
+        && shasum -a 256 /output/* > /output/${name}.sha256
     SAVE ARTIFACT /output
 build-musl:
     FROM +source
     DO rust+CARGO --args="build --release --locked --target x86_64-unknown-linux-musl --bin inkjet" --output="x86_64-unknown-linux-musl/release/[^/\.]+"
     ENV BINARY=/build/target/x86_64-unknown-linux-musl/release/inkjet
     RUN strip $BINARY \
-        && cp $BINARY /output \
         && version=$($BINARY --version | awk '{print $2}') \
-        && tar -czf /output/inkjet-v${version}-x86_64-unknown-linux-musl.tar.gz $BINARY \
-        && shasum -a 256 /output/* > /output/sum.sha256
+        && name=inkjet-v${version}-x86_64-unknown-linux-musl \
+        && tar -czf /output/${name}.tar.gz $BINARY \
+        && shasum -a 256 /output/* > /output/${name}.sha256
     SAVE ARTIFACT /output
 # test executes all unit and integration tests via Cargo
 test:
