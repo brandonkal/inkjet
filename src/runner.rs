@@ -21,6 +21,13 @@ use crate::view;
 /// Inkjet parser created by Brandon Kalinowski See: https://github.com/brandonkal/inkjet
 #[inline(never)]
 pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
+    let early_version_detected = match args.get(1) {
+        Some(first_arg) => first_arg == "-V" || first_arg == "--version",
+        _ => false,
+    };
+    if early_version_detected {
+        return (0, format!("inkjet {}", crate_version!()), false);
+    }
     let (opts, args) = pre_parse(args);
     let color_setting = if color {
         AppSettings::ColoredHelp
@@ -203,22 +210,6 @@ fn interactive_params(
             return (None, 0, "".to_string());
         }
     }
-    for arg in chosen_cmd.args.iter_mut() {
-        if arg.val.is_empty() {
-            let rv: String = Input::with_theme(&ColoredTheme::default())
-                .with_prompt(&format!(
-                    "{}: Enter value for {}{}",
-                    chosen_cmd.name,
-                    arg.name,
-                    if arg.required { " *" } else { "" },
-                ))
-                .allow_empty(!arg.required)
-                .default(arg.default.clone())
-                .interact()
-                .expect("Inkjet: unable to read input");
-            arg.val = rv
-        }
-    }
     for flag in &mut chosen_cmd.named_flags {
         if !flag.takes_value {
             if flag.name == "verbose" {
@@ -265,6 +256,22 @@ fn interactive_params(
                 };
             }
             flag.val = rv
+        }
+    }
+    for arg in chosen_cmd.args.iter_mut() {
+        if arg.val.is_empty() {
+            let rv: String = Input::with_theme(&ColoredTheme::default())
+                .with_prompt(&format!(
+                    "{}: Enter value for {}{}",
+                    chosen_cmd.name,
+                    arg.name,
+                    if arg.required { " *" } else { "" },
+                ))
+                .allow_empty(!arg.required)
+                .default(arg.default.clone())
+                .interact()
+                .expect("Inkjet: unable to read input");
+            arg.val = rv
         }
     }
     (Some(chosen_cmd), 0, "".to_string())

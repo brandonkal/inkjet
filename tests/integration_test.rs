@@ -180,6 +180,22 @@ fn simple_case_does_not_panic() {
     // This also checks to ensure no extra output is printed (i.e. debug println)
     common::run_binary()
         .current_dir("tests/simple_case")
+        .arg("echo")
+        .arg("test_runner")
+        .arg("--required")
+        .arg("req")
+        .arg("--")
+        .arg("last_arg")
+        .assert()
+        .stdout("Hello test_runner! Optional arg is \"default\". Number is \"\". Required is \"req\". Any is \"\". extras is \"last_arg\"\n")
+        .success();
+}
+
+#[test]
+fn last_arg_recognized_when_optionals_omitted() {
+    // This also checks to ensure no extra output is printed (i.e. debug println)
+    common::run_binary()
+        .current_dir("tests/simple_case")
         .assert()
         .stdout("expected output\n")
         .success();
