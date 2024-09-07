@@ -326,3 +326,11 @@ echo "$revision"
 echo $_
 echo Done
 ```
+
+## man
+
+> Preview README as man page for distribution
+
+```
+pandoc README.md -s -t man --lua-filter=man-filter.lua | man -l -
+```

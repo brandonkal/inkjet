@@ -48,7 +48,7 @@ build-musl:
     RUN strip $BINARY \
         && version=$($BINARY --version | awk '{print $2}') \
         && name=inkjet-v${version}-x86_64-unknown-linux-musl \
-        && tar -czf /output/${name}.tar.gz $BINARY \
+        && tar -czf /output/${name}.tar.gz -C "$(dirname "$BINARY")" inkjet \
         && shasum -a 256 /output/* > /output/${name}.sha256
     SAVE ARTIFACT /output
 # test executes all unit and integration tests via Cargo
@@ -73,6 +73,12 @@ coverage:
     RUN zip -9 /output/inkjet-coverage-$EARTHLY_GIT_SHORT_HASH.zip /build/target/cov/* \
         && mv /build/target/lcov.info /output/inkjet-coverage-$EARTHLY_GIT_SHORT_HASH.lcov.info
     SAVE ARTIFACT /output
+# man builds the man page
+man:
+    FROM pandoc/core:3.2-alpine
+    COPY README.md man-filter.lua .
+    RUN pandoc README.md -s -t man --lua-filter=man-filter.lua > inkjet.1
+    SAVE ARTIFACT inkjet.1
 # all runs all targets in parallel
 all:
     BUILD +fmt
@@ -81,4 +87,5 @@ all:
     BUILD +coverage
     BUILD +build
     BUILD +build-musl
+    BUILD +man
 
