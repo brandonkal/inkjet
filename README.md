@@ -54,19 +54,23 @@ Here's the [inkjet.md](/inkjet.md) that `inkjet` uses to build itself and run te
 
 To get started, follow the guide below or check out the more [advanced features](#features "Features") `inkjet` has such as **positional args**, **named flags**, **subcommands**, other **scripting runtimes** and more!
 
-# Installation
+# INSTALLATION
 
 ### Using Homebrew
 
-Homebrew is the preferred method to install `inkjet` and keep it updated on macOS and Linux.
+Homebrew is the preferred method to install `inkjet` and keep it updated on macOS.
 
 ```
 brew install brandonkal/tap/inkjet
 ```
 
+### Debian Repository
+
+[My Debian repository](https://git.kalinow.ski/kiterun/-/packages/debian/inkjet) is the preferred way to install `inkjet` on Linux. It includes shell completions and the man page. See how to configure the debian package here and then run `sudo apt install inkjet`
+
 ### Pre-compiled binaries for Linux, macOS, and Windows
 
-Head to the [Releases page][releases] and look for the latest published version. Under **Assets** you'll see zips available for download for Linux, macOS, and Windows. Once downloaded, you can extract them and then move the `inkjet` binary to somewhere accessible in your `$PATH` like `mv inkjet /usr/local/bin`.
+Head to the Releases and look for the latest published version. Under **Assets** you'll see zips available for download for Linux, macOS, and Windows. Once downloaded, you can extract them and then move the `inkjet` binary to somewhere accessible in your `$PATH` like `mv inkjet /usr/local/bin`.
 
 ### From source
 

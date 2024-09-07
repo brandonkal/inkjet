@@ -13,4 +13,3 @@ OPTIONS
 ```
 echo "the string is $str"
 ```
-

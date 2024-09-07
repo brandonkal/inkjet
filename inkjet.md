@@ -69,6 +69,34 @@ platform=`echo $(uname -s) | tr '[:upper:]' '[:lower:]'`
 tar -czf inkjet-${platform}.tar.gz inkjet
 ```
 
+### build mac
+
+> Build a release version of inkjet for mac arm and x86
+
+```bash
+set -x
+zips_dir=$INKJET_DIR/output/zips
+mkdir -p $zips_dir
+rm -r $zips_dir/* || true
+version=$($INKJET utils v crate)
+_build() {
+  cargo build --target $arch --release
+  target_dir=$INKJET_DIR/target/$arch/release
+  cp $INKJET_DIR/README.md $target_dir
+  cp -r $INKJET_DIR/completions $target_dir
+  cp $INKJET_DIR/output/inkjet.1 $target_dir # regenerate with `earthly --artifact +man/inkjet.1 ./output/inkjet.1`
+  cd $target_dir
+  strip inkjet
+  tar -czf $zips_dir/inkjet-v$version-$arch.tar.gz inkjet inkjet.1 completions README.md
+}
+
+arch=aarch64-apple-darwin
+_build
+arch=x86_64-apple-darwin
+_build
+shasum -a 256 $zips_dir/* > $zips_dir/checksums.sha256
+```
+
 ## ping
 
 > Echo pong for ping tests
@@ -316,6 +344,14 @@ if git status --porcelain >/dev/null 2>&1; then
   revision="$revision-dirty"
 fi
 echo "$revision"
+```
+
+#### utils v crate
+
+> Returns the version per the crate
+
+```
+cargo metadata --format-version 1 | jq -r '.packages[] | select(.name == "inkjet") | .version'
 ```
 
 ## double-dash -- (extra)

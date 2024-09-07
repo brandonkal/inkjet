@@ -76,11 +76,11 @@ coverage:
 # man builds the man page
 man:
     FROM pandoc/core:3.2-alpine
+    RUN apk add groff util-linux
     COPY README.md man-filter.lua .
-    RUN pandoc README.md -s -t man --lua-filter=man-filter.lua > inkjet.1
-    SAVE ARTIFACT inkjet.1
-# release
-release:
+    RUN pandoc README.md -s -t man --lua-filter=man-filter.lua -V adjusting=l > inkjet.1
+    SAVE ARTIFACT inkjet.1 AS LOCAL ./output/inkjet.1
+debian:
     FROM ./packager+base
     COPY --dir .fpm completions .
     COPY +build/output .
@@ -88,7 +88,16 @@ release:
     RUN tar xf *.tar.gz
     RUN fpm -v 0.15.0
     SAVE ARTIFACT *.deb
-
+gather-release:
+    LOCALLY
+    COPY +man/inkjet.1 ./output/
+    RUN ./target/release/inkjet build mac
+    COPY +man/inkjet.1 ./output/
+    RUN cp README.md ./output/
+    COPY +build/output ./output/linux-gnu
+    COPY +build-musl/output ./output/linux-musl
+    COPY +debian/inkjet_0.15.0_amd64.deb ./output/zips/
+    RUN cp ./output/linux*/*.tar.gz ./output/ && rm ./output/zips/*.sha256 && cd ./output/zips && shasum -a 256 * > checksums.sha256
 # all runs all targets in parallel
 all:
     BUILD +fmt
@@ -98,4 +107,3 @@ all:
     BUILD +build
     BUILD +build-musl
     BUILD +man
-
