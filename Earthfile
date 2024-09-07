@@ -38,7 +38,7 @@ build:
     RUN strip $BINARY \
         && version=$($BINARY --version | awk '{print $2}') \
         && name=inkjet-v${version}-x86_64-unknown-linux-gnu \
-        && tar -czf /output/${name}.tar.gz $BINARY \
+        && tar -czf /output/${name}.tar.gz  -C "$(dirname "$BINARY")" inkjet \
         && shasum -a 256 /output/* > /output/${name}.sha256
     SAVE ARTIFACT /output
 build-musl:
@@ -79,6 +79,16 @@ man:
     COPY README.md man-filter.lua .
     RUN pandoc README.md -s -t man --lua-filter=man-filter.lua > inkjet.1
     SAVE ARTIFACT inkjet.1
+# release
+release:
+    FROM ./packager+base
+    COPY --dir .fpm completions .
+    COPY +build/output .
+    COPY +man/inkjet.1 .
+    RUN tar xf *.tar.gz
+    RUN fpm -v 0.15.0
+    SAVE ARTIFACT *.deb
+
 # all runs all targets in parallel
 all:
     BUILD +fmt

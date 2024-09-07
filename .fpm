@@ -1,0 +1,12 @@
+-s dir
+-t deb
+--name inkjet
+--license mit
+--description "Create interactive CLIs and execute Markdown with Inkjet"
+--url "https://github.com/brandonkal/inkjet"
+--maintainer "Brandon Kalinowski <brandon@brandonkalinowski.com>"
+--depends bash
+inkjet=/usr/bin/inkjet
+inkjet.1=/usr/share/man/man1/inkjet.1
+completions/inkjet.fish=/usr/share/fish/vendor_completions.d/inkjet.fish
+completions/inkjet.bash=/usr/share/bash-completion/completions/inkjet.bash

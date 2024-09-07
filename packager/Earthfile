@@ -1,0 +1,22 @@
+VERSION 0.8
+FROM debian:12-slim
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN set -x \
+	&& apt-get update && apt-get install -y --no-install-recommends \
+		ruby \
+		ruby-dev \
+		gcc \
+		make \
+		ca-certificates \
+		libffi-dev \
+		ruby-ffi \
+	&& rm -rf /var/lib/apt/lists/* \
+	&& gem install fpm -v 1.15.1 \
+	&& mkdir /src/
+
+WORKDIR /src/
+
+CMD /usr/local/bin/fpm
+SAVE IMAGE --push git.kalinow.ski/brandonkal/packager
