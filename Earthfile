@@ -86,7 +86,7 @@ debian:
     COPY +build/output .
     COPY +man/inkjet.1 .
     RUN tar xf *.tar.gz
-    RUN fpm -v 0.15.0
+    RUN fpm -v 1.0.0
     SAVE ARTIFACT *.deb
 gather-release:
     LOCALLY
@@ -95,7 +95,7 @@ gather-release:
     COPY +man/inkjet.1 ./output/
     COPY +build/output ./output/linux-gnu
     COPY +build-musl/output ./output/linux-musl
-    COPY +debian/inkjet_0.15.0_amd64.deb ./output/zips/
+    COPY +debian/inkjet_1.0.0_amd64.deb ./output/zips/
     RUN cp ./output/*.7z ./output/zips/
     RUN cp ./output/linux*/*.tar.gz ./output/zips/ && rm ./output/zips/*.sha256.txt || true && cd ./output/zips && shasum -a 256 * > checksums.sha256.txt
 # all runs all targets in parallel

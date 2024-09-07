@@ -512,7 +512,7 @@ dependencies = [
 
 [[package]]
 name = "inkjet"
-version = "0.15.0"
+version = "1.0.0"
 dependencies = [
  "assert_cmd",
  "assert_fs",
