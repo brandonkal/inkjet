@@ -94,7 +94,8 @@ arch=aarch64-apple-darwin
 _build
 arch=x86_64-apple-darwin
 _build
-shasum -a 256 $zips_dir/* > $zips_dir/checksums.sha256
+cd $zips_dir
+shasum -a 256 * > $zips_dir/checksums.sha256.txt
 ```
 
 ## ping

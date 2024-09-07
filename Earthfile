@@ -4,7 +4,7 @@
 VERSION 0.8
 IMPORT github.com/earthly/lib/rust:3.0.1 AS rust
 
-FROM rust:slim-bookworm
+FROM rust:1.81-slim-bookworm
 RUN apt-get update && apt-get install -y binutils pkg-config openssl libssl-dev \
     && apt-get install -y --no-install-recommends sudo php python3 ruby curl lcov unzip zip p7zip-full && apt-get clean
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs
@@ -93,11 +93,11 @@ gather-release:
     COPY +man/inkjet.1 ./output/
     RUN ./target/release/inkjet build mac
     COPY +man/inkjet.1 ./output/
-    RUN cp README.md ./output/
     COPY +build/output ./output/linux-gnu
     COPY +build-musl/output ./output/linux-musl
     COPY +debian/inkjet_0.15.0_amd64.deb ./output/zips/
-    RUN cp ./output/linux*/*.tar.gz ./output/ && rm ./output/zips/*.sha256 && cd ./output/zips && shasum -a 256 * > checksums.sha256
+    RUN cp ./output/*.7z ./output/zips/
+    RUN cp ./output/linux*/*.tar.gz ./output/zips/ && rm ./output/zips/*.sha256.txt || true && cd ./output/zips && shasum -a 256 * > checksums.sha256.txt
 # all runs all targets in parallel
 all:
     BUILD +fmt
