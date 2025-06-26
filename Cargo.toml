@@ -6,9 +6,21 @@ authors = ["Brandon Kalinowski <brandon@brandonkalinowski.com>"]
 repository = "https://github.com/brandonkal/inkjet"
 readme = "README.md"
 keywords = ["cli", "task", "command", "make", "markdown"]
-categories = ["command-line-interface", "command-line-utilities", "development-tools::build-utils", "parser-implementations"]
+categories = [
+    "command-line-interface",
+    "command-line-utilities",
+    "development-tools::build-utils",
+    "parser-implementations",
+]
 edition = "2018"
-exclude = ["inkjet.md", ".gitignore", "CHANGELOG.md", "test/**", ".github/**", ".devbox"]
+exclude = [
+    "inkjet.md",
+    ".gitignore",
+    "CHANGELOG.md",
+    "test/**",
+    ".github/**",
+    ".devbox",
+]
 license = "MIT"
 build = "build.rs"
 
@@ -32,7 +44,7 @@ debug = true
 lto = false
 
 [dependencies]
-colored = "2.0.0" # https://github.com/mackwic/colored
+colored = "2.0.0"                                                # https://github.com/mackwic/colored
 pulldown-cmark = { version = "0.7.2", default-features = false } # https://github.com/raphlinus/pulldown-cmark
 dialoguer = { git = "https://github.com/brandonkal/dialoguer" }
 mdcat = { version = "0.16.0", default-features = false }
@@ -40,8 +52,11 @@ regex = "1.10.6"
 walkdir = "2"
 
 [dependencies.clap] # https://github.com/clap-rs/clap
-version = "2.33.1"
-features = ["wrap_help"]
+version = "4.5"
+features = ["derive", "wrap_help", "string"]
+
+[dependencies.clap_complete] # https://github.com/clap-rs/clap
+version = "4.5"
 
 [dependencies.syntect]
 version = "4.2.0"
@@ -50,7 +65,7 @@ features = ["parsing", "assets", "dump-load"]
 
 [dev-dependencies]
 assert_cmd = "2.0.16" # https://github.com/assert-rs/assert_cmd
-assert_fs = "1.0.0"  # https://github.com/assert-rs/assert_fs
+assert_fs = "1.0.0"   # https://github.com/assert-rs/assert_fs
 predicates = "3.1.2"  # https://github.com/assert-rs/predicates-rs
 
 [target.'cfg(not(windows))'.dev-dependencies]

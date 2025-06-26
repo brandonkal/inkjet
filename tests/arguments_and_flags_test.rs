@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 use assert_cmd::prelude::*;
-use clap::{crate_name, crate_version};
 use predicates::str::contains;
 
 mod common;
@@ -362,7 +361,11 @@ mod version_flag {
         common::run_inkjet(&inkfile_path)
             .command("--version")
             .assert()
-            .stdout(contains(format!("{} {}", crate_name!(), crate_version!())))
+            .stdout(contains(format!(
+                "{} {}",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION")
+            )))
             .success();
     }
 

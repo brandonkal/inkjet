@@ -4,7 +4,6 @@
 use std::path::PathBuf;
 
 use assert_cmd::prelude::*;
-use clap::{crate_name, crate_version};
 use predicates::str::contains;
 
 mod common;
@@ -281,7 +280,11 @@ mod when_no_inkfile_found_in_current_directory {
             .current_dir(common::temp_path())
             .command("--version")
             .assert()
-            .stdout(contains(format!("{} {}", crate_name!(), crate_version!())))
+            .stdout(contains(format!(
+                "{} {}",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION")
+            )))
             .success();
     }
 
