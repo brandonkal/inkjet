@@ -188,7 +188,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
     let fixed_pwd = !mdtxt.contains("inkjet_fixed_dir: false");
 
     if opts.interactive {
-        let p = view::Printer::new(color, false, &inkfile_path);
+        let p = view::Printer::new(color, &inkfile_path);
 
         let portion = &mdtxt
             .get(chosen_cmd.start..chosen_cmd.end)

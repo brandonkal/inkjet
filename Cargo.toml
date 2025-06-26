@@ -44,12 +44,13 @@ debug = true
 lto = false
 
 [dependencies]
-colored = "2.0.0"                                                # https://github.com/mackwic/colored
-pulldown-cmark = { version = "0.7.2", default-features = false } # https://github.com/raphlinus/pulldown-cmark
+colored = "3.0.0"                                                 # https://github.com/mackwic/colored
+pulldown-cmark = { version = "0.12.2", default-features = false } # https://github.com/raphlinus/pulldown-cmark
 dialoguer = { git = "https://github.com/brandonkal/dialoguer" }
-mdcat = { version = "0.16.0", default-features = false }
 regex = "1.10.6"
 walkdir = "2"
+pulldown-cmark-mdcat = "2.7.1"
+url = "2.5.4"
 
 [dependencies.clap] # https://github.com/clap-rs/clap
 version = "4.5"
@@ -59,17 +60,21 @@ features = ["derive", "wrap_help", "string"]
 version = "4.5"
 
 [dependencies.syntect]
-version = "4.2.0"
+version = "5.2.0"
 default-features = false
-features = ["parsing", "assets", "dump-load"]
+features = ["parsing", "default-syntaxes", "default-themes", "dump-load"]
 
 [dev-dependencies]
 assert_cmd = "2.0.16" # https://github.com/assert-rs/assert_cmd
 assert_fs = "1.0.0"   # https://github.com/assert-rs/assert_fs
 predicates = "3.1.2"  # https://github.com/assert-rs/predicates-rs
+rexpect = "0.6.2"
 
 [target.'cfg(not(windows))'.dev-dependencies]
-rexpect = "0.5.0"
+rexpect = "0.6.2"
 
 [target.'cfg(windows)'.build-dependencies]
-tauri-winres = "0.1"
+tauri-winres = "0.3.1"
+
+[build-dependencies]
+tauri-winres = "0.3.1"

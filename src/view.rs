@@ -1,8 +1,10 @@
 // Copyright 2020 Brandon Kalinowski (brandonkal)
 // SPDX-License-Identifier: MIT
 
-use mdcat::{ResourceAccess, TerminalCapabilities, TerminalSize};
 use pulldown_cmark::{Options, Parser};
+use pulldown_cmark_mdcat::resources::FileResourceHandler;
+use pulldown_cmark_mdcat::terminal::TerminalSize;
+use pulldown_cmark_mdcat::{push_tty, Environment, Settings, TerminalProgram, Theme};
 use std::error::Error;
 use std::io::stderr;
 use std::path::Path;
@@ -10,61 +12,79 @@ use syntect::parsing::SyntaxSet;
 
 /// The Printer represents an instance for printing markdown to the terminal.
 pub struct Printer {
-    size: TerminalSize,
-    resource_access: ResourceAccess,
     syntax_set: SyntaxSet,
     base_dir: String,
     colors: bool,
+    terminal_program: TerminalProgram,
+    environment: Environment,
 }
 
 impl Printer {
     #[must_use]
     /// Build a new Printer for printing markdown to the terminal.
-    pub fn new(colors: bool, local_only: bool, filename: &str) -> Printer {
-        let resource_access = if local_only {
-            ResourceAccess::LocalOnly // available for library users
-        } else {
-            ResourceAccess::RemoteAllowed
-        };
+    pub fn new(colors: bool, filename: &str) -> Printer {
         let syntax_set = SyntaxSet::load_defaults_newlines();
 
+        // Determine terminal capabilities based on colors setting
+        let terminal_program: TerminalProgram = if !colors {
+            TerminalProgram::Ansi
+        } else {
+            TerminalProgram::detect()
+        };
+
+        let base_dir = Path::new(&filename)
+            .parent()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        // Create environment
+        let environment = Environment::for_local_directory(&base_dir).unwrap_or(Environment {
+            base_url: url::Url::parse("http://localhost/").expect("Failed to parse URL"),
+            hostname: String::from("localhost"),
+        });
+
         Printer {
-            size: TerminalSize::detect().unwrap_or_default(),
-            resource_access,
             syntax_set,
-            base_dir: Path::new(&filename)
-                .parent()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string(),
+            base_dir,
             colors,
+            terminal_program,
+            environment,
         }
     }
 
     /// Parses a given markdown string and renders it to the terminal.
     pub fn print_markdown(&self, input: &str) -> Result<(), Box<dyn Error>> {
-        let terminal_capabilities = if !self.colors {
-            // If the user disabled colours assume a dumb terminal
-            TerminalCapabilities::none()
-        } else {
-            TerminalCapabilities::detect()
+        // Create a resource handler
+        let resource_handler = FileResourceHandler::new(u64::MAX);
+
+        // Load a theme
+        let theme = Theme::default();
+        let terminal_capabilities = TerminalProgram::capabilities(self.terminal_program);
+
+        // Create settings
+        let settings = Settings {
+            terminal_capabilities,
+            terminal_size: TerminalSize::detect().unwrap_or_default(),
+            theme,
+            syntax_set: &self.syntax_set,
         };
 
-        mdcat::push_tty(
-            &mdcat::Settings {
-                terminal_capabilities,
-                terminal_size: TerminalSize {
-                    // width: self.size.width.to_string(),
-                    ..self.size
-                },
-                resource_access: self.resource_access,
-                syntax_set: self.syntax_set.clone(),
-            },
+        // Create parser
+        let parser = create_markdown_parser(input);
+
+        // Convert the result to Box<dyn Error>
+        match push_tty(
+            &settings,
+            &self.environment,
+            &resource_handler,
             &mut stderr(),
-            Path::new(&self.base_dir),
-            create_markdown_parser(input),
-        )
+            parser,
+        ) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(Box::new(e)),
+        }
     }
 }
 
@@ -79,6 +99,6 @@ fn create_markdown_parser(contents: &str) -> Parser {
 
 #[test]
 fn make_printer() {
-    let p = Printer::new(false, true, "folder/somefile.txt");
+    let p = Printer::new(false, "folder/somefile.txt");
     assert_eq!(p.base_dir, "folder".to_string());
 }
