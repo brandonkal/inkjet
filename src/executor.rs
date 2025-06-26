@@ -95,7 +95,7 @@ pub fn execute_command(
 ) -> Option<io::Result<process::ExitStatus>> {
     if cmd.script.source.is_empty() {
         let msg = "CommandBlock has no script."; // cov:include (unusual)
-        return Some(Err(io::Error::new(io::ErrorKind::Other, msg))); // cov:include
+        return Some(Err(io::Error::other(msg))); // cov:include
     }
 
     if cmd.script.executor.is_empty() && !cmd.script.source.trim().starts_with("#!") {

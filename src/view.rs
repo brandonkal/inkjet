@@ -12,21 +12,15 @@ use syntect::parsing::SyntaxSet;
 pub struct Printer {
     size: TerminalSize,
     resource_access: ResourceAccess,
-    terminal_capabilities: TerminalCapabilities,
     syntax_set: SyntaxSet,
     base_dir: String,
+    colors: bool,
 }
 
 impl Printer {
     #[must_use]
     /// Build a new Printer for printing markdown to the terminal.
     pub fn new(colors: bool, local_only: bool, filename: &str) -> Printer {
-        let terminal_capabilities = if !colors {
-            // If the user disabled colours assume a dumb terminal
-            TerminalCapabilities::none()
-        } else {
-            TerminalCapabilities::detect()
-        };
         let resource_access = if local_only {
             ResourceAccess::LocalOnly // available for library users
         } else {
@@ -36,7 +30,6 @@ impl Printer {
 
         Printer {
             size: TerminalSize::detect().unwrap_or_default(),
-            terminal_capabilities,
             resource_access,
             syntax_set,
             base_dir: Path::new(&filename)
@@ -45,22 +38,32 @@ impl Printer {
                 .to_str()
                 .unwrap()
                 .to_string(),
+            colors,
         }
     }
 
     /// Parses a given markdown string and renders it to the terminal.
     pub fn print_markdown(&self, input: &str) -> Result<(), Box<dyn Error>> {
+        let terminal_capabilities = if !self.colors {
+            // If the user disabled colours assume a dumb terminal
+            TerminalCapabilities::none()
+        } else {
+            TerminalCapabilities::detect()
+        };
+
         mdcat::push_tty(
-            &mut stderr(),
-            &self.terminal_capabilities,
-            TerminalSize {
-                // width: self.size.width.to_string(),
-                ..self.size
+            &mdcat::Settings {
+                terminal_capabilities,
+                terminal_size: TerminalSize {
+                    // width: self.size.width.to_string(),
+                    ..self.size
+                },
+                resource_access: self.resource_access,
+                syntax_set: self.syntax_set.clone(),
             },
-            create_markdown_parser(input),
+            &mut stderr(),
             Path::new(&self.base_dir),
-            self.resource_access,
-            self.syntax_set.clone(),
+            create_markdown_parser(input),
         )
     }
 }

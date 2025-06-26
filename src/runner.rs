@@ -452,7 +452,7 @@ fn build_subcommands<'a, 'b>(
 ) -> App<'a, 'b> {
     for c in subcommands {
         let mut subcmd = SubCommand::with_name(&c.name)
-            .about(c.desc.as_ref())
+            .about(&*c.desc)
             .setting(AppSettings::AllowNegativeNumbers);
         if !c.subcommands.is_empty() {
             subcmd = build_subcommands(subcmd, opts, &c.subcommands);
@@ -524,11 +524,10 @@ fn find_command(matches: &ArgMatches, subcommands: &[CommandBlock]) -> Option<Co
                     command = find_command(matches, &c.subcommands)
                         .or_else(|| Some(c.clone()).map(|c| embed_arg_values(c, matches)));
                     // early exit on validation error (e.g. number required and not supplied)
-                    if command
-                        .as_ref()
-                        .map_or(false, |command| !command.validation_error_msg.is_empty())
-                    {
-                        return command;
+                    if let Some(ref cmd) = command {
+                        if !cmd.validation_error_msg.is_empty() {
+                            return command;
+                        }
                     }
                 }
             }

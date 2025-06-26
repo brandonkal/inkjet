@@ -430,7 +430,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
     };
 
     // Find any arguments. They look like this: (arg_name)
-    let name_and_args: Vec<&str> = name.split(|c| c == '(' || c == ')').collect();
+    let name_and_args: Vec<&str> = name.split(['(', ')']).collect();
     let (name, args_split) = name_and_args.split_at(1);
 
     let name = name.join(" ");
