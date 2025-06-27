@@ -36,12 +36,6 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         ColorChoice::Never
     };
 
-    // let styles = styling::Styles::styled()
-    //     .header(AnsiColor::Yellow.on_default() | Effects::BOLD)
-    //     .usage(AnsiColor::Green.on_default() | Effects::BOLD)
-    //     .literal(AnsiColor::Blue.on_default() | Effects::BOLD)
-    //     .placeholder(AnsiColor::Green.on_default());
-
     const STYLES: styling::Styles = styling::Styles::styled()
         .header(styling::AnsiColor::Green.on_default().bold())
         .usage(styling::AnsiColor::Green.on_default().bold())
@@ -52,7 +46,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         .allow_negative_numbers(true)
         .subcommand_required(true)
         .disable_help_subcommand(true)
-        // .color(ColorChoice::Always)
+        .color(color_setting)
         .styles(STYLES)
         .trailing_var_arg(true)
         .version(env!("CARGO_PKG_VERSION"))
