@@ -14,7 +14,7 @@ use crate::command::{Arg, CommandBlock, NamedFlag};
 
 /// Creates the message that is returned on an error
 fn invalid_type_msg(t: &str) -> String {
-    format!("Invalid flag type '{}' Expected string | number | bool.", t)
+    format!("Invalid flag type '{t}' Expected string | number | bool.")
 }
 
 /// The main inkjet markdown parsing logic. Takes an inkfile content as a string and returns the parsed CommandBlock tree.
@@ -94,7 +94,9 @@ pub fn build_command_structure(
                         return Err("unexpected empty heading name".to_string());
                     }
                     if name.contains(char::is_whitespace) {
-                        return Err(format!("Command names cannot contain spaces. Found '{}'. Did you forget to wrap args in ()?", name));
+                        return Err(format!(
+                            "Command names cannot contain spaces. Found '{name}'. Did you forget to wrap args in ()?"
+                        ));
                     }
                     current_command.name = name;
                     current_command.args = args;
@@ -249,9 +251,9 @@ pub fn build_command_structure(
                 text += html.as_ref();
             }
             Code(inline_code) => {
-                text += &format!("`{}`", inline_code);
+                text += &format!("`{inline_code}`");
                 if in_block_quote {
-                    current_command.desc.push_str(&format!("`{}`", inline_code));
+                    current_command.desc.push_str(&format!("`{inline_code}`"));
                     current_command.desc.push(' ');
                 }
             }
@@ -708,8 +710,10 @@ echo "abc"
        "#;
         let tree_result = build_command_structure(file, true);
         if let Err(e) = tree_result {
-            assert!(e == "Command names cannot contain spaces. Found 'b c'. Did you forget to wrap args in ()?",
-                "Unexpected error message: \"{}\"", e);
+            assert!(
+                e == "Command names cannot contain spaces. Found 'b c'. Did you forget to wrap args in ()?",
+                "Unexpected error message: \"{e}\""
+            );
         } else {
             panic!("expected a parse error");
         }

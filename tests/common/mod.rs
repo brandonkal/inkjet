@@ -52,7 +52,7 @@ pub fn cargo_bin() -> String {
     if path.is_file() {
         return path.to_string_lossy().to_string();
     }
-    panic!("Could not locate cargo_bin {:?}", path)
+    panic!("Could not locate cargo_bin {path:?}")
 }
 
 /// Returns temp directory to support Windows testing
@@ -72,10 +72,8 @@ pub fn convert_windows_path_to_unix(windows_path: &str) -> String {
     let unix_path = windows_path.replace("\\", "/");
 
     // Replace the drive letter (e.g., C:) with its Unix equivalent (/c)
-    let unix_path = unix_path
-        .strip_prefix("C:")
-        .map(|s| format!("/c{}", s))
-        .unwrap_or(unix_path.to_string());
-
     unix_path
+        .strip_prefix("C:")
+        .map(|s| format!("/c{s}"))
+        .unwrap_or(unix_path.to_string())
 }

@@ -56,11 +56,11 @@ pub fn execute_merge_command(inkfile_path: &str) -> Result<String, String> {
     // Append the content of each file with the required format
     for file in inkjet_files {
         let file_str = file.to_string_lossy();
-        combined_text.push_str(&format!("<!-- inkfile: {} -->\n", file_str));
+        combined_text.push_str(&format!("<!-- inkfile: {file_str} -->\n"));
 
         match fs::read_to_string(&file) {
             Ok(content) => combined_text.push_str(&content),
-            Err(e) => return Err(format!("Error reading file {}: {}", file_str, e)),
+            Err(e) => return Err(format!("Error reading file {file_str}: {e}")),
         }
     }
 
@@ -109,13 +109,13 @@ pub fn execute_command(
 
     if preview {
         if !color {
-            print!("{}", source);
+            print!("{source}");
             return None;
         }
         match run_bat(source.clone(), &cmd.script.executor) {
             Ok(mut child) => Some(child.wait()),
             Err(_) => {
-                print!("{}", source); // cov:include (bat exists)
+                print!("{source}"); // cov:include (bat exists)
                 None // cov:include
             }
         }
@@ -177,7 +177,7 @@ fn prepare_command(
     let source = cmd.script.source.trim();
     if source.starts_with("#!") {
         let hash = hash_source(source);
-        *tempfile = format!("{}/.inkjet-order.{}", parent_dir, hash);
+        *tempfile = format!("{parent_dir}/.inkjet-order.{hash}");
         #[allow(clippy::needless_borrows_for_generic_args)]
         std::fs::write(&tempfile, source)
             .unwrap_or_else(|_| panic!("Inkjet: Unable to write file {}", &tempfile));
@@ -244,7 +244,7 @@ fn prepare_command(
                 }
                 let mut child = process::Command::new(&executor);
                 let top = "set -e"; // a sane default for scripts
-                let src = format!("{}\n{}", top, source);
+                let src = format!("{top}\n{source}");
                 child.arg("-c").arg(src);
                 (child, executor)
             }
@@ -294,13 +294,10 @@ fn add_utility_variables(
     // inside scripts so that they can be location-agnostic (not care where they are
     // called from). This is useful for global inkfiles especially.
     // $INKJET always refers to the root inkjet script
-    child.env("INKJET", format!("{} --inkfile {}", exe_path, inkfile_path));
+    child.env("INKJET", format!("{exe_path} --inkfile {inkfile_path}"));
     // $INK is shorthand for "$INKJET command". The difference here is that it resolves to the local inkjet.md which
     // could differ from $INKJET if the file was imported.
-    child.env(
-        "INK",
-        format!("{} --inkfile {}", exe_path, local_inkfile_path),
-    );
+    child.env("INK", format!("{exe_path} --inkfile {local_inkfile_path}"));
     // This allows us to refer to the directory the inkfile lives in which can be handy
     // for loading relative files to it.
     child.env("INKJET_DIR", get_parent_dir(inkfile_path));

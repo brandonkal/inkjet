@@ -13,9 +13,9 @@ fn main() {
         if prefix {
             eprintln!("{} {}", "ERROR (inkjet):".red(), err_str);
         } else if rc == 0 {
-            println!("{}", err_str);
+            println!("{err_str}");
         } else {
-            eprintln!("{}", err_str);
+            eprintln!("{err_str}");
         }
     }
     std::process::exit(rc);

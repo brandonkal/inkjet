@@ -12,7 +12,7 @@ categories = [
     "development-tools::build-utils",
     "parser-implementations",
 ]
-edition = "2018"
+edition = "2024"
 exclude = [
     "inkjet.md",
     ".gitignore",
@@ -54,7 +54,7 @@ url = "2.5.4"
 
 [dependencies.clap] # https://github.com/clap-rs/clap
 version = "4.5"
-features = ["derive", "wrap_help", "string"]
+features = ["wrap_help", "string"]
 
 [dependencies.clap_complete] # https://github.com/clap-rs/clap
 version = "4.5"

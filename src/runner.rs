@@ -1,16 +1,14 @@
 // Copyright 2020 Brandon Kalinowski (brandonkal)
 // SPDX-License-Identifier: MIT
 
-use clap::builder::styling;
-use clap::builder::styling::{AnsiColor, Effects};
 use dialoguer::theme::ColoredTheme;
 use dialoguer::{Confirmation, Input, KeyPrompt};
 use std::collections::HashSet;
 use std::env;
 use std::path::Path;
 
-use clap::{Arg, ArgMatches, ColorChoice, Command};
-use clap_complete::{generate, Shell};
+use clap::{Arg, ArgMatches, ColorChoice, Command, builder::styling};
+use clap_complete::{Shell, generate};
 use colored::*;
 
 use crate::command::CommandBlock;
@@ -38,18 +36,24 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         ColorChoice::Never
     };
 
-    let styles = styling::Styles::styled()
-        .header(AnsiColor::Yellow.on_default() | Effects::BOLD)
-        .usage(AnsiColor::Green.on_default() | Effects::BOLD)
-        .literal(AnsiColor::Blue.on_default() | Effects::BOLD)
-        .placeholder(AnsiColor::Green.on_default());
+    // let styles = styling::Styles::styled()
+    //     .header(AnsiColor::Yellow.on_default() | Effects::BOLD)
+    //     .usage(AnsiColor::Green.on_default() | Effects::BOLD)
+    //     .literal(AnsiColor::Blue.on_default() | Effects::BOLD)
+    //     .placeholder(AnsiColor::Green.on_default());
+
+    const STYLES: styling::Styles = styling::Styles::styled()
+        .header(styling::AnsiColor::Green.on_default().bold())
+        .usage(styling::AnsiColor::Green.on_default().bold())
+        .literal(styling::AnsiColor::Blue.on_default().bold())
+        .placeholder(styling::AnsiColor::Cyan.on_default());
 
     let mut cli_app = Command::new(env!("CARGO_PKG_NAME"))
         .allow_negative_numbers(true)
         .subcommand_required(true)
         .disable_help_subcommand(true)
-        .color(color_setting)
-        .styles(styles)
+        // .color(ColorChoice::Always)
+        .styles(STYLES)
         .trailing_var_arg(true)
         .version(env!("CARGO_PKG_VERSION"))
         .about("Inkjet parser created by Brandon Kalinowski\nInkjet is a tool to build interactive CLIs with executable markdown documents.\nSee: https://github.com/brandonkal/inkjet")
@@ -199,7 +203,7 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
             .expect("Inkjet: portion out of bounds");
         let print_err = p.print_markdown(portion);
         if let Err(err) = print_err {
-            return (10, format!("printing markdown: {}", err), true); // cov:include (unusual error)
+            return (10, format!("printing markdown: {err}"), true); // cov:include (unusual error)
         }
         eprintln!();
         let (picked_cmd, exit_code, err_str) =
@@ -677,7 +681,7 @@ fn is_invalid_number(is_num: bool, raw_value: &str) -> bool {
 }
 
 fn not_number_err_msg(name: &str) -> String {
-    format!("flag `{}` expects a numerical value", name)
+    format!("flag `{name}` expects a numerical value")
 }
 
 #[cfg(test)]

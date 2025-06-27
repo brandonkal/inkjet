@@ -14,11 +14,11 @@ mod interactive {
         if path.is_file() {
             return path.to_string_lossy().to_string();
         }
-        panic!("Could not locate cargo_bin {:?}", path)
+        panic!("Could not locate cargo_bin {path:?}")
     }
 
     fn do_interactive() -> Result<(), Error> {
-        env::set_var("NO_COLOR", "1");
+        unsafe { env::set_var("NO_COLOR", "1") };
         let exec = format!(
             "{} --inkfile tests/simple_case/inkjet.md -i echo",
             cargo_bin()
@@ -73,7 +73,7 @@ mod interactive {
                     if code == 0 {
                         return Ok(());
                     }
-                    panic!("process exited with code {}", code);
+                    panic!("process exited with code {code}");
                 }
                 _ => Ok(()),
             },
@@ -83,16 +83,16 @@ mod interactive {
 
     #[test]
     fn interactive() {
-        do_interactive().unwrap_or_else(|e| panic!("inkjet job failed with {}", e));
+        do_interactive().unwrap_or_else(|e| panic!("inkjet job failed with {e}"));
     }
 
     #[test]
     fn interactive_preview() {
-        do_interactive_preview().unwrap_or_else(|e| panic!("inkjet job failed with {}", e));
+        do_interactive_preview().unwrap_or_else(|e| panic!("inkjet job failed with {e}"));
     }
 
     #[test]
     fn interactive_skip() {
-        do_interactive_skip().unwrap_or_else(|e| panic!("inkjet job failed with {}", e));
+        do_interactive_skip().unwrap_or_else(|e| panic!("inkjet job failed with {e}"));
     }
 }
