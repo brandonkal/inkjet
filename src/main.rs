@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 //! Make your markdown executable with inkjet, the interactive CLI task runner
-use colored::*;
 use std::env;
 
 fn main() {
@@ -11,7 +10,8 @@ fn main() {
     let (rc, err_str, prefix) = inkjet::runner::run(args, color);
     if !err_str.is_empty() {
         if prefix {
-            eprintln!("{} {}", "ERROR (inkjet):".red(), err_str);
+            let prefix_string = inkjet::utils::error_msg();
+            eprintln!("{prefix_string} {err_str}");
         } else if rc == 0 {
             println!("{err_str}");
         } else {

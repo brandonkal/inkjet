@@ -9,18 +9,16 @@ use std::path::Path;
 
 use clap::{Arg, ArgMatches, ColorChoice, Command, builder::styling};
 use clap_complete::{Shell, generate};
-use colored::*;
 
 use crate::command::CommandBlock;
 use crate::executor::{execute_command, execute_merge_command};
-use crate::view;
+use crate::{utils, view};
 
 /// Parse and execute the chosen command.
 /// run attempts to ensure that the process does not exit unless there is a panic or clap --help or --version is matched.
 /// This enables improved integration testing.
 /// Returns exit code, an error string if it should be printed, and if the error should be prefixed with `ERROR`.
 /// Inkjet parser created by Brandon Kalinowski See: https://github.com/brandonkal/inkjet
-#[inline(never)]
 pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
     let early_version_detected = match args.get(1) {
         Some(first_arg) => first_arg == "-V" || first_arg == "--version",
@@ -71,7 +69,8 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
     if inkfile.is_err() {
         if opts.inkfile_opt.is_empty() || opts.inkfile_opt == "./inkjet.md" {
             // Just log a warning and let the process continue
-            eprintln!("{} no inkjet.md found", "WARNING (inkjet):".yellow());
+            eprintln!("{} no inkjet.md found", utils::warn_msg());
+
             // If the inkfile can't be found, at least parse for --version or --help
             if let Err(err) = cli_app.try_get_matches_from(args) {
                 let rc = if err.kind() == clap::error::ErrorKind::DisplayVersion
@@ -115,8 +114,8 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
     // for alphabetical sort.
     let alphabetical_sort = mdtxt.contains("inkjet_sort: true");
 
-    #[allow(clippy::indexing_slicing)]
-    let in_completions_mode = args.len() > 2 && args[1] == "inkjet-dynamic-completions";
+    let in_completions_mode =
+        args.len() > 2 && args.get(1).unwrap_or(&String::from("")) == "inkjet-dynamic-completions";
     let root_command = match crate::parser::build_command_structure(&mdtxt, !in_completions_mode) {
         Ok(cmd) => cmd,
         Err(err) => {
@@ -298,14 +297,14 @@ fn interactive_params(
                 if !flag.choices.is_empty() && !flag.choices.contains(&rv) {
                     eprintln!(
                         "{}: {} flag expects one of {:?}",
-                        "INVALID".red(),
+                        utils::invalid_msg(),
                         flag.name,
                         flag.choices
                     );
                     continue;
                 }
                 if is_invalid_number(flag.validate_as_number, &rv) {
-                    eprintln!("{}: {}", "INVALID".red(), not_number_err_msg(&name));
+                    eprintln!("{}: {}", utils::invalid_msg(), not_number_err_msg(&name));
                     continue;
                 } else {
                     break;
@@ -640,7 +639,7 @@ fn embed_arg_values(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBlock
             {
                 cmd.validation_error_msg = format!(
                     "{}: {} flag expects one of {:?}",
-                    "INVALID".red(),
+                    utils::invalid_msg(),
                     flag.name,
                     flag.choices
                 );

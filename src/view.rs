@@ -4,7 +4,7 @@
 use pulldown_cmark::{Options, Parser};
 use pulldown_cmark_mdcat::resources::FileResourceHandler;
 use pulldown_cmark_mdcat::terminal::TerminalSize;
-use pulldown_cmark_mdcat::{push_tty, Environment, Settings, TerminalProgram, Theme};
+use pulldown_cmark_mdcat::{Environment, Settings, TerminalProgram, Theme, push_tty};
 use std::error::Error;
 use std::io::stderr;
 use std::path::Path;

@@ -1,7 +1,7 @@
 // Copyright 2020 Brandon Kalinowski (brandonkal)
 // SPDX-License-Identifier: MIT
 
-use colored::*;
+use crate::utils;
 use pulldown_cmark::CodeBlockKind::Fenced;
 use pulldown_cmark::{
     Event::{Code, End, Html, Start, Text},
@@ -290,7 +290,7 @@ fn validate_no_duplicate_aliases(cmd: CommandBlock) -> bool {
                     errors.push(alias.to_string());
                     eprintln!(
                         "{} Duplicate command alias found: {}",
-                        "ERROR (inkjet):".red(),
+                        utils::error_msg(),
                         alias
                     );
                 } else if !alias.is_empty() {
@@ -314,7 +314,7 @@ fn remove_duplicates(mut cmds: Vec<CommandBlock>, log_warnings: bool) -> Vec<Com
                 if log_warnings {
                     eprintln!(
                         "{} Duplicate command overwritten: {}",
-                        "INFO (inkjet):".yellow(),
+                        utils::info_msg(),
                         item.name
                     );
                 }
@@ -365,7 +365,6 @@ fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
     let mut add = 0;
     let mut allow_increment = false;
 
-    #[allow(clippy::needless_range_loop, clippy::comparison_chain)]
     for i in 0..num_commands {
         let mut c = commands.get(i).unwrap().clone();
         let is_last_cmd = i == num_commands - 1;

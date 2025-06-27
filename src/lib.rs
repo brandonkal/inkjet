@@ -14,5 +14,7 @@ pub mod loader;
 pub mod parser;
 /// The `inkjet::runner` module contains the main inkjet CLI logic. Call `inkjet::runner::run` with args and color setting.
 pub mod runner;
+/// utils used internally (mainly color)
+pub mod utils;
 /// The `inkjet::view` module contains the implementation for printing markdown to the terminal. It is used for interactive mode.
 pub mod view;

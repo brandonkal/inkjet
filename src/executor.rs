@@ -1,7 +1,6 @@
 // Copyright 2020 Brandon Kalinowski (brandonkal)
 // SPDX-License-Identifier: MIT
 
-use colored::*;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
@@ -12,6 +11,7 @@ use std::{env, fs};
 use walkdir::WalkDir;
 
 use crate::command::CommandBlock;
+use crate::utils;
 
 /// takes a source string and generates a temporary hash for the filename.
 fn hash_source(s: &str) -> String {
@@ -141,7 +141,7 @@ pub fn execute_command(
                     }
                     eprintln!(
                         "{} Please check if {} is installed to run the command.",
-                        "ERROR (inkjet):".red(),
+                        utils::error_msg(),
                         executor
                     );
                 }
@@ -161,7 +161,7 @@ fn delete_file(file: &str) {
     if !file.is_empty() && std::fs::remove_file(file).is_err() {
         eprintln!(
             "{} Failed to delete temporary file {}",
-            "ERROR (inkjet):".red(),
+            utils::error_msg(),
             file
         ); // cov:ignore (unusual)
     }
@@ -178,19 +178,16 @@ fn prepare_command(
     if source.starts_with("#!") {
         let hash = hash_source(source);
         *tempfile = format!("{parent_dir}/.inkjet-order.{hash}");
-        #[allow(clippy::needless_borrows_for_generic_args)]
         std::fs::write(&tempfile, source)
             .unwrap_or_else(|_| panic!("Inkjet: Unable to write file {}", &tempfile));
 
         #[cfg(not(windows))]
         {
             use std::os::unix::fs::PermissionsExt;
-            #[allow(clippy::needless_borrows_for_generic_args)]
             let meta =
                 std::fs::metadata(&tempfile).expect("Inkjet: Unable to read file permissions");
             let mut perms = meta.permissions();
             perms.set_mode(0o775);
-            #[allow(clippy::needless_borrows_for_generic_args)]
             std::fs::set_permissions(&tempfile, perms).expect("Inkjet: Could not set permissions");
         }
 

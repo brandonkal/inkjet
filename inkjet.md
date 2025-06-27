@@ -80,7 +80,7 @@ mkdir -p $zips_dir
 rm -r $zips_dir/* || true
 version=$($INKJET utils v crate)
 _build() {
-  cargo build --target $arch --release
+  cargo build --target $arch --release --frozen
   target_dir=$INKJET_DIR/target/$arch/release
   cp $INKJET_DIR/README.md $target_dir
   cp -r $INKJET_DIR/completions $target_dir

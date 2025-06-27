@@ -1,6 +1,6 @@
 [package]
 name = "inkjet"
-version = "1.0.0"
+version = "1.1.0"
 description = "Create interactive CLIs and execute Markdown with Inkjet"
 authors = ["Brandon Kalinowski <brandon@brandonkalinowski.com>"]
 repository = "https://github.com/brandonkal/inkjet"
@@ -36,6 +36,7 @@ path = "src/lib.rs"
 lto = true
 codegen-units = 1
 panic = 'abort'
+strip = true
 
 [profile.coverage]
 inherits = "release"
@@ -44,25 +45,20 @@ debug = true
 lto = false
 
 [dependencies]
-colored = "3.0.0"                                                 # https://github.com/mackwic/colored
-pulldown-cmark = { version = "0.12.2", default-features = false } # https://github.com/raphlinus/pulldown-cmark
+colored = "3.0.0"                                                      # https://github.com/mackwic/colored
+pulldown-cmark = { version = "0.12.2", default-features = false }      # https://github.com/raphlinus/pulldown-cmark
 dialoguer = { git = "https://github.com/brandonkal/dialoguer" }
 regex = "1.10.6"
 walkdir = "2"
-pulldown-cmark-mdcat = "2.7.1"
+pulldown-cmark-mdcat = { version = "2.7.1", default-features = false }
 url = "2.5.4"
-
-[dependencies.clap] # https://github.com/clap-rs/clap
-version = "4.5"
-features = ["wrap_help", "string"]
-
-[dependencies.clap_complete] # https://github.com/clap-rs/clap
-version = "4.5"
+clap = { version = "4.5", features = ["string"] }
+clap_complete = "4.5"
 
 [dependencies.syntect]
 version = "5.2.0"
 default-features = false
-features = ["parsing", "default-syntaxes", "default-themes", "dump-load"]
+features = ["default-syntaxes"]
 
 [dev-dependencies]
 assert_cmd = "2.0.16" # https://github.com/assert-rs/assert_cmd
