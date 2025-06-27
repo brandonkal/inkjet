@@ -7,16 +7,6 @@ use std::env;
 fn main() {
     let color = env::var_os("NO_COLOR").is_none();
     let args = env::args().collect();
-    let (rc, err_str, prefix) = inkjet::runner::run(args, color);
-    if !err_str.is_empty() {
-        if prefix {
-            let prefix_string = inkjet::utils::error_msg();
-            eprintln!("{prefix_string} {err_str}");
-        } else if rc == 0 {
-            println!("{err_str}");
-        } else {
-            eprintln!("{err_str}");
-        }
-    }
+    let rc = inkjet::runner::run(args, color);
     std::process::exit(rc);
 }

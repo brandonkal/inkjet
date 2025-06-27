@@ -227,8 +227,9 @@ echo "Hello, " . $name . "!\n";
     common::run_inkjet(&inkfile_path)
         .command("missing")
         .assert()
+        // NOTE: we are also checking that color output works here
         .stderr(contains(
-            "ERROR (inkjet): Please check if missingbinary is installed to run the command.\n",
+            "\x1b[31m\x1b[4mERROR (inkjet):\x1b[39m\x1b[24m Please check if missingbinary is installed to run the command.\nNo such file or directory (os error 2)",
         ))
         .failure();
 }

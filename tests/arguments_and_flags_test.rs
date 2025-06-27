@@ -179,7 +179,7 @@ Write-Output "Value: $in"
             ($($x:expr),*) => (vec![$($x.to_string()),*]);
         }
 
-        let (rc, _, _) = runner::run(
+        let rc = runner::run(
             svec!("inkjet", "--inkfile", contents, "color", "--val", "RED"),
             false,
         );

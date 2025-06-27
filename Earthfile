@@ -4,7 +4,7 @@
 VERSION 0.8
 IMPORT github.com/earthly/lib/rust:3.0.1 AS rust
 
-FROM rust:1.81-slim-bookworm
+FROM rust:1.88.0-slim-bullseye
 RUN apt-get update && apt-get install -y binutils pkg-config openssl libssl-dev \
     && apt-get install -y --no-install-recommends sudo php python3 ruby curl lcov unzip zip p7zip-full && apt-get clean
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs
@@ -75,7 +75,7 @@ coverage:
     SAVE ARTIFACT /output
 # man builds the man page
 man:
-    FROM pandoc/core:3.2-alpine
+    FROM pandoc/core:3.7-alpine
     RUN apk add groff util-linux
     COPY README.md man-filter.lua .
     RUN pandoc README.md -s -t man --lua-filter=man-filter.lua -V adjusting=l > inkjet.1

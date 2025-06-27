@@ -1,6 +1,7 @@
 // Copyright 2020 Brandon Kalinowski (brandonkal)
 // SPDX-License-Identifier: MIT
 
+use clap::error::ErrorKind;
 use dialoguer::theme::ColoredTheme;
 use dialoguer::{Confirmation, Input, KeyPrompt};
 use std::collections::HashSet;
@@ -19,15 +20,12 @@ use crate::{utils, view};
 /// This enables improved integration testing.
 /// Returns exit code, an error string if it should be printed, and if the error should be prefixed with `ERROR`.
 /// Inkjet parser created by Brandon Kalinowski See: https://github.com/brandonkal/inkjet
-pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
+pub fn run(args: Vec<String>, color: bool) -> i32 {
     let early_version_detected = match args.get(1) {
         Some(first_arg) => first_arg == "-V" || first_arg == "--version",
         _ => false,
     };
-    if early_version_detected {
-        return (0, format!("inkjet {}", env!("CARGO_PKG_VERSION")), false);
-    }
-    let (opts, args) = pre_parse(args);
+
     let color_setting = if color {
         ColorChoice::Auto
     } else {
@@ -65,30 +63,46 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
                 .help("Preview the command source and exit")
                 .action(clap::ArgAction::SetTrue),
         );
+
+    // Handle version command early here
+    if early_version_detected {
+        println!("inkjet {}", env!("CARGO_PKG_VERSION"));
+        return 0;
+    }
+    let (opts, args) = pre_parse(args);
+
     let (inkfile, inkfile_path) = crate::loader::find_inkfile(&opts.inkfile_opt);
     if inkfile.is_err() {
         if opts.inkfile_opt.is_empty() || opts.inkfile_opt == "./inkjet.md" {
             // Just log a warning and let the process continue
-            eprintln!("{} no inkjet.md found", utils::warn_msg());
+            // we use an if statement here because clap is not printing this as we want
+            // it to be printed even if a valid match is found (such as help or version)
+            if color {
+                eprintln!("{} no inkjet.md found", utils::WARNING_MSG);
+            } else {
+                eprintln!("WARNING (inkjet): no inkjet.md found");
+            }
 
             // If the inkfile can't be found, at least parse for --version or --help
-            if let Err(err) = cli_app.try_get_matches_from(args) {
-                let rc = if err.kind() == clap::error::ErrorKind::DisplayVersion
-                    || err.kind() == clap::error::ErrorKind::DisplayHelp
-                {
-                    0
-                } else {
-                    1
-                };
-                return (rc, err.to_string(), false);
+            if let Err(err) = cli_app.clone().try_get_matches_from(args) {
+                // Parsed as version or help most likely
+                // if --help is called, clap still considers it an error.
+                let _ = err.print();
+                return err.exit_code();
             };
-            return (10, "No argument match found".to_string(), true); // cov:ignore (won't be called if help is parsed)
+            return 66; // cov:ignore (won't be called if help is parsed)
         } else {
-            return (
-                10,
-                format!("specified inkfile \"{}\" not found", opts.inkfile_opt),
-                true,
-            ); // won't be called if help is parsed
+            let red_inkjet: &'static str =
+                color_print::cstr!("<bold><underline><red>INKJET</red></underline></bold>");
+            let err = cli_app.error(
+                ErrorKind::ValueValidation,
+                format!(
+                    "{} specified inkfile \"{}\" not found",
+                    red_inkjet, opts.inkfile_opt
+                ),
+            );
+            let _ = err.print();
+            return 66; // won't be called if help is parsed
         }
     }
     let mut mdtxt = inkfile.unwrap();
@@ -101,13 +115,16 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
                 mdtxt = txt;
             }
 
-            Err(err) /* cov:include */ => {
-                return (10, err, true);
+            Err(err_string) /* cov:include */ => {
+                let err = cli_app.error(ErrorKind::Io, format!("{} {}", utils::INVALID_MSG, err_string));
+                let _ = err.print();
+                return 5;
             }
         };
     }
     if opts.print_all {
-        return (0, mdtxt, false);
+        println!("{mdtxt}");
+        return 0;
     }
     // By default subcommands in the help output are listed in the same order
     // they are defined in the markdown file. Users can define this directive
@@ -118,8 +135,14 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         args.len() > 2 && args.get(1).unwrap_or(&String::from("")) == "inkjet-dynamic-completions";
     let root_command = match crate::parser::build_command_structure(&mdtxt, !in_completions_mode) {
         Ok(cmd) => cmd,
-        Err(err) => {
-            return (10, err, true);
+        Err(err_string) => {
+            let prefix = if color {
+                utils::ERROR_MSG
+            } else {
+                "ERROR (inkjet):"
+            };
+            eprintln!("{prefix} {err_string}");
+            return 78;
         }
     };
     let about_txt = format!(
@@ -143,7 +166,12 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
             "zsh" => Shell::Zsh,
             "powershell" => Shell::PowerShell,
             _ => {
-                return (1, format!("Unsupported shell: {}", args[2]), false);
+                let err = cli_app.error(
+                    ErrorKind::ValueValidation,
+                    format!("Unsupported shell: {}", args[2]),
+                );
+                let _ = err.print();
+                return err.exit_code();
             }
         };
         let mut buffer: Vec<u8> = Vec::new();
@@ -164,27 +192,24 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
                 .collect::<Vec<&str>>()
                 .join("\n")
         }
-        return (0, output, false); // Exit after generating completion
+        eprintln!("{output}");
+        return 0; // Exit after generating completion
     }
 
     let matches = match cli_app.clone().try_get_matches_from(args) {
         Ok(m) => m,
         Err(err) => {
-            let rc = if err.kind() == clap::error::ErrorKind::DisplayVersion
-                || err.kind() == clap::error::ErrorKind::DisplayHelp
-            {
-                0
-            } else {
-                1
-            };
-            return (rc, err.to_string(), false);
+            let _ = err.print();
+            return err.exit_code();
         }
     };
 
     let mut chosen_cmd = find_command(&matches, &root_command.subcommands)
         .expect("Inkjet: SubcommandRequired failed to work");
     if !chosen_cmd.validation_error_msg.is_empty() {
-        return (1, chosen_cmd.validation_error_msg, true);
+        let err = cli_app.error(ErrorKind::ValueValidation, chosen_cmd.validation_error_msg);
+        let _ = err.print();
+        return err.exit_code();
     }
     let fixed_pwd = !mdtxt.contains("inkjet_fixed_dir: false");
 
@@ -194,35 +219,37 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         let portion = &mdtxt
             .get(chosen_cmd.start..chosen_cmd.end)
             .expect("Inkjet: portion out of bounds");
-        let print_err = p.print_markdown(portion);
-        if let Err(err) = print_err {
-            return (10, format!("printing markdown: {err}"), true); // cov:include (unusual error)
+        let print_result = p.print_markdown(portion);
+        if let Err(err_box) = print_result {
+            let err = cli_app.error(
+                ErrorKind::Io,
+                format!("{} printing markdown: {}", utils::ERROR_MSG, err_box),
+            );
+            let _ = err.print();
+            return 5; // cov:include (unusual error)
         }
         eprintln!();
         let (picked_cmd, exit_code, err_str) =
             interactive_params(chosen_cmd, &inkfile_path, color, fixed_pwd);
         if picked_cmd.is_none() {
-            return (exit_code, err_str, true); // cov:include (skipped command)
+            eprintln!("{err_str}");
+            return exit_code; // cov:include (skipped command)
         }
         chosen_cmd = picked_cmd.unwrap();
     }
     match execute_command(chosen_cmd, &inkfile_path, opts.preview, color, fixed_pwd) {
         Some(result) => match result {
-            Ok(status) => {
-                if let Some(code) = status.code() {
-                    (code, "".to_string(), false)
-                } else {
-                    (0, "".to_string(), false) // cov:ignore (unusual)
-                }
+            Ok(status) => status.code().unwrap_or_default(), // default is 0 status code (success)
+            Err(err_original) => {
+                eprintln!("{err_original}");
+                5
             }
-            Err(err) => (10, err.to_string(), false),
         },
-        _ => (0, "".to_string(), false),
+        _ => 0,
     }
 }
 
 /// Prompt for missing parameters interactively.
-#[inline(never)]
 fn interactive_params(
     mut chosen_cmd: CommandBlock,
     inkfile_path: &str,
@@ -295,16 +322,27 @@ fn interactive_params(
                     .interact()
                     .expect("Inkjet: unable to read option");
                 if !flag.choices.is_empty() && !flag.choices.contains(&rv) {
-                    eprintln!(
-                        "{}: {} flag expects one of {:?}",
-                        utils::invalid_msg(),
-                        flag.name,
-                        flag.choices
-                    );
+                    if color {
+                        eprintln!(
+                            "{} {} flag expects one of {:?}",
+                            utils::INVALID_MSG,
+                            flag.name,
+                            flag.choices
+                        );
+                    } else {
+                        eprintln!(
+                            "INVALID: {} flag expects one of {:?}",
+                            flag.name, flag.choices
+                        );
+                    }
                     continue;
                 }
                 if is_invalid_number(flag.validate_as_number, &rv) {
-                    eprintln!("{}: {}", utils::invalid_msg(), not_number_err_msg(&name));
+                    if color {
+                        eprintln!("{} {}", utils::INVALID_MSG, not_number_err_msg(&name));
+                    } else {
+                        eprintln!("INVALID: {}", not_number_err_msg(&name));
+                    }
                     continue;
                 } else {
                     break;
@@ -639,7 +677,7 @@ fn embed_arg_values(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBlock
             {
                 cmd.validation_error_msg = format!(
                     "{}: {} flag expects one of {:?}",
-                    utils::invalid_msg(),
+                    utils::INVALID_MSG,
                     flag.name,
                     flag.choices
                 );
@@ -690,16 +728,17 @@ echo "This should not run"
 ```
         "#;
         let args = svec!("inkjet", "--inkfile", contents);
-        let (rc, err_str, _) = run(args, false);
-        assert_eq!(rc, 10);
+        let rc = run(args, false);
+        // TEMP: error text no longer returned
+        assert_eq!(rc, 5);
 
         #[cfg(windows)]
         let no_file_error = "program not found";
 
-        #[cfg(not(windows))]
-        let no_file_error = "No such file or directory (os error 2)";
-
-        assert_eq!(err_str, no_file_error);
+        // #[cfg(not(windows))]
+        // let no_file_error = "No such file or directory (os error 2)";
+        // TEMP: error text no longer returned
+        // assert_eq!(err_str, no_file_error);
     }
 
     #[test]
@@ -746,9 +785,10 @@ echo "Hello $extra"
             "--",
             "last_arg"
         );
-        let (rc, err_str, _) = run(args, false);
+        let rc = run(args, false);
         assert_eq!(rc, 0);
-        assert_eq!(err_str, "");
+        // TEMP: error text no longer returned
+        // assert_eq!(err_str, "");
     }
 
     #[test]
@@ -867,7 +907,7 @@ Write-Output "Value: $in"
 ```
 "#;
         let args = svec!("inkjet", "--inkfile", contents);
-        let (rc, _, _) = run(args, false);
+        let rc = run(args, false);
         assert_eq!(0, rc);
     }
 }

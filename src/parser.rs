@@ -290,7 +290,7 @@ fn validate_no_duplicate_aliases(cmd: CommandBlock) -> bool {
                     errors.push(alias.to_string());
                     eprintln!(
                         "{} Duplicate command alias found: {}",
-                        utils::error_msg(),
+                        utils::ERROR_MSG,
                         alias
                     );
                 } else if !alias.is_empty() {
@@ -314,7 +314,7 @@ fn remove_duplicates(mut cmds: Vec<CommandBlock>, log_warnings: bool) -> Vec<Com
                 if log_warnings {
                     eprintln!(
                         "{} Duplicate command overwritten: {}",
-                        utils::info_msg(),
+                        utils::INFO_MSG,
                         item.name
                     );
                 }

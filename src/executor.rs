@@ -141,7 +141,7 @@ pub fn execute_command(
                     }
                     eprintln!(
                         "{} Please check if {} is installed to run the command.",
-                        utils::error_msg(),
+                        utils::ERROR_MSG,
                         executor
                     );
                 }
@@ -161,7 +161,7 @@ fn delete_file(file: &str) {
     if !file.is_empty() && std::fs::remove_file(file).is_err() {
         eprintln!(
             "{} Failed to delete temporary file {}",
-            utils::error_msg(),
+            utils::ERROR_MSG,
             file
         ); // cov:ignore (unusual)
     }

@@ -56,7 +56,7 @@ echo "starting...
     common::run_inkjet(&inkfile_path)
         .command("service")
         .assert()
-        .code(1)
+        .code(2)
         .stderr(
             is_match(
                 r"error: 'inkjet(?:\.exe)? service' requires a subcommand but one was not provided",
@@ -98,7 +98,7 @@ echo "system, online"
         common::run_inkjet(&inkfile_path)
             .command("start")
             .assert()
-            .code(1)
+            .code(2)
             .stderr(contains("error: unexpected argument 'start' found"))
             .failure();
     }

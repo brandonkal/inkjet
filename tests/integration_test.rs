@@ -261,7 +261,7 @@ mod when_no_inkfile_found_in_current_directory {
             .command("--bad-argument")
             .assert()
             .stderr(contains("no inkjet.md found"))
-            .code(1);
+            .code(2);
     }
 
     #[test]
@@ -294,7 +294,7 @@ mod when_no_inkfile_found_in_current_directory {
             .current_dir("tests")
             .command("nothing")
             .assert()
-            .code(1)
+            .code(2)
             .stderr(contains("error: unrecognized subcommand 'nothing'"))
             .failure();
     }
@@ -304,7 +304,7 @@ mod when_no_inkfile_found_in_current_directory {
             .current_dir("tests/common")
             .command("nothing")
             .assert()
-            .code(1)
+            .code(2)
             .stderr(contains("error: unrecognized subcommand 'nothing'"))
             .failure();
     }
@@ -318,7 +318,7 @@ mod when_custom_specified_inkfile_not_found {
         common::run_inkjet(&PathBuf::from("./nonexistent.md"))
             .command("--help")
             .assert()
-            .code(10)
+            .code(66)
             .stderr(contains("specified inkfile \"./nonexistent.md\" not found"))
             .failure();
     }
@@ -328,7 +328,7 @@ mod when_custom_specified_inkfile_not_found {
         common::run_inkjet(&PathBuf::from("./nonexistent.md"))
             .command("--version")
             .assert()
-            .code(10)
+            .code(66)
             .stderr(contains("specified inkfile \"./nonexistent.md\" not found"))
             .failure();
     }
@@ -338,7 +338,7 @@ mod when_custom_specified_inkfile_not_found {
         common::run_inkjet(&PathBuf::from("./nonexistent.md"))
             .command("what")
             .assert()
-            .code(10)
+            .code(66)
             .stderr(contains("specified inkfile \"./nonexistent.md\" not found"))
             .failure();
     }
