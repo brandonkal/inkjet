@@ -442,7 +442,7 @@ All output the same help info:
 inkjet-services-start
 Start or restart a service.
 
-USAGE:
+Usage:
     inkjet services start [FLAGS] <service_name>
 
 FLAGS:

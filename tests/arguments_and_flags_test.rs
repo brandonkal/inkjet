@@ -44,8 +44,8 @@ Write-Output "Testing $test_case in $file"
         .arg("some_test_case")
         .assert()
         .stderr(contains(
-            "error: The following required arguments were not provided:
-    <test_case>",
+            "error: the following required arguments were not provided:
+  <test_case>",
         ))
         .failure();
 }
@@ -386,9 +386,7 @@ echo "boo"
             .command("foo")
             .arg("--version")
             .assert()
-            .stderr(contains(
-                "error: Found argument '--version' which wasn't expected, or isn't valid in this context",
-            ))
+            .stderr(contains("error: unexpected argument '--version' found"))
             .failure();
     }
 }
@@ -454,7 +452,7 @@ Write-Output "This shouldn't render"
             .cli("required_val")
             .assert()
             .stderr(contains(
-                "error: The following required arguments were not provided:\n    --val <val>",
+                "error: the following required arguments were not provided:\n  --val <val>",
             ))
             .failure();
     }

@@ -13,8 +13,6 @@ use syntect::parsing::SyntaxSet;
 /// The Printer represents an instance for printing markdown to the terminal.
 pub struct Printer {
     syntax_set: SyntaxSet,
-    base_dir: String,
-    colors: bool,
     terminal_program: TerminalProgram,
     environment: Environment,
 }
@@ -47,8 +45,6 @@ impl Printer {
 
         Printer {
             syntax_set,
-            base_dir,
-            colors,
             terminal_program,
             environment,
         }
@@ -100,5 +96,8 @@ fn create_markdown_parser(contents: &str) -> Parser {
 #[test]
 fn make_printer() {
     let p = Printer::new(false, "folder/somefile.txt");
-    assert_eq!(p.base_dir, "folder".to_string());
+    assert_eq!(
+        p.environment.base_url.to_string(),
+        "http://localhost/".to_string()
+    );
 }

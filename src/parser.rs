@@ -5,7 +5,7 @@ use colored::*;
 use pulldown_cmark::CodeBlockKind::Fenced;
 use pulldown_cmark::{
     Event::{Code, End, Html, Start, Text},
-    Options, Parser, Tag,
+    Options, Parser, Tag, TagEnd,
 };
 use regex::Regex;
 use std::collections::HashSet;
@@ -27,6 +27,7 @@ pub fn build_command_structure(
     let mut current_command = CommandBlock::new(1);
     let mut current_named_flag = NamedFlag::new();
     let mut text = "".to_string();
+    let mut current_lc = "".to_string();
     let mut list_level = 0;
     let mut first_was_pushed = false;
     let mut current_file = "".to_string();
@@ -36,27 +37,32 @@ pub fn build_command_structure(
         match event {
             Start(tag) => {
                 match tag {
-                    Tag::Heading(heading_level) => {
+                    Tag::Heading { level, .. } => {
+                        let heading_level = level as u8;
                         // Add the last command before starting a new one.
                         // Don't add the first command during the first iteration.
                         if heading_level > 1 || first_was_pushed {
                             first_was_pushed = true;
                             commands.push(current_command.build());
                         }
-                        current_command = CommandBlock::new(heading_level as u8);
+                        current_command = CommandBlock::new(heading_level);
                         current_command.inkjet_file = current_file.clone();
                         current_command.start = range.start;
                     }
                     #[cfg(not(windows))]
                     Tag::CodeBlock(Fenced(lang_code)) => {
-                        let lc = lang_code.to_string();
-                        if lc != "powershell" && lc != "batch" && lc != "cmd" {
+                        current_lc = lang_code.to_string();
+                        if current_lc != "powershell"
+                            && current_lc != "batch"
+                            && current_lc != "cmd"
+                        {
                             current_command.end = range.start;
-                            current_command.script.executor = lc;
+                            current_command.script.executor = current_lc.clone();
                         }
                     }
                     #[cfg(windows)]
                     Tag::CodeBlock(Fenced(lang_code)) => {
+                        current_lc = lang_code.to_string();
                         current_command.end = range.start;
                         current_command.script.executor = lang_code.to_string();
                     }
@@ -66,7 +72,7 @@ pub fn build_command_structure(
                             list_level += 1;
                         }
                     }
-                    Tag::BlockQuote => {
+                    Tag::BlockQuote(_) => {
                         in_block_quote = true;
                     }
                     _ => (),
@@ -76,7 +82,8 @@ pub fn build_command_structure(
                 text = "".to_string();
             }
             End(tag) => match tag {
-                Tag::Heading(heading_level) => {
+                TagEnd::Heading(level) => {
+                    let heading_level = level as u8;
                     let mut virtual_heading_level = heading_level;
                     if first_was_pushed && heading_level == 1 {
                         virtual_heading_level = 2; // This case occurs during a merge
@@ -95,23 +102,22 @@ pub fn build_command_structure(
                         current_command.aliases = aliases;
                     }
                 }
-                Tag::BlockQuote => {
+                TagEnd::BlockQuote(_) => {
                     if in_block_quote {
                         in_block_quote = false;
                     }
                 }
                 #[cfg(not(windows))]
-                Tag::CodeBlock(Fenced(lang_code)) => {
-                    let lc = lang_code.to_string();
-                    if lc != "powershell" && lc != "batch" && lc != "cmd" {
+                TagEnd::CodeBlock => {
+                    if current_lc != "powershell" && current_lc != "batch" && current_lc != "cmd" {
                         current_command.script.source = text.to_string();
                     }
                 }
                 #[cfg(windows)]
-                Tag::CodeBlock(_) => {
+                TagEnd::CodeBlock(_) => {
                     current_command.script.source = text.to_string();
                 }
-                Tag::List(_) => {
+                TagEnd::List(_) => {
                     // Don't go lower than zero (for cases where it's a non-OPTIONS list)
                     list_level = std::cmp::max(list_level - 1, 0);
                     // Must be finished parsing the current option
@@ -406,7 +412,7 @@ fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
     command_tree
 }
 
-fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Vec<Arg>) {
+fn parse_heading_to_cmd(heading_level: u8, text: String) -> (String, String, Vec<Arg>) {
     // Anything after double dash is handled later -- if defined, it is the last arg
     let mut parts = text.split(" -- ");
     let main_text = parts.next().unwrap();

@@ -33,7 +33,7 @@ echo "hidden"
         .arg("--help")
         .assert()
         .stdout(contains("Brandon Kalinowski"))
-        .stdout(contains("USAGE:"))
+        .stdout(contains("Usage:"))
         .stdout(contains("foo").count(1))
         .stdout(contains("hidden").count(0))
         .stdout(contains("default").count(0))
@@ -68,7 +68,7 @@ echo "optional infinite $extras"
         .assert()
         .stdout(contains(""))
         .stderr(contains(
-            "error: The following required arguments were not provided:\n    <extras>...",
+            "error: the following required arguments were not provided:\n  <extras>...",
         ))
         .failure();
     common::run_inkjet(&inkfile_path)
@@ -270,7 +270,7 @@ mod when_no_inkfile_found_in_current_directory {
             .current_dir(common::temp_path())
             .command("--help")
             .assert()
-            .stdout(contains("USAGE:"))
+            .stdout(contains("Usage:"))
             .success();
     }
 
@@ -295,7 +295,7 @@ mod when_no_inkfile_found_in_current_directory {
             .command("nothing")
             .assert()
             .code(1)
-            .stderr(contains("error: Found argument 'nothing' which wasn't expected, or isn't valid in this context"))
+            .stderr(contains("error: unrecognized subcommand 'nothing'"))
             .failure();
     }
     #[test]
@@ -305,7 +305,7 @@ mod when_no_inkfile_found_in_current_directory {
             .command("nothing")
             .assert()
             .code(1)
-            .stderr(contains("error: Found argument 'nothing' which wasn't expected, or isn't valid in this context"))
+            .stderr(contains("error: unrecognized subcommand 'nothing'"))
             .failure();
     }
 }

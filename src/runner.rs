@@ -115,9 +115,8 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
     // By default subcommands in the help output are listed in the same order
     // they are defined in the markdown file. Users can define this directive
     // for alphabetical sort.
-    // if !mdtxt.contains("inkjet_sort: true") {
-    //     cli_app = cli_app.subcommand_display_order(clap::builder::SubcommandDisplayOrder::Declaration);
-    // }
+    let alphabetical_sort = mdtxt.contains("inkjet_sort: true");
+
     #[allow(clippy::indexing_slicing)]
     let in_completions_mode = args.len() > 2 && args[1] == "inkjet-dynamic-completions";
     let root_command = match crate::parser::build_command_structure(&mdtxt, !in_completions_mode) {
@@ -131,7 +130,12 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
         inkfile_path, root_command.desc
     );
     cli_app = cli_app.about(about_txt.trim().to_string());
-    cli_app = build_subcommands(cli_app, &opts, root_command.subcommands.clone());
+    cli_app = build_subcommands(
+        cli_app,
+        &opts,
+        root_command.subcommands.clone(),
+        alphabetical_sort,
+    );
 
     // Manual arg parsing for inkjet-dynamic-completions because it should not be required
     #[allow(clippy::indexing_slicing)]
@@ -464,7 +468,7 @@ fn custom_inkfile_path_arg() -> Arg {
         .action(clap::ArgAction::Set)
 }
 /// Helper function to build a Command from a CommandBlock
-fn build_command_from_block(cmd_block: CommandBlock, opts: &CustomOpts) -> Command {
+fn build_command_from_block(cmd_block: CommandBlock, opts: &CustomOpts, sort: bool) -> Command {
     let name = cmd_block.name;
     let desc = cmd_block.desc;
     let args = cmd_block.args;
@@ -480,7 +484,7 @@ fn build_command_from_block(cmd_block: CommandBlock, opts: &CustomOpts) -> Comma
     // Process subcommands recursively
     if !subcommands.is_empty() {
         // Pass ownership of the subcommands
-        cmd = build_subcommands(cmd, opts, subcommands);
+        cmd = build_subcommands(cmd, opts, subcommands, sort);
         // If this parent command has no script source, require a subcommand.
         if script_source.is_empty() {
             cmd = cmd.subcommand_required(true);
@@ -505,7 +509,7 @@ fn build_command_from_block(cmd_block: CommandBlock, opts: &CustomOpts) -> Comma
             }
             // Handle "extras" arg to collect everything after the --
             if a.last {
-                arg = arg.trailing_var_arg(true);
+                arg = arg.last(true);
             }
         }
         // If we are printing, we can't have required args
@@ -570,10 +574,14 @@ fn build_subcommands(
     mut cli_app: Command,
     opts: &CustomOpts,
     subcommands: Vec<CommandBlock>,
+    sort: bool,
 ) -> Command {
     for c in subcommands {
         // Build a new Command from the CommandBlock
-        let subcmd = build_command_from_block(c, opts);
+        let mut subcmd = build_command_from_block(c, opts, sort);
+        if sort {
+            subcmd = subcmd.display_order(0);
+        }
 
         // Add the subcommand to the parent command
         // In clap v4, subcommand takes ownership of the Command
@@ -675,6 +683,7 @@ fn not_number_err_msg(name: &str) -> String {
 #[cfg(test)]
 mod runner_tests {
     use super::*;
+
     #[test]
     fn fake_language() {
         let contents = r#"
@@ -694,6 +703,55 @@ echo "This should not run"
         let no_file_error = "No such file or directory (os error 2)";
 
         assert_eq!(err_str, no_file_error);
+    }
+
+    #[test]
+    fn handles_positional_args() {
+        let contents = r#"
+## build//default
+
+> A test to check implicit execution of default when calling inkjet without arguments.
+
+```
+echo "expected output"
+```
+
+## echo (name) (optional=default) (not_required?) -- (extras...?)
+
+> Echo something interactively
+
+**OPTIONS**
+
+- flag: --num |number| A number
+- flag: --required -r |string| required This must be specified
+- flag: --any |string| Anything you want
+
+```bash
+echo "Hello $name! Optional arg is \"$optional\". Number is \"$num\". Required is \"$required\". Any is \"$any\". extras is \"$extras\""
+```
+
+## extras (extra...?)
+
+> Test multiple optional values for extra
+
+```
+echo "Hello $extra"
+```
+        "#;
+        let args = svec!(
+            "inkjet",
+            "--inkfile",
+            contents,
+            "echo",
+            "test_runner",
+            "--required",
+            "req",
+            "--",
+            "last_arg"
+        );
+        let (rc, err_str, _) = run(args, false);
+        assert_eq!(rc, 0);
+        assert_eq!(err_str, "");
     }
 
     #[test]
