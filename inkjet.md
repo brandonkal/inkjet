@@ -84,7 +84,7 @@ _build() {
   target_dir=$INKJET_DIR/target/$arch/release
   cp $INKJET_DIR/README.md $target_dir
   cp -r $INKJET_DIR/completions $target_dir
-  cp $INKJET_DIR/output/inkjet.1 $target_dir # regenerate with `earthly --artifact +man/inkjet.1 ./output/inkjet.1`
+  cp $INKJET_DIR/generated/inkjet.1 $target_dir # regenerate with `earthly --artifact +man/inkjet.1 ./output/inkjet.1`
   cd $target_dir
   strip inkjet
   tar -czf $zips_dir/inkjet-v$version-$arch.tar.gz inkjet inkjet.1 completions README.md
