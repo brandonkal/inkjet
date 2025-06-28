@@ -38,12 +38,6 @@ codegen-units = 1
 panic = 'abort'
 strip = true
 
-[profile.coverage]
-inherits = "release"
-opt-level = 0
-debug = true
-lto = false
-
 [dependencies]
 pulldown-cmark = { version = "0.12.2", default-features = false }      # https://github.com/raphlinus/pulldown-cmark
 dialoguer = { git = "https://github.com/brandonkal/dialoguer" }

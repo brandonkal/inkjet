@@ -4,24 +4,23 @@
 VERSION 0.8
 IMPORT github.com/earthly/lib/rust:3.0.1 AS rust
 
-FROM rust:1.88.0-slim-bullseye
-RUN apt-get update && apt-get install -y binutils pkg-config openssl libssl-dev \
-    && apt-get install -y --no-install-recommends sudo php python3 ruby curl lcov unzip zip p7zip-full && apt-get clean
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs
-RUN curl -fsSL https://deno.land/install.sh | sh
-ENV YAEGI_VERSION v0.16.1
-RUN curl -LO https://github.com/traefik/yaegi/releases/download/${YAEGI_VERSION}/yaegi_${YAEGI_VERSION}_linux_amd64.tar.gz \
-    && tar -xzf yaegi_${YAEGI_VERSION}_linux_amd64.tar.gz && sudo mv yaegi /bin/ && rm yaegi_${YAEGI_VERSION}_linux_amd64.tar.gz
-ENV DENO_INSTALL="/root/.deno"
-ENV PATH="$DENO_INSTALL/bin:$PATH"
-RUN rustup toolchain install nightly && rustup component add llvm-tools-preview # for coverage
-RUN rustup target add x86_64-unknown-linux-musl
-RUN cargo install grcov rust-covfix
-RUN rustup component add clippy && rustup component add rustfmt # for lint checks
-RUN mkdir -p /output
-WORKDIR /build
-
 source:
+    FROM rust:1.88.0-slim-bullseye
+    RUN apt-get update && apt-get install -y binutils pkg-config openssl libssl-dev \
+        && apt-get install -y --no-install-recommends sudo php python3 ruby curl lcov unzip zip p7zip-full && apt-get clean
+    RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && apt-get install -y nodejs
+    RUN curl -fsSL https://deno.land/install.sh | sh
+    ENV YAEGI_VERSION v0.16.1
+    RUN curl -LO https://github.com/traefik/yaegi/releases/download/${YAEGI_VERSION}/yaegi_${YAEGI_VERSION}_linux_amd64.tar.gz \
+        && tar -xzf yaegi_${YAEGI_VERSION}_linux_amd64.tar.gz && sudo mv yaegi /bin/ && rm yaegi_${YAEGI_VERSION}_linux_amd64.tar.gz
+    ENV DENO_INSTALL="/root/.deno"
+    ENV PATH="$DENO_INSTALL/bin:$PATH"
+    RUN rustup component add llvm-tools # for coverage
+    RUN rustup target add x86_64-unknown-linux-musl
+    RUN cargo install grcov
+    RUN rustup component add clippy && rustup component add rustfmt # for lint checks
+    RUN mkdir -p /output
+    WORKDIR /build
     # CARGO function adds caching to cargo runs.
     # See https://github.com/earthly/lib/tree/main/rust
     DO rust+INIT --keep_fingerprints=true
@@ -69,9 +68,12 @@ lint:
 coverage:
     FROM +test
     ARG EARTHLY_GIT_SHORT_HASH
-    RUN inkjet cov
-    RUN zip -9 /output/inkjet-coverage-$EARTHLY_GIT_SHORT_HASH.zip /build/target/cov/* \
-        && mv /build/target/lcov.info /output/inkjet-coverage-$EARTHLY_GIT_SHORT_HASH.lcov.info
+    ENV RUSTFLAGS="-Cinstrument-coverage"
+    RUN cargo build
+    ENV LLVM_PROFILE_FILE="inkjet-%p-%m.profraw"
+    RUN cargo test
+    RUN grcov . -s . --binary-path ./target/debug/ -t html --branch --ignore-not-existing -o ./target/debug/coverage/
+    RUN zip -9 /output/inkjet-coverage-$EARTHLY_GIT_SHORT_HASH.zip /build/target/debug/coverage/*
     SAVE ARTIFACT /output
 # man builds the man page
 man:
@@ -79,7 +81,7 @@ man:
     RUN apk add groff util-linux
     COPY README.md man-filter.lua .
     RUN pandoc README.md -s -t man --lua-filter=man-filter.lua -V adjusting=l > inkjet.1
-    SAVE ARTIFACT inkjet.1 AS LOCAL ./output/inkjet.1
+    SAVE ARTIFACT inkjet.1 AS LOCAL ./generated/inkjet.1
 debian:
     FROM ./packager+base
     COPY --dir .fpm completions .

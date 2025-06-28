@@ -286,53 +286,6 @@ inkjet_fixed_dir: true
 ls .vscode
 ```
 
-## cov
-
-> Run tests in coverage profile and generate a coverage report
-
-```sh
-rm -rf target/coverage || :
-$INKJET cov build
-$INKJET cov build # view.rs shows incorrect coverage if run once
-$INKJET cov collect
-```
-
-### cov build
-
-> Run tests to build coverage report. This may need to be run several times
-
-```sh
-export CARGO_INCREMENTAL=0
-export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
-export RUSTDOCFLAGS="-Cpanic=abort"
-cargo +nightly build --profile coverage
-export LLVM_PROFILE_FILE="your_name-%p-%m.profraw"
-cargo +nightly test --profile coverage
-```
-
-### cov collect
-
-> Collect coverage report as HTML
-
-```sh
-v="${EARTHLY_GIT_SHORT_HASH:-$(inkjet utils v)}"
-echo "Version is: $v"
-rm -rf target/cov || :
-rm target/cov.zip || :
-mkdir -p target/cov || :
-zip -0 target/cov.zip `find target/coverage \( -name "inkjet*.gc*" \) -print`
-grcov target/cov.zip -s . -t lcov --llvm --ignore-not-existing --ignore "/*" -o target/cov/intermediate.info \
-  --excl-start '#\[cfg\(test\)\]' --excl-stop '#\[cfg\(cov:end-exclude\)\]'
-rm target/cov.zip
-rust-covfix target/cov/intermediate.info -o target/lcov.info
-sed -i "1s/.*/TN:inkjet_$v/" target/lcov.info
-sed -i "1s/-/_/" target/lcov.info
-genhtml -o target/cov/ --show-details --highlight --ignore-errors source  --title "inkjet-$v" \
-  --legend target/lcov.info --no-function-coverage
-mv target/cov/src/* target/cov
-echo "Coverage report generated at target/cov" >&2
-```
-
 ## utils
 
 ### utils v
