@@ -52,10 +52,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: check env
         run: |
-          env
+          source ~/.profile
           which rustup
           echo $PATH
-          /opt/homebrew/opt/rustup/bin/cargo fetch
+          cargo fetch
       - name: Build
         run: inkjet build mac
       - uses: actions/upload-artifact@v3
