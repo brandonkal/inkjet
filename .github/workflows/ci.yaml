@@ -52,8 +52,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: check env
         run: |
-          source ~/.profile
-          which rustup
+          source /Users/admin/.profile
           echo $PATH
           cargo fetch
       - name: Build
