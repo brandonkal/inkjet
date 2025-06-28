@@ -32,7 +32,7 @@ jobs:
           path: .\target\release\inkjet.exe
           retention-days: 3
   linux:
-    name: linux-ci
+    name: linux
     runs-on: earthly
     env:
       FORCE_COLOR: 1
@@ -46,15 +46,10 @@ jobs:
         run: earthly --ci +all
 
   macos:
-    name: macos-ci
+    name: macos
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: check env
-        run: |
-          source /Users/admin/.profile
-          echo $PATH
-          cargo fetch
       - name: Build
         run: inkjet build mac
       - uses: actions/upload-artifact@v3
