@@ -50,6 +50,11 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: check env
+        run: |
+          env
+          which rustup
+          echo $PATH
       - name: Build
         run: inkjet build mac
       - uses: actions/upload-artifact@v3
