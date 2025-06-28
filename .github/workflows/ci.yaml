@@ -55,6 +55,7 @@ jobs:
           env
           which rustup
           echo $PATH
+          /opt/homebrew/opt/rustup/bin/cargo fetch
       - name: Build
         run: inkjet build mac
       - uses: actions/upload-artifact@v3
