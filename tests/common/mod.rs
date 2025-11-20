@@ -2,7 +2,7 @@
 // Copyright 2020 Brandon Kalinowski (brandonkal)
 // SPDX-License-Identifier: MIT
 
-use assert_cmd::{cargo, crate_name, prelude::*};
+use assert_cmd::{cargo, pkg_name};
 use assert_fs::prelude::*;
 use std::env;
 use std::path::PathBuf;
@@ -37,7 +37,7 @@ pub fn inkfile(content: &'static str) -> (assert_fs::TempDir, PathBuf) {
 }
 
 pub fn run_binary() -> Command {
-    Command::cargo_bin(crate_name!()).expect("Was not able to find binary")
+    Command::new(cargo::cargo_bin!(pkg_name!()))
 }
 
 pub fn run_inkjet(inkfile: &PathBuf) -> Command {
@@ -48,7 +48,7 @@ pub fn run_inkjet(inkfile: &PathBuf) -> Command {
 
 /// Returns the path for the current binary under this integration test
 pub fn cargo_bin() -> String {
-    let path = cargo::cargo_bin(crate_name!());
+    let path = cargo::cargo_bin!(pkg_name!());
     if path.is_file() {
         return path.to_string_lossy().to_string();
     }

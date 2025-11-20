@@ -4,13 +4,13 @@
 #[cfg(test)]
 #[cfg(not(windows))]
 mod interactive {
-    use assert_cmd::{cargo, crate_name};
+    use assert_cmd::{cargo, pkg_name};
     use rexpect::error::Error;
     use rexpect::spawn;
     use std::env;
 
     fn cargo_bin() -> String {
-        let path = cargo::cargo_bin(crate_name!());
+        let path = cargo::cargo_bin!(pkg_name!());
         if path.is_file() {
             return path.to_string_lossy().to_string();
         }

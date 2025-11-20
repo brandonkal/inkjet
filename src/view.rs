@@ -84,7 +84,7 @@ impl Printer {
     }
 }
 
-fn create_markdown_parser(contents: &str) -> Parser {
+fn create_markdown_parser(contents: &'_ str) -> Parser<'_> {
     // Set up options and parser. Strikethroughs are not part of the CommonMark standard
     // and we therefore must enable it explicitly.
     let mut options = Options::empty();

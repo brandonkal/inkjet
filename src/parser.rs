@@ -337,7 +337,7 @@ fn remove_duplicates(mut cmds: Vec<CommandBlock>, log_warnings: bool) -> Vec<Com
     cmds
 }
 
-fn create_markdown_parser(inkfile_contents: &str) -> Parser {
+fn create_markdown_parser(inkfile_contents: &'_ str) -> Parser<'_> {
     // Set up options and parser. Strikethroughs are not part of the CommonMark standard
     // and we therefore must enable it explicitly.
     let mut options = Options::empty();
@@ -463,12 +463,8 @@ fn parse_heading_to_cmd(heading_level: u8, text: String) -> (String, String, Vec
     }
 
     let caps = Regex::new(r"-- \(([^)]+)\)").unwrap().captures(&text);
-    if caps.is_some() {
-        let last_arg = caps
-            .expect("Inkjet: regex should match for last arg")
-            .get(1)
-            .unwrap()
-            .as_str();
+    if let Some(caps) = caps {
+        let last_arg = caps.get(1).unwrap().as_str();
         let mut parsed = parse_arg(last_arg);
         parsed.last = true;
         out_args.push(parsed);
@@ -488,9 +484,9 @@ fn parse_arg(arg_str: &str) -> Arg {
             arg.pop();
             arg.pop();
             arg.pop();
-            return Arg::new(arg, false, None, true);
+            Arg::new(arg, false, None, true)
         } else {
-            return Arg::new(arg, false, None, false);
+            Arg::new(arg, false, None, false)
         }
     } else if arg_str.contains('=') {
         let parts: Vec<&str> = arg_str.splitn(2, '=').collect();
@@ -506,15 +502,15 @@ fn parse_arg(arg_str: &str) -> Arg {
     } else if arg_str.ends_with('…') {
         let mut arg = (*arg_str).to_lowercase();
         arg.pop();
-        return Arg::new(arg, true, None, true);
+        Arg::new(arg, true, None, true)
     } else if arg_str.ends_with("...") {
         let mut arg = (*arg_str).to_lowercase();
         arg.pop();
         arg.pop();
         arg.pop();
-        return Arg::new(arg, true, None, true);
+        Arg::new(arg, true, None, true)
     } else {
-        return Arg::new((*arg_str).to_lowercase(), true, None, false);
+        Arg::new((*arg_str).to_lowercase(), true, None, false)
     }
 }
 

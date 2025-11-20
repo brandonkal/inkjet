@@ -630,20 +630,20 @@ fn build_subcommands(
 fn find_command(matches: &ArgMatches, subcommands: &[CommandBlock]) -> Option<CommandBlock> {
     let mut command = None;
     // The child subcommand that was used
-    if let Some(subcommand_name) = matches.subcommand_name() {
-        if let Some(matches) = matches.subcommand_matches(subcommand_name) {
-            for c in subcommands {
-                if c.name == subcommand_name {
-                    // Check if a subcommand was called, otherwise return this command
-                    let c_clone = c.clone();
-                    command = find_command(matches, &c_clone.subcommands)
-                        .or_else(|| Some(c_clone.clone()).map(|c| embed_arg_values(c, matches)));
-                    // early exit on validation error (e.g. number required and not supplied)
-                    if let Some(ref cmd) = command {
-                        if !cmd.validation_error_msg.is_empty() {
-                            return command;
-                        }
-                    }
+    if let Some(subcommand_name) = matches.subcommand_name()
+        && let Some(matches) = matches.subcommand_matches(subcommand_name)
+    {
+        for c in subcommands {
+            if c.name == subcommand_name {
+                // Check if a subcommand was called, otherwise return this command
+                let c_clone = c.clone();
+                command = find_command(matches, &c_clone.subcommands)
+                    .or_else(|| Some(c_clone.clone()).map(|c| embed_arg_values(c, matches)));
+                // early exit on validation error (e.g. number required and not supplied)
+                if let Some(ref cmd) = command
+                    && !cmd.validation_error_msg.is_empty()
+                {
+                    return command;
                 }
             }
         }
