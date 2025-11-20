@@ -1,6 +1,6 @@
 [package]
 name = "inkjet"
-version = "1.1.0"
+version = "2.0.0"
 description = "Create interactive CLIs and execute Markdown with Inkjet"
 authors = ["Brandon Kalinowski <brandon@brandonkalinowski.com>"]
 repository = "https://github.com/brandonkal/inkjet"
@@ -58,7 +58,6 @@ features = ["default-syntaxes"]
 assert_cmd = "2.0.16" # https://github.com/assert-rs/assert_cmd
 assert_fs = "1.0.0"   # https://github.com/assert-rs/assert_fs
 predicates = "3.1.2"  # https://github.com/assert-rs/predicates-rs
-rexpect = "0.6.2"
 
 [target.'cfg(not(windows))'.dev-dependencies]
 rexpect = "0.6.2"

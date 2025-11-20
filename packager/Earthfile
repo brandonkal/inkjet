@@ -1,5 +1,5 @@
 VERSION 0.8
-FROM debian:12-slim
+FROM debian:13-slim
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -13,7 +13,7 @@ RUN set -x \
 		libffi-dev \
 		ruby-ffi \
 	&& rm -rf /var/lib/apt/lists/* \
-	&& gem install fpm -v 1.15.1 \
+	&& gem install fpm -v 1.17.0 \
 	&& mkdir /src/
 
 WORKDIR /src/
