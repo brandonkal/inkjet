@@ -229,7 +229,7 @@ echo "Hello, " . $name . "!\n";
         .assert()
         // NOTE: we are also checking that color output works here
         .stderr(contains(
-            "\x1b[31m\x1b[4mERROR (inkjet):\x1b[39m\x1b[24m Please check if missingbinary is installed to run the command.\nNo such file or directory (os error 2)",
+            "\x1b[31m\x1b[4mERROR (inkjet):\x1b[39m\x1b[24m Please check if missingbinary is installed to run the command.",
         ))
         .failure();
 }

@@ -27,6 +27,7 @@ pub fn build_command_structure(
     let mut current_command = CommandBlock::new(1);
     let mut current_named_flag = NamedFlag::new();
     let mut text = "".to_string();
+    #[cfg(not(windows))]
     let mut current_lc = "".to_string();
     let mut list_level = 0;
     let mut first_was_pushed = false;
@@ -62,7 +63,6 @@ pub fn build_command_structure(
                     }
                     #[cfg(windows)]
                     Tag::CodeBlock(Fenced(lang_code)) => {
-                        current_lc = lang_code.to_string();
                         current_command.end = range.start;
                         current_command.script.executor = lang_code.to_string();
                     }

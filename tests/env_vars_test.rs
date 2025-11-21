@@ -70,7 +70,9 @@ echo "inkjet = $INKJET"
         let pattern2 = "inkjet --inkfile /";
 
         #[cfg(windows)]
-        let pattern2 = "inkjet.exe --inkfile \\\\?\\C:\\Users\\User\\AppData\\Local\\Temp\\";
+        let temp_path = common::temp_path();
+        #[cfg(windows)]
+        let pattern2 = format!("inkjet.exe --inkfile \\\\?\\{}", temp_path);
 
         common::run_inkjet(&inkfile_path)
             .current_dir(common::temp_path())
@@ -78,7 +80,7 @@ echo "inkjet = $INKJET"
             .assert()
             // Absolute inkfile path starts with /
             .stdout(contains(pattern1))
-            .stdout(contains(pattern2))
+            .stdout(contains(pattern2.as_str()))
             // And ends with inkjet.md
             .stdout(contains("inkjet.md"))
             .success();
@@ -105,14 +107,16 @@ echo "inkfile_dir = $INKJET_DIR"
         let pattern = "inkfile_dir = /";
 
         #[cfg(windows)]
-        let pattern = "inkfile_dir = \\\\?\\C:\\Users\\User\\AppData\\Local\\Temp";
+        let temp_path = common::temp_path();
+        #[cfg(windows)]
+        let pattern = format!("inkfile_dir = \\\\?\\{}", temp_path);
 
         common::run_inkjet(&inkfile_path)
             .current_dir(common::temp_path())
             .command("run")
             .assert()
             // Absolute inkfile path starts with /
-            .stdout(contains(pattern))
+            .stdout(contains(pattern.as_str()))
             .success();
     }
 }
