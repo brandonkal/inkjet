@@ -37,8 +37,6 @@ jobs:
     env:
       FORCE_COLOR: 1
       EARTHLY_CI: true
-      EARTHLY_ORG: nimbus
-      EARTHLY_SATELLITE: nimbus-sat
       EARTHLY_TOKEN: "${{ secrets.EARTHLY_TOKEN }}"
     steps:
       - uses: actions/checkout@v4

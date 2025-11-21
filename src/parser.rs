@@ -116,7 +116,7 @@ pub fn build_command_structure(
                     }
                 }
                 #[cfg(windows)]
-                TagEnd::CodeBlock(_) => {
+                TagEnd::CodeBlock => {
                     current_command.script.source = text.to_string();
                 }
                 TagEnd::List(_) => {
