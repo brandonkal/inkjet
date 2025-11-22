@@ -1,14 +1,26 @@
 [package]
 name = "inkjet"
-version = "1.0.0"
+version = "2.0.1"
 description = "Create interactive CLIs and execute Markdown with Inkjet"
 authors = ["Brandon Kalinowski <brandon@brandonkalinowski.com>"]
 repository = "https://github.com/brandonkal/inkjet"
 readme = "README.md"
 keywords = ["cli", "task", "command", "make", "markdown"]
-categories = ["command-line-interface", "command-line-utilities", "development-tools::build-utils", "parser-implementations"]
-edition = "2018"
-exclude = ["inkjet.md", ".gitignore", "CHANGELOG.md", "test/**", ".github/**", ".devbox"]
+categories = [
+    "command-line-interface",
+    "command-line-utilities",
+    "development-tools::build-utils",
+    "parser-implementations",
+]
+edition = "2024"
+exclude = [
+    "inkjet.md",
+    ".gitignore",
+    "CHANGELOG.md",
+    "test/**",
+    ".github/**",
+    ".devbox",
+]
 license = "MIT"
 build = "build.rs"
 
@@ -24,37 +36,34 @@ path = "src/lib.rs"
 lto = true
 codegen-units = 1
 panic = 'abort'
-
-[profile.coverage]
-inherits = "release"
-opt-level = 0
-debug = true
-lto = false
+strip = true
 
 [dependencies]
-colored = "2.0.0" # https://github.com/mackwic/colored
-pulldown-cmark = { version = "0.7.2", default-features = false } # https://github.com/raphlinus/pulldown-cmark
+pulldown-cmark = { version = "0.12.2", default-features = false }      # https://github.com/raphlinus/pulldown-cmark
 dialoguer = { git = "https://github.com/brandonkal/dialoguer" }
-mdcat = { version = "0.16.0", default-features = false }
 regex = "1.10.6"
 walkdir = "2"
-
-[dependencies.clap] # https://github.com/clap-rs/clap
-version = "2.33.1"
-features = ["wrap_help"]
+pulldown-cmark-mdcat = { version = "2.7.1", default-features = false }
+url = "2.5.4"
+clap = { version = "4.5", features = ["string"] }
+clap_complete = "4.5"
+color-print = "0.3.7"
 
 [dependencies.syntect]
-version = "4.2.0"
+version = "5.2.0"
 default-features = false
-features = ["parsing", "assets", "dump-load"]
+features = ["default-syntaxes"]
 
 [dev-dependencies]
 assert_cmd = "2.0.16" # https://github.com/assert-rs/assert_cmd
-assert_fs = "1.0.0"  # https://github.com/assert-rs/assert_fs
+assert_fs = "1.0.0"   # https://github.com/assert-rs/assert_fs
 predicates = "3.1.2"  # https://github.com/assert-rs/predicates-rs
 
 [target.'cfg(not(windows))'.dev-dependencies]
-rexpect = "0.5.0"
+rexpect = "0.6.2"
 
 [target.'cfg(windows)'.build-dependencies]
-tauri-winres = "0.1"
+tauri-winres = "0.3.1"
+
+[build-dependencies]
+tauri-winres = "0.3.1"

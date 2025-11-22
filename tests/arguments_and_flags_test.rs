@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 use assert_cmd::prelude::*;
-use clap::{crate_name, crate_version};
 use predicates::str::contains;
 
 mod common;
@@ -45,8 +44,8 @@ Write-Output "Testing $test_case in $file"
         .arg("some_test_case")
         .assert()
         .stderr(contains(
-            "error: The following required arguments were not provided:
-    <test_case>",
+            "error: the following required arguments were not provided:
+  <test_case>",
         ))
         .failure();
 }
@@ -180,7 +179,7 @@ Write-Output "Value: $in"
             ($($x:expr),*) => (vec![$($x.to_string()),*]);
         }
 
-        let (rc, _, _) = runner::run(
+        let rc = runner::run(
             svec!("inkjet", "--inkfile", contents, "color", "--val", "RED"),
             false,
         );
@@ -362,7 +361,11 @@ mod version_flag {
         common::run_inkjet(&inkfile_path)
             .command("--version")
             .assert()
-            .stdout(contains(format!("{} {}", crate_name!(), crate_version!())))
+            .stdout(contains(format!(
+                "{} {}",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION")
+            )))
             .success();
     }
 
@@ -383,9 +386,7 @@ echo "boo"
             .command("foo")
             .arg("--version")
             .assert()
-            .stderr(contains(
-                "error: Found argument '--version' which wasn't expected, or isn't valid in this context",
-            ))
+            .stderr(contains("error: unexpected argument '--version' found"))
             .failure();
     }
 }
@@ -451,7 +452,7 @@ Write-Output "This shouldn't render"
             .cli("required_val")
             .assert()
             .stderr(contains(
-                "error: The following required arguments were not provided:\n    --val <val>",
+                "error: the following required arguments were not provided:\n  --val <val>",
             ))
             .failure();
     }

@@ -1,11 +1,11 @@
 // Copyright 2020 Brandon Kalinowski (brandonkal)
 // SPDX-License-Identifier: MIT
 
-use colored::*;
+use crate::utils;
 use pulldown_cmark::CodeBlockKind::Fenced;
 use pulldown_cmark::{
     Event::{Code, End, Html, Start, Text},
-    Options, Parser, Tag,
+    Options, Parser, Tag, TagEnd,
 };
 use regex::Regex;
 use std::collections::HashSet;
@@ -14,7 +14,7 @@ use crate::command::{Arg, CommandBlock, NamedFlag};
 
 /// Creates the message that is returned on an error
 fn invalid_type_msg(t: &str) -> String {
-    format!("Invalid flag type '{}' Expected string | number | bool.", t)
+    format!("Invalid flag type '{t}' Expected string | number | bool.")
 }
 
 /// The main inkjet markdown parsing logic. Takes an inkfile content as a string and returns the parsed CommandBlock tree.
@@ -27,6 +27,8 @@ pub fn build_command_structure(
     let mut current_command = CommandBlock::new(1);
     let mut current_named_flag = NamedFlag::new();
     let mut text = "".to_string();
+    #[cfg(not(windows))]
+    let mut current_lc = "".to_string();
     let mut list_level = 0;
     let mut first_was_pushed = false;
     let mut current_file = "".to_string();
@@ -36,23 +38,27 @@ pub fn build_command_structure(
         match event {
             Start(tag) => {
                 match tag {
-                    Tag::Heading(heading_level) => {
+                    Tag::Heading { level, .. } => {
+                        let heading_level = level as u8;
                         // Add the last command before starting a new one.
                         // Don't add the first command during the first iteration.
                         if heading_level > 1 || first_was_pushed {
                             first_was_pushed = true;
                             commands.push(current_command.build());
                         }
-                        current_command = CommandBlock::new(heading_level as u8);
+                        current_command = CommandBlock::new(heading_level);
                         current_command.inkjet_file = current_file.clone();
                         current_command.start = range.start;
                     }
                     #[cfg(not(windows))]
                     Tag::CodeBlock(Fenced(lang_code)) => {
-                        let lc = lang_code.to_string();
-                        if lc != "powershell" && lc != "batch" && lc != "cmd" {
+                        current_lc = lang_code.to_string();
+                        if current_lc != "powershell"
+                            && current_lc != "batch"
+                            && current_lc != "cmd"
+                        {
                             current_command.end = range.start;
-                            current_command.script.executor = lc;
+                            current_command.script.executor = current_lc.clone();
                         }
                     }
                     #[cfg(windows)]
@@ -66,7 +72,7 @@ pub fn build_command_structure(
                             list_level += 1;
                         }
                     }
-                    Tag::BlockQuote => {
+                    Tag::BlockQuote(_) => {
                         in_block_quote = true;
                     }
                     _ => (),
@@ -76,7 +82,8 @@ pub fn build_command_structure(
                 text = "".to_string();
             }
             End(tag) => match tag {
-                Tag::Heading(heading_level) => {
+                TagEnd::Heading(level) => {
+                    let heading_level = level as u8;
                     let mut virtual_heading_level = heading_level;
                     if first_was_pushed && heading_level == 1 {
                         virtual_heading_level = 2; // This case occurs during a merge
@@ -87,7 +94,9 @@ pub fn build_command_structure(
                         return Err("unexpected empty heading name".to_string());
                     }
                     if name.contains(char::is_whitespace) {
-                        return Err(format!("Command names cannot contain spaces. Found '{}'. Did you forget to wrap args in ()?", name));
+                        return Err(format!(
+                            "Command names cannot contain spaces. Found '{name}'. Did you forget to wrap args in ()?"
+                        ));
                     }
                     current_command.name = name;
                     current_command.args = args;
@@ -95,23 +104,22 @@ pub fn build_command_structure(
                         current_command.aliases = aliases;
                     }
                 }
-                Tag::BlockQuote => {
+                TagEnd::BlockQuote(_) => {
                     if in_block_quote {
                         in_block_quote = false;
                     }
                 }
                 #[cfg(not(windows))]
-                Tag::CodeBlock(Fenced(lang_code)) => {
-                    let lc = lang_code.to_string();
-                    if lc != "powershell" && lc != "batch" && lc != "cmd" {
+                TagEnd::CodeBlock => {
+                    if current_lc != "powershell" && current_lc != "batch" && current_lc != "cmd" {
                         current_command.script.source = text.to_string();
                     }
                 }
                 #[cfg(windows)]
-                Tag::CodeBlock(_) => {
+                TagEnd::CodeBlock => {
                     current_command.script.source = text.to_string();
                 }
-                Tag::List(_) => {
+                TagEnd::List(_) => {
                     // Don't go lower than zero (for cases where it's a non-OPTIONS list)
                     list_level = std::cmp::max(list_level - 1, 0);
                     // Must be finished parsing the current option
@@ -243,9 +251,9 @@ pub fn build_command_structure(
                 text += html.as_ref();
             }
             Code(inline_code) => {
-                text += &format!("`{}`", inline_code);
+                text += &format!("`{inline_code}`");
                 if in_block_quote {
-                    current_command.desc.push_str(&format!("`{}`", inline_code));
+                    current_command.desc.push_str(&format!("`{inline_code}`"));
                     current_command.desc.push(' ');
                 }
             }
@@ -282,7 +290,7 @@ fn validate_no_duplicate_aliases(cmd: CommandBlock) -> bool {
                     errors.push(alias.to_string());
                     eprintln!(
                         "{} Duplicate command alias found: {}",
-                        "ERROR (inkjet):".red(),
+                        utils::ERROR_MSG,
                         alias
                     );
                 } else if !alias.is_empty() {
@@ -306,7 +314,7 @@ fn remove_duplicates(mut cmds: Vec<CommandBlock>, log_warnings: bool) -> Vec<Com
                 if log_warnings {
                     eprintln!(
                         "{} Duplicate command overwritten: {}",
-                        "INFO (inkjet):".yellow(),
+                        utils::INFO_MSG,
                         item.name
                     );
                 }
@@ -329,7 +337,7 @@ fn remove_duplicates(mut cmds: Vec<CommandBlock>, log_warnings: bool) -> Vec<Com
     cmds
 }
 
-fn create_markdown_parser(inkfile_contents: &str) -> Parser {
+fn create_markdown_parser(inkfile_contents: &'_ str) -> Parser<'_> {
     // Set up options and parser. Strikethroughs are not part of the CommonMark standard
     // and we therefore must enable it explicitly.
     let mut options = Options::empty();
@@ -357,7 +365,6 @@ fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
     let mut add = 0;
     let mut allow_increment = false;
 
-    #[allow(clippy::needless_range_loop, clippy::comparison_chain)]
     for i in 0..num_commands {
         let mut c = commands.get(i).unwrap().clone();
         let is_last_cmd = i == num_commands - 1;
@@ -406,7 +413,7 @@ fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
     command_tree
 }
 
-fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Vec<Arg>) {
+fn parse_heading_to_cmd(heading_level: u8, text: String) -> (String, String, Vec<Arg>) {
     // Anything after double dash is handled later -- if defined, it is the last arg
     let mut parts = text.split(" -- ");
     let main_text = parts.next().unwrap();
@@ -430,7 +437,7 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
     };
 
     // Find any arguments. They look like this: (arg_name)
-    let name_and_args: Vec<&str> = name.split(|c| c == '(' || c == ')').collect();
+    let name_and_args: Vec<&str> = name.split(['(', ')']).collect();
     let (name, args_split) = name_and_args.split_at(1);
 
     let name = name.join(" ");
@@ -456,12 +463,8 @@ fn parse_heading_to_cmd(heading_level: u32, text: String) -> (String, String, Ve
     }
 
     let caps = Regex::new(r"-- \(([^)]+)\)").unwrap().captures(&text);
-    if caps.is_some() {
-        let last_arg = caps
-            .expect("Inkjet: regex should match for last arg")
-            .get(1)
-            .unwrap()
-            .as_str();
+    if let Some(caps) = caps {
+        let last_arg = caps.get(1).unwrap().as_str();
         let mut parsed = parse_arg(last_arg);
         parsed.last = true;
         out_args.push(parsed);
@@ -481,9 +484,9 @@ fn parse_arg(arg_str: &str) -> Arg {
             arg.pop();
             arg.pop();
             arg.pop();
-            return Arg::new(arg, false, None, true);
+            Arg::new(arg, false, None, true)
         } else {
-            return Arg::new(arg, false, None, false);
+            Arg::new(arg, false, None, false)
         }
     } else if arg_str.contains('=') {
         let parts: Vec<&str> = arg_str.splitn(2, '=').collect();
@@ -499,15 +502,15 @@ fn parse_arg(arg_str: &str) -> Arg {
     } else if arg_str.ends_with('…') {
         let mut arg = (*arg_str).to_lowercase();
         arg.pop();
-        return Arg::new(arg, true, None, true);
+        Arg::new(arg, true, None, true)
     } else if arg_str.ends_with("...") {
         let mut arg = (*arg_str).to_lowercase();
         arg.pop();
         arg.pop();
         arg.pop();
-        return Arg::new(arg, true, None, true);
+        Arg::new(arg, true, None, true)
     } else {
-        return Arg::new((*arg_str).to_lowercase(), true, None, false);
+        Arg::new((*arg_str).to_lowercase(), true, None, false)
     }
 }
 
@@ -702,8 +705,10 @@ echo "abc"
        "#;
         let tree_result = build_command_structure(file, true);
         if let Err(e) = tree_result {
-            assert!(e == "Command names cannot contain spaces. Found 'b c'. Did you forget to wrap args in ()?",
-                "Unexpected error message: \"{}\"", e);
+            assert!(
+                e == "Command names cannot contain spaces. Found 'b c'. Did you forget to wrap args in ()?",
+                "Unexpected error message: \"{e}\""
+            );
         } else {
             panic!("expected a parse error");
         }

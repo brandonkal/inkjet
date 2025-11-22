@@ -1,7 +1,6 @@
 // Copyright 2020 Brandon Kalinowski (brandonkal)
 // SPDX-License-Identifier: MIT
 
-use colored::*;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io;
@@ -12,6 +11,7 @@ use std::{env, fs};
 use walkdir::WalkDir;
 
 use crate::command::CommandBlock;
+use crate::utils;
 
 /// takes a source string and generates a temporary hash for the filename.
 fn hash_source(s: &str) -> String {
@@ -56,11 +56,11 @@ pub fn execute_merge_command(inkfile_path: &str) -> Result<String, String> {
     // Append the content of each file with the required format
     for file in inkjet_files {
         let file_str = file.to_string_lossy();
-        combined_text.push_str(&format!("<!-- inkfile: {} -->\n", file_str));
+        combined_text.push_str(&format!("<!-- inkfile: {file_str} -->\n"));
 
         match fs::read_to_string(&file) {
             Ok(content) => combined_text.push_str(&content),
-            Err(e) => return Err(format!("Error reading file {}: {}", file_str, e)),
+            Err(e) => return Err(format!("Error reading file {file_str}: {e}")),
         }
     }
 
@@ -95,7 +95,7 @@ pub fn execute_command(
 ) -> Option<io::Result<process::ExitStatus>> {
     if cmd.script.source.is_empty() {
         let msg = "CommandBlock has no script."; // cov:include (unusual)
-        return Some(Err(io::Error::new(io::ErrorKind::Other, msg))); // cov:include
+        return Some(Err(io::Error::other(msg))); // cov:include
     }
 
     if cmd.script.executor.is_empty() && !cmd.script.source.trim().starts_with("#!") {
@@ -109,13 +109,13 @@ pub fn execute_command(
 
     if preview {
         if !color {
-            print!("{}", source);
+            print!("{source}");
             return None;
         }
         match run_bat(source.clone(), &cmd.script.executor) {
             Ok(mut child) => Some(child.wait()),
             Err(_) => {
-                print!("{}", source); // cov:include (bat exists)
+                print!("{source}"); // cov:include (bat exists)
                 None // cov:include
             }
         }
@@ -141,7 +141,7 @@ pub fn execute_command(
                     }
                     eprintln!(
                         "{} Please check if {} is installed to run the command.",
-                        "ERROR (inkjet):".red(),
+                        utils::ERROR_MSG,
                         executor
                     );
                 }
@@ -161,7 +161,7 @@ fn delete_file(file: &str) {
     if !file.is_empty() && std::fs::remove_file(file).is_err() {
         eprintln!(
             "{} Failed to delete temporary file {}",
-            "ERROR (inkjet):".red(),
+            utils::ERROR_MSG,
             file
         ); // cov:ignore (unusual)
     }
@@ -177,20 +177,17 @@ fn prepare_command(
     let source = cmd.script.source.trim();
     if source.starts_with("#!") {
         let hash = hash_source(source);
-        *tempfile = format!("{}/.inkjet-order.{}", parent_dir, hash);
-        #[allow(clippy::needless_borrows_for_generic_args)]
+        *tempfile = format!("{parent_dir}/.inkjet-order.{hash}");
         std::fs::write(&tempfile, source)
             .unwrap_or_else(|_| panic!("Inkjet: Unable to write file {}", &tempfile));
 
         #[cfg(not(windows))]
         {
             use std::os::unix::fs::PermissionsExt;
-            #[allow(clippy::needless_borrows_for_generic_args)]
             let meta =
                 std::fs::metadata(&tempfile).expect("Inkjet: Unable to read file permissions");
             let mut perms = meta.permissions();
             perms.set_mode(0o775);
-            #[allow(clippy::needless_borrows_for_generic_args)]
             std::fs::set_permissions(&tempfile, perms).expect("Inkjet: Could not set permissions");
         }
 
@@ -244,7 +241,7 @@ fn prepare_command(
                 }
                 let mut child = process::Command::new(&executor);
                 let top = "set -e"; // a sane default for scripts
-                let src = format!("{}\n{}", top, source);
+                let src = format!("{top}\n{source}");
                 child.arg("-c").arg(src);
                 (child, executor)
             }
@@ -294,13 +291,10 @@ fn add_utility_variables(
     // inside scripts so that they can be location-agnostic (not care where they are
     // called from). This is useful for global inkfiles especially.
     // $INKJET always refers to the root inkjet script
-    child.env("INKJET", format!("{} --inkfile {}", exe_path, inkfile_path));
+    child.env("INKJET", format!("{exe_path} --inkfile {inkfile_path}"));
     // $INK is shorthand for "$INKJET command". The difference here is that it resolves to the local inkjet.md which
     // could differ from $INKJET if the file was imported.
-    child.env(
-        "INK",
-        format!("{} --inkfile {}", exe_path, local_inkfile_path),
-    );
+    child.env("INK", format!("{exe_path} --inkfile {local_inkfile_path}"));
     // This allows us to refer to the directory the inkfile lives in which can be handy
     // for loading relative files to it.
     child.env("INKJET_DIR", get_parent_dir(inkfile_path));

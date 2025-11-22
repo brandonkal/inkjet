@@ -4,7 +4,6 @@
 use std::path::PathBuf;
 
 use assert_cmd::prelude::*;
-use clap::{crate_name, crate_version};
 use predicates::str::contains;
 
 mod common;
@@ -34,7 +33,7 @@ echo "hidden"
         .arg("--help")
         .assert()
         .stdout(contains("Brandon Kalinowski"))
-        .stdout(contains("USAGE:"))
+        .stdout(contains("Usage:"))
         .stdout(contains("foo").count(1))
         .stdout(contains("hidden").count(0))
         .stdout(contains("default").count(0))
@@ -69,7 +68,7 @@ echo "optional infinite $extras"
         .assert()
         .stdout(contains(""))
         .stderr(contains(
-            "error: The following required arguments were not provided:\n    <extras>...",
+            "error: the following required arguments were not provided:\n  <extras>...",
         ))
         .failure();
     common::run_inkjet(&inkfile_path)
@@ -124,7 +123,7 @@ fn read_stdin() {
     #[cfg(windows)]
     let bin_path = common::convert_windows_path_to_unix(&bin_path);
 
-    let script = format!("cat tests/simple_case/inkjet.md | {} -", bin_path);
+    let script = format!("cat tests/simple_case/inkjet.md | {bin_path} -");
     std::process::Command::new("bash")
         .arg("-c")
         .arg(script)
@@ -262,7 +261,7 @@ mod when_no_inkfile_found_in_current_directory {
             .command("--bad-argument")
             .assert()
             .stderr(contains("no inkjet.md found"))
-            .code(1);
+            .code(2);
     }
 
     #[test]
@@ -271,7 +270,7 @@ mod when_no_inkfile_found_in_current_directory {
             .current_dir(common::temp_path())
             .command("--help")
             .assert()
-            .stdout(contains("USAGE:"))
+            .stdout(contains("Usage:"))
             .success();
     }
 
@@ -281,7 +280,11 @@ mod when_no_inkfile_found_in_current_directory {
             .current_dir(common::temp_path())
             .command("--version")
             .assert()
-            .stdout(contains(format!("{} {}", crate_name!(), crate_version!())))
+            .stdout(contains(format!(
+                "{} {}",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION")
+            )))
             .success();
     }
 
@@ -291,8 +294,8 @@ mod when_no_inkfile_found_in_current_directory {
             .current_dir("tests")
             .command("nothing")
             .assert()
-            .code(1)
-            .stderr(contains("error: Found argument 'nothing' which wasn't expected, or isn't valid in this context"))
+            .code(2)
+            .stderr(contains("error: unrecognized subcommand 'nothing'"))
             .failure();
     }
     #[test]
@@ -301,8 +304,8 @@ mod when_no_inkfile_found_in_current_directory {
             .current_dir("tests/common")
             .command("nothing")
             .assert()
-            .code(1)
-            .stderr(contains("error: Found argument 'nothing' which wasn't expected, or isn't valid in this context"))
+            .code(2)
+            .stderr(contains("error: unrecognized subcommand 'nothing'"))
             .failure();
     }
 }
@@ -315,7 +318,7 @@ mod when_custom_specified_inkfile_not_found {
         common::run_inkjet(&PathBuf::from("./nonexistent.md"))
             .command("--help")
             .assert()
-            .code(10)
+            .code(66)
             .stderr(contains("specified inkfile \"./nonexistent.md\" not found"))
             .failure();
     }
@@ -325,7 +328,7 @@ mod when_custom_specified_inkfile_not_found {
         common::run_inkjet(&PathBuf::from("./nonexistent.md"))
             .command("--version")
             .assert()
-            .code(10)
+            .code(66)
             .stderr(contains("specified inkfile \"./nonexistent.md\" not found"))
             .failure();
     }
@@ -335,7 +338,7 @@ mod when_custom_specified_inkfile_not_found {
         common::run_inkjet(&PathBuf::from("./nonexistent.md"))
             .command("what")
             .assert()
-            .code(10)
+            .code(66)
             .stderr(contains("specified inkfile \"./nonexistent.md\" not found"))
             .failure();
     }

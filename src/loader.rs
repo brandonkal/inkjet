@@ -57,7 +57,7 @@ pub fn read_inkfile(inkfile: &str) -> (Result<String, String>, String, bool) {
     }
     let file = File::open(&filename);
     if file.is_err() {
-        return (Err(format!("failed to open {}", filename)), filename, true);
+        return (Err(format!("failed to open {filename}")), filename, true);
     }
     let inkfile_contents = read_and_return(file);
     (Ok(inkfile_contents), filename, true)
@@ -98,7 +98,7 @@ mod read_inkfile {
     fn reads_root_inkfile() {
         let (inkfile, _, _) = read_inkfile("./inkjet.md");
 
-        assert!(inkfile.is_ok(), "Inkfile is not ok: {:?}", inkfile);
+        assert!(inkfile.is_ok(), "Inkfile is not ok: {inkfile:?}");
 
         let contents = inkfile.unwrap();
 

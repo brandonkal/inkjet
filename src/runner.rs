@@ -1,78 +1,108 @@
 // Copyright 2020 Brandon Kalinowski (brandonkal)
 // SPDX-License-Identifier: MIT
 
+use clap::error::ErrorKind;
 use dialoguer::theme::ColoredTheme;
 use dialoguer::{Confirmation, Input, KeyPrompt};
 use std::collections::HashSet;
 use std::env;
 use std::path::Path;
 
-use clap::{crate_name, crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
-use colored::*;
+use clap::{Arg, ArgMatches, ColorChoice, Command, builder::styling};
+use clap_complete::{Shell, generate};
 
 use crate::command::CommandBlock;
 use crate::executor::{execute_command, execute_merge_command};
-use crate::view;
+use crate::{utils, view};
 
 /// Parse and execute the chosen command.
 /// run attempts to ensure that the process does not exit unless there is a panic or clap --help or --version is matched.
 /// This enables improved integration testing.
 /// Returns exit code, an error string if it should be printed, and if the error should be prefixed with `ERROR`.
 /// Inkjet parser created by Brandon Kalinowski See: https://github.com/brandonkal/inkjet
-#[inline(never)]
-pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
+pub fn run(args: Vec<String>, color: bool) -> i32 {
     let early_version_detected = match args.get(1) {
         Some(first_arg) => first_arg == "-V" || first_arg == "--version",
         _ => false,
     };
-    if early_version_detected {
-        return (0, format!("inkjet {}", crate_version!()), false);
-    }
-    let (opts, args) = pre_parse(args);
+
     let color_setting = if color {
-        AppSettings::ColoredHelp
+        ColorChoice::Auto
     } else {
-        AppSettings::ColorNever
+        ColorChoice::Never
     };
-    let mut cli_app = App::new(crate_name!())
-        .setting(AppSettings::VersionlessSubcommands)
-        .setting(AppSettings::AllowNegativeNumbers)
-        .setting(AppSettings::SubcommandRequired)
-        .global_setting(AppSettings::DisableHelpSubcommand)
-        .setting(AppSettings::VersionlessSubcommands)
-        .global_setting(color_setting)
-        .global_setting(AppSettings::TrailingVarArg)
-        .version(crate_version!())
+
+    const STYLES: styling::Styles = styling::Styles::styled()
+        .header(styling::AnsiColor::Green.on_default().bold())
+        .usage(styling::AnsiColor::Green.on_default().bold())
+        .literal(styling::AnsiColor::Blue.on_default().bold())
+        .placeholder(styling::AnsiColor::Cyan.on_default());
+
+    let mut cli_app = Command::new(env!("CARGO_PKG_NAME"))
+        .allow_negative_numbers(true)
+        .subcommand_required(true)
+        .disable_help_subcommand(true)
+        .color(color_setting)
+        .styles(STYLES)
+        .trailing_var_arg(true)
+        .version(env!("CARGO_PKG_VERSION"))
         .about("Inkjet parser created by Brandon Kalinowski\nInkjet is a tool to build interactive CLIs with executable markdown documents.\nSee: https://github.com/brandonkal/inkjet")
         .after_help("Run 'inkjet --inkjet-print-all' if you wish to view the complete merged inkjet definition.\nRun 'inkjet --inkjet-dynamic-completions fish/bash/zsh/powershell' to generate shell completions.\nThis is called dynamically by the global shell completion scripts.\nRun 'inkjet COMMAND --help' for more information on a command.")
         .arg(custom_inkfile_path_arg())
-        .arg_from_usage(
-            "-i --interactive 'Execute the command in the document prompting for arguments'",
+        .arg(
+            Arg::new("interactive")
+                .short('i')
+                .long("interactive")
+                .help("Execute the command in the document prompting for arguments")
+                .action(clap::ArgAction::SetTrue),
         )
-        .arg_from_usage("-p --preview 'Preview the command source and exit'");
+        .arg(
+            Arg::new("preview")
+                .short('p')
+                .long("preview")
+                .help("Preview the command source and exit")
+                .action(clap::ArgAction::SetTrue),
+        );
+
+    // Handle version command early here
+    if early_version_detected {
+        println!("inkjet {}", env!("CARGO_PKG_VERSION"));
+        return 0;
+    }
+    let (opts, args) = pre_parse(args);
+
     let (inkfile, inkfile_path) = crate::loader::find_inkfile(&opts.inkfile_opt);
     if inkfile.is_err() {
         if opts.inkfile_opt.is_empty() || opts.inkfile_opt == "./inkjet.md" {
             // Just log a warning and let the process continue
-            eprintln!("{} no inkjet.md found", "WARNING (inkjet):".yellow());
+            // we use an if statement here because clap is not printing this as we want
+            // it to be printed even if a valid match is found (such as help or version)
+            if color {
+                eprintln!("{} no inkjet.md found", utils::WARNING_MSG);
+            } else {
+                eprintln!("WARNING (inkjet): no inkjet.md found");
+            }
+
             // If the inkfile can't be found, at least parse for --version or --help
-            if let Err(err) = cli_app.get_matches_from_safe(args) {
-                let rc = if err.kind == clap::ErrorKind::VersionDisplayed
-                    || err.kind == clap::ErrorKind::HelpDisplayed
-                {
-                    0
-                } else {
-                    1
-                };
-                return (rc, err.message, false);
+            if let Err(err) = cli_app.clone().try_get_matches_from(args) {
+                // Parsed as version or help most likely
+                // if --help is called, clap still considers it an error.
+                let _ = err.print();
+                return err.exit_code();
             };
-            return (10, "No argument match found".to_string(), true); // cov:ignore (won't be called if help is parsed)
+            return 66; // cov:ignore (won't be called if help is parsed)
         } else {
-            return (
-                10,
-                format!("specified inkfile \"{}\" not found", opts.inkfile_opt),
-                true,
-            ); // won't be called if help is parsed
+            let red_inkjet: &'static str =
+                color_print::cstr!("<bold><underline><red>INKJET</red></underline></bold>");
+            let err = cli_app.error(
+                ErrorKind::ValueValidation,
+                format!(
+                    "{} specified inkfile \"{}\" not found",
+                    red_inkjet, opts.inkfile_opt
+                ),
+            );
+            let _ = err.print();
+            return 66; // won't be called if help is parsed
         }
     }
     let mut mdtxt = inkfile.unwrap();
@@ -85,49 +115,67 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
                 mdtxt = txt;
             }
 
-            Err(err) /* cov:include */ => {
-                return (10, err, true);
+            Err(err_string) /* cov:include */ => {
+                let err = cli_app.error(ErrorKind::Io, format!("{} {}", utils::INVALID_MSG, err_string));
+                let _ = err.print();
+                return 5;
             }
         };
     }
     if opts.print_all {
-        return (0, mdtxt, false);
+        println!("{mdtxt}");
+        return 0;
     }
     // By default subcommands in the help output are listed in the same order
     // they are defined in the markdown file. Users can define this directive
     // for alphabetical sort.
-    if !mdtxt.contains("inkjet_sort: true") {
-        cli_app = cli_app.setting(AppSettings::DeriveDisplayOrder);
-    }
-    #[allow(clippy::indexing_slicing)]
-    let in_completions_mode = args.len() > 2 && args[1] == "inkjet-dynamic-completions";
+    let alphabetical_sort = mdtxt.contains("inkjet_sort: true");
+
+    let in_completions_mode =
+        args.len() > 2 && args.get(1).unwrap_or(&String::from("")) == "inkjet-dynamic-completions";
     let root_command = match crate::parser::build_command_structure(&mdtxt, !in_completions_mode) {
         Ok(cmd) => cmd,
-        Err(err) => {
-            return (10, err, true);
+        Err(err_string) => {
+            let prefix = if color {
+                utils::ERROR_MSG
+            } else {
+                "ERROR (inkjet):"
+            };
+            eprintln!("{prefix} {err_string}");
+            return 78;
         }
     };
     let about_txt = format!(
         "Generated from {}\n\nInkjet parser created by Brandon Kalinowski\nInkjet is a tool to build interactive CLIs with executable markdown documents.\nSee: https://github.com/brandonkal/inkjet\n\n{}",
         inkfile_path, root_command.desc
     );
-    cli_app = cli_app.about(about_txt.trim());
-    cli_app = build_subcommands(cli_app, &opts, &root_command.subcommands);
+    cli_app = cli_app.about(about_txt.trim().to_string());
+    cli_app = build_subcommands(
+        cli_app,
+        &opts,
+        root_command.subcommands.clone(),
+        alphabetical_sort,
+    );
 
     // Manual arg parsing for inkjet-dynamic-completions because it should not be required
     #[allow(clippy::indexing_slicing)]
     if in_completions_mode {
         let shell = match args[2].as_str() {
-            "bash" => clap::Shell::Bash,
-            "fish" => clap::Shell::Fish,
-            "zsh" => clap::Shell::Zsh,
-            "powershell" => clap::Shell::PowerShell,
+            "bash" => Shell::Bash,
+            "fish" => Shell::Fish,
+            "zsh" => Shell::Zsh,
+            "powershell" => Shell::PowerShell,
             _ => {
-                return (1, format!("Unsupported shell: {}", args[2]), false);
+                let err = cli_app.error(
+                    ErrorKind::ValueValidation,
+                    format!("Unsupported shell: {}", args[2]),
+                );
+                let _ = err.print();
+                return err.exit_code();
             }
         };
         let mut buffer: Vec<u8> = Vec::new();
-        cli_app.gen_completions_to("inkjet", shell, &mut buffer);
+        generate(shell, &mut cli_app, "inkjet", &mut buffer);
         let mut output = String::from_utf8_lossy(&buffer).into_owned();
         if args[2].as_str() == "bash" {
             output = output
@@ -144,65 +192,64 @@ pub fn run(args: Vec<String>, color: bool) -> (i32, String, bool) {
                 .collect::<Vec<&str>>()
                 .join("\n")
         }
-        return (0, output, false); // Exit after generating completion
+        eprintln!("{output}");
+        return 0; // Exit after generating completion
     }
 
-    let matches = match cli_app.clone().get_matches_from_safe(args) {
+    let matches = match cli_app.clone().try_get_matches_from(args) {
         Ok(m) => m,
         Err(err) => {
-            let rc = if err.kind == clap::ErrorKind::VersionDisplayed
-                || err.kind == clap::ErrorKind::HelpDisplayed
-            {
-                0
-            } else {
-                1
-            };
-            return (rc, err.message, false);
+            let _ = err.print();
+            return err.exit_code();
         }
     };
 
     let mut chosen_cmd = find_command(&matches, &root_command.subcommands)
         .expect("Inkjet: SubcommandRequired failed to work");
     if !chosen_cmd.validation_error_msg.is_empty() {
-        return (1, chosen_cmd.validation_error_msg, true);
+        let err = cli_app.error(ErrorKind::ValueValidation, chosen_cmd.validation_error_msg);
+        let _ = err.print();
+        return err.exit_code();
     }
     let fixed_pwd = !mdtxt.contains("inkjet_fixed_dir: false");
 
     if opts.interactive {
-        let p = view::Printer::new(color, false, &inkfile_path);
+        let p = view::Printer::new(color, &inkfile_path);
 
         let portion = &mdtxt
             .get(chosen_cmd.start..chosen_cmd.end)
             .expect("Inkjet: portion out of bounds");
-        let print_err = p.print_markdown(portion);
-        if let Err(err) = print_err {
-            return (10, format!("printing markdown: {}", err), true); // cov:include (unusual error)
+        let print_result = p.print_markdown(portion);
+        if let Err(err_box) = print_result {
+            let err = cli_app.error(
+                ErrorKind::Io,
+                format!("{} printing markdown: {}", utils::ERROR_MSG, err_box),
+            );
+            let _ = err.print();
+            return 5; // cov:include (unusual error)
         }
         eprintln!();
         let (picked_cmd, exit_code, err_str) =
             interactive_params(chosen_cmd, &inkfile_path, color, fixed_pwd);
         if picked_cmd.is_none() {
-            return (exit_code, err_str, true); // cov:include (skipped command)
+            eprintln!("{err_str}");
+            return exit_code; // cov:include (skipped command)
         }
         chosen_cmd = picked_cmd.unwrap();
     }
     match execute_command(chosen_cmd, &inkfile_path, opts.preview, color, fixed_pwd) {
         Some(result) => match result {
-            Ok(status) => {
-                if let Some(code) = status.code() {
-                    (code, "".to_string(), false)
-                } else {
-                    (0, "".to_string(), false) // cov:ignore (unusual)
-                }
+            Ok(status) => status.code().unwrap_or_default(), // default is 0 status code (success)
+            Err(err_original) => {
+                eprintln!("{err_original}");
+                5
             }
-            Err(err) => (10, err.to_string(), false),
         },
-        _ => (0, "".to_string(), false),
+        _ => 0,
     }
 }
 
 /// Prompt for missing parameters interactively.
-#[inline(never)]
 fn interactive_params(
     mut chosen_cmd: CommandBlock,
     inkfile_path: &str,
@@ -275,16 +322,27 @@ fn interactive_params(
                     .interact()
                     .expect("Inkjet: unable to read option");
                 if !flag.choices.is_empty() && !flag.choices.contains(&rv) {
-                    eprintln!(
-                        "{}: {} flag expects one of {:?}",
-                        "INVALID".red(),
-                        flag.name,
-                        flag.choices
-                    );
+                    if color {
+                        eprintln!(
+                            "{} {} flag expects one of {:?}",
+                            utils::INVALID_MSG,
+                            flag.name,
+                            flag.choices
+                        );
+                    } else {
+                        eprintln!(
+                            "INVALID: {} flag expects one of {:?}",
+                            flag.name, flag.choices
+                        );
+                    }
                     continue;
                 }
                 if is_invalid_number(flag.validate_as_number, &rv) {
-                    eprintln!("{}: {}", "INVALID".red(), not_number_err_msg(&name));
+                    if color {
+                        eprintln!("{} {}", utils::INVALID_MSG, not_number_err_msg(&name));
+                    } else {
+                        eprintln!("INVALID: {}", not_number_err_msg(&name));
+                    }
                     continue;
                 } else {
                     break;
@@ -433,79 +491,135 @@ fn canonical_path(p: &str) -> String {
         .to_string()
 }
 
-fn custom_inkfile_path_arg<'a, 'b>() -> Arg<'a, 'b> {
+fn custom_inkfile_path_arg() -> Arg {
     // This is needed to prevent clap from complaining about the custom flag check
     // within find_inkfile(). It should be removed once clap 3.x is released.
     // See https://github.com/clap-rs/clap/issues/748
-    Arg::with_name("inkfile")
+    Arg::new("inkfile")
         .help("Path to a different inkfile you want to use")
         .long("inkfile")
-        .short("c")
-        .takes_value(true)
-        .multiple(false)
+        .short('c')
+        .value_name("FILE")
+        .action(clap::ArgAction::Set)
 }
-/// Takes a `clap_app` and a parsed root command and recursively builds the CLI application
-fn build_subcommands<'a, 'b>(
-    mut cli_app: App<'a, 'b>,
-    opts: &CustomOpts,
-    subcommands: &'a [CommandBlock],
-) -> App<'a, 'b> {
-    for c in subcommands {
-        let mut subcmd = SubCommand::with_name(&c.name)
-            .about(c.desc.as_ref())
-            .setting(AppSettings::AllowNegativeNumbers);
-        if !c.subcommands.is_empty() {
-            subcmd = build_subcommands(subcmd, opts, &c.subcommands);
-            // If this parent command has no script source, require a subcommand.
-            if c.script.source.is_empty() {
-                subcmd = subcmd.setting(AppSettings::SubcommandRequired);
+/// Helper function to build a Command from a CommandBlock
+fn build_command_from_block(cmd_block: CommandBlock, opts: &CustomOpts, sort: bool) -> Command {
+    let name = cmd_block.name;
+    let desc = cmd_block.desc;
+    let args = cmd_block.args;
+    let named_flags = cmd_block.named_flags;
+    let aliases = cmd_block.aliases;
+    let script_source = cmd_block.script.source;
+    let starts_with_underscore = name.starts_with('_');
+    let subcommands = cmd_block.subcommands;
+
+    // Create a new owned Command
+    let mut cmd = Command::new(name).about(desc).allow_negative_numbers(true);
+
+    // Process subcommands recursively
+    if !subcommands.is_empty() {
+        // Pass ownership of the subcommands
+        cmd = build_subcommands(cmd, opts, subcommands, sort);
+        // If this parent command has no script source, require a subcommand.
+        if script_source.is_empty() {
+            cmd = cmd.subcommand_required(true);
+        }
+    }
+
+    // Add all positional arguments
+    for a in args {
+        // Convert to owned strings to satisfy 'static lifetime requirement
+        let arg_name = a.name.clone();
+        let mut arg = Arg::new(arg_name);
+        if a.multiple {
+            arg = arg.action(clap::ArgAction::Append);
+        } else {
+            arg = arg.action(clap::ArgAction::Set);
+        }
+        if !opts.preview && !opts.interactive {
+            if let Some(def) = &a.default {
+                // Convert to owned string
+                let default_value = def.clone();
+                arg = arg.default_value(default_value);
+            }
+            // Handle "extras" arg to collect everything after the --
+            if a.last {
+                arg = arg.last(true);
             }
         }
+        // If we are printing, we can't have required args
+        arg = arg.required(if opts.preview || opts.interactive {
+            false
+        } else {
+            a.required
+        });
+        cmd = cmd.arg(arg);
+    }
 
-        // Add all positional arguments
-        for a in &c.args {
-            let mut arg = Arg::with_name(&a.name).multiple(a.multiple);
-            if !opts.preview && !opts.interactive {
-                if let Some(def) = &a.default {
-                    arg = arg.default_value(def);
-                }
-                // Handle "extras" arg to collect everything after the --
-                if a.last {
-                    arg = arg.last(true)
-                }
-            }
-            // If we are printing, we can't have required args
-            subcmd = subcmd.arg(arg.required(if opts.preview || opts.interactive {
+    // Add all named flags
+    for f in named_flags {
+        // Convert to owned strings to satisfy 'static lifetime requirement
+        let flag_name = f.name.clone();
+        let flag_desc = f.desc.clone();
+        let flag_long = f.long.clone();
+
+        let mut arg = Arg::new(flag_name)
+            .help(flag_desc)
+            .long(flag_long)
+            .required(if opts.preview || opts.interactive {
                 false
             } else {
-                a.required
-            }));
+                f.required
+            });
+
+        if !f.short.is_empty() {
+            arg = arg.short(f.short.chars().next().unwrap_or('?'));
         }
 
-        // Add all named flags
-        for f in &c.named_flags {
-            let arg = Arg::with_name(&f.name)
-                .help(&f.desc)
-                .short(&f.short)
-                .long(&f.long)
-                .takes_value(f.takes_value)
-                .multiple(f.multiple)
-                .required(if opts.preview || opts.interactive {
-                    false
-                } else {
-                    f.required
-                });
-            subcmd = subcmd.arg(arg);
-        }
-        if c.name.starts_with('_') {
-            subcmd = subcmd.setting(AppSettings::Hidden);
-        }
-        if !c.aliases.is_empty() {
-            let parts = c.aliases.split("//");
-            for s in parts {
-                subcmd = subcmd.visible_alias(s);
+        if f.takes_value {
+            if f.multiple {
+                arg = arg.action(clap::ArgAction::Append);
+            } else {
+                arg = arg.action(clap::ArgAction::Set);
             }
+        } else {
+            arg = arg.action(clap::ArgAction::SetTrue);
         }
+
+        cmd = cmd.arg(arg);
+    }
+
+    if starts_with_underscore {
+        cmd = cmd.hide(true);
+    }
+
+    if !aliases.is_empty() {
+        // Split the aliases string and convert each alias to an owned string
+        for s in aliases.split("//") {
+            let alias = s.to_string();
+            cmd = cmd.visible_alias(alias);
+        }
+    }
+
+    cmd
+}
+
+/// Takes a `clap_app` and a parsed root command and recursively builds the CLI application
+fn build_subcommands(
+    mut cli_app: Command,
+    opts: &CustomOpts,
+    subcommands: Vec<CommandBlock>,
+    sort: bool,
+) -> Command {
+    for c in subcommands {
+        // Build a new Command from the CommandBlock
+        let mut subcmd = build_command_from_block(c, opts, sort);
+        if sort {
+            subcmd = subcmd.display_order(0);
+        }
+
+        // Add the subcommand to the parent command
+        // In clap v4, subcommand takes ownership of the Command
         cli_app = cli_app.subcommand(subcmd);
     }
 
@@ -516,20 +630,20 @@ fn build_subcommands<'a, 'b>(
 fn find_command(matches: &ArgMatches, subcommands: &[CommandBlock]) -> Option<CommandBlock> {
     let mut command = None;
     // The child subcommand that was used
-    if let Some(subcommand_name) = matches.subcommand_name() {
-        if let Some(matches) = matches.subcommand_matches(subcommand_name) {
-            for c in subcommands {
-                if c.name == subcommand_name {
-                    // Check if a subcommand was called, otherwise return this command
-                    command = find_command(matches, &c.subcommands)
-                        .or_else(|| Some(c.clone()).map(|c| embed_arg_values(c, matches)));
-                    // early exit on validation error (e.g. number required and not supplied)
-                    if command
-                        .as_ref()
-                        .map_or(false, |command| !command.validation_error_msg.is_empty())
-                    {
-                        return command;
-                    }
+    if let Some(subcommand_name) = matches.subcommand_name()
+        && let Some(matches) = matches.subcommand_matches(subcommand_name)
+    {
+        for c in subcommands {
+            if c.name == subcommand_name {
+                // Check if a subcommand was called, otherwise return this command
+                let c_clone = c.clone();
+                command = find_command(matches, &c_clone.subcommands)
+                    .or_else(|| Some(c_clone.clone()).map(|c| embed_arg_values(c, matches)));
+                // early exit on validation error (e.g. number required and not supplied)
+                if let Some(ref cmd) = command
+                    && !cmd.validation_error_msg.is_empty()
+                {
+                    return command;
                 }
             }
         }
@@ -543,8 +657,8 @@ fn find_command(matches: &ArgMatches, subcommands: &[CommandBlock]) -> Option<Co
 fn embed_arg_values(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBlock {
     // Check all required args
     for arg in &mut cmd.args {
-        arg.val = match matches.values_of(arg.name.clone()) {
-            Some(v) => v.collect::<Vec<_>>().join(" "),
+        arg.val = match matches.get_many::<String>(&arg.name) {
+            Some(values) => values.map(|s| s.as_str()).collect::<Vec<_>>().join(" "),
             _ => "".to_string(),
         };
     }
@@ -553,15 +667,17 @@ fn embed_arg_values(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBlock
     for flag in &mut cmd.named_flags {
         flag.val = if flag.takes_value {
             // Extract the value
-            let raw_value = matches
-                .values_of(flag.name.clone())
-                .unwrap_or_default()
-                .collect::<Vec<_>>()
-                .join(" ");
-            if !flag.choices.is_empty() && !flag.choices.contains(&raw_value) {
+            let raw_value = match matches.get_many::<String>(&flag.name) {
+                Some(values) => values.map(|s| s.as_str()).collect::<Vec<_>>().join(" "),
+                _ => "".to_string(),
+            };
+            if !flag.choices.is_empty()
+                && !raw_value.is_empty()
+                && !flag.choices.contains(&raw_value)
+            {
                 cmd.validation_error_msg = format!(
                     "{}: {} flag expects one of {:?}",
-                    "INVALID".red(),
+                    utils::INVALID_MSG,
                     flag.name,
                     flag.choices
                 );
@@ -577,7 +693,7 @@ fn embed_arg_values(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBlock
         } else {
             // Check if the boolean flag is present and set to "true".
             // It's a string since it's set as an environment variable.
-            if matches.is_present(flag.name.clone()) {
+            if *matches.get_one::<bool>(&flag.name).unwrap_or(&false) {
                 "true".to_string()
             } else {
                 "".to_string()
@@ -596,12 +712,13 @@ fn is_invalid_number(is_num: bool, raw_value: &str) -> bool {
 }
 
 fn not_number_err_msg(name: &str) -> String {
-    format!("flag `{}` expects a numerical value", name)
+    format!("flag `{name}` expects a numerical value")
 }
 
 #[cfg(test)]
 mod runner_tests {
     use super::*;
+
     #[test]
     fn fake_language() {
         let contents = r#"
@@ -611,16 +728,56 @@ echo "This should not run"
 ```
         "#;
         let args = svec!("inkjet", "--inkfile", contents);
-        let (rc, err_str, _) = run(args, false);
-        assert_eq!(rc, 10);
+        let rc = run(args, false);
+        assert_eq!(rc, 5);
+    }
 
-        #[cfg(windows)]
-        let no_file_error = "program not found";
+    #[test]
+    fn handles_positional_args() {
+        let contents = r#"
+## build//default
 
-        #[cfg(not(windows))]
-        let no_file_error = "No such file or directory (os error 2)";
+> A test to check implicit execution of default when calling inkjet without arguments.
 
-        assert_eq!(err_str, no_file_error);
+```
+echo "expected output"
+```
+
+## echo (name) (optional=default) (not_required?) -- (extras...?)
+
+> Echo something interactively
+
+**OPTIONS**
+
+- flag: --num |number| A number
+- flag: --required -r |string| required This must be specified
+- flag: --any |string| Anything you want
+
+```bash
+echo "Hello $name! Optional arg is \"$optional\". Number is \"$num\". Required is \"$required\". Any is \"$any\". extras is \"$extras\""
+```
+
+## extras (extra...?)
+
+> Test multiple optional values for extra
+
+```
+echo "Hello $extra"
+```
+        "#;
+        let args = svec!(
+            "inkjet",
+            "--inkfile",
+            contents,
+            "echo",
+            "test_runner",
+            "--required",
+            "req",
+            "--",
+            "last_arg"
+        );
+        let rc = run(args, false);
+        assert_eq!(rc, 0);
     }
 
     #[test]
@@ -739,7 +896,7 @@ Write-Output "Value: $in"
 ```
 "#;
         let args = svec!("inkjet", "--inkfile", contents);
-        let (rc, _, _) = run(args, false);
+        let rc = run(args, false);
         assert_eq!(0, rc);
     }
 }

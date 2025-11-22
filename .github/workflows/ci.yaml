@@ -30,17 +30,29 @@ jobs:
         with:
           name: inkjet-windows
           path: .\target\release\inkjet.exe
-          retention-days: 5
+          retention-days: 3
   linux:
-    name: linux-ci
+    name: linux
     runs-on: earthly
     env:
       FORCE_COLOR: 1
       EARTHLY_CI: true
-      EARTHLY_ORG: nimbus
-      EARTHLY_SATELLITE: nimbus-sat
       EARTHLY_TOKEN: "${{ secrets.EARTHLY_TOKEN }}"
     steps:
       - uses: actions/checkout@v4
       - name: Earthly build
         run: earthly --ci +all
+
+  macos:
+    name: macos
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: inkjet build mac
+      - uses: actions/upload-artifact@v3
+        id: artifact-upload-step
+        with:
+          name: inkjet-macos
+          path: ./output/zips
+          retention-days: 3

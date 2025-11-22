@@ -1,4 +1,4 @@
-% inkjet(1) Version 1.0.0 | Create interactive CLIs and execute Markdown with inkjet
+% inkjet(1) Version 2.0.1 | Create interactive CLIs and execute Markdown with inkjet
 
 <p align="center">
   <img height="180" width="180" src="https://user-images.githubusercontent.com/4714862/80295323-cf9e8180-8726-11ea-9919-2bbe1de7f5e5.png">
@@ -83,9 +83,9 @@ First, define a simple `inkjet.md` in your project root.
 ````markdown
 # Tasks For My Project
 
-<!-- A heading defines the command's name -->
+> (Optional) Information entered here will appear in your CLI's about help text.
 
-> (Optional) Information entered here will appear in the CLI about help text.
+<!-- A heading defines the command's name -->
 
 ## build
 
@@ -427,7 +427,7 @@ cargo install --force --path .
 
 ## Automatic help and usage output
 
-You don't have to spend time writing out help info manually. `inkjet` uses your command descriptions and options to automatically generate help output. For every command, it adds the `-h, --help` flags.
+You don't have to spend time writing out help info manually. `inkjet` uses your command descriptions and options to automatically generate help output. For every command, it adds the `-h` and `--help` flags.
 
 **Example:**
 
@@ -439,25 +439,24 @@ inkjet services start --help
 All output the same help info:
 
 ```txt
-inkjet-services-start
-Start or restart a service.
 
-USAGE:
-    inkjet services start [FLAGS] <service_name>
+Start a service.
 
-FLAGS:
-    -h, --help       Prints help information
-    -v, --verbose    Sets the level of verbosity
-    -r, --restart    Restart this service if it's already running
-    -w, --watch      Restart a service on file change
+Usage: inkjet services start [OPTIONS] <service_name>
 
-ARGS:
-    <service_name>
+Arguments:
+  <service_name>
+
+Options:
+  -v, --verbose  Sets the level of verbosity
+  -h, --help     Print help
+  -r, --restart  Restart this service if it's already running
+  -w, --watch    Restart a service on file change
 ```
 
 ## Directives
 
-You can change how parsing occurs by including some special directives in the Markdown file.
+You can change how parsing occurs by including some special directives in the Markdown file. Most of the time, I don't use these but they are available to you for advanced use cases.
 
 ### inkjet_sort: false
 
@@ -514,11 +513,11 @@ Release
 ```
 ````
 
-Note that in the above example `.` works because as the docker build is run from frontend directory.
+Note that in the above example `.` (period) works because the docker build is executed from frontend directory.
 
 ## Running Inkjet from within a script
 
-You can easily call `inkjet` within scripts if you need to chain commands together. However, if you plan on [running inkjet with a different inkfile](#), you should consider using the `$INK` utility instead which allows your scripts to be location-agnostic.
+You can easily call `inkjet` within scripts if you need to chain commands together. However, if you plan on [running inkjet with a different inkfile](#), you should consider using the `$INK` utility (documented below) instead which allows your scripts to be location-agnostic.
 
 Shell scripts execute as if `set -e` is set.
 
@@ -541,7 +540,7 @@ $INK start
 ```
 ````
 
-## Inherits the script's exit code
+## Exit Codes
 
 If your command exits with an error, `inkjet` will exit with its status code. This allows you to chain commands which will exit on the first error.
 
@@ -558,6 +557,15 @@ inkjet test \
     && inkjet format --check
 ```
 ````
+
+Normally, inkjet transparently returns the exit code of your command. However if inkjet itself experiences an error, you may see one of these errors:
+
+| Status Code | Cause                                                                      |
+|-------------|----------------------------------------------------------------------------|
+|      2      | Invalid command line args                                                  |
+|      5      | I/O error (i.e. unable to merge inkjet.md files, executer cannot be found) |
+|      66     | inkjet.md file not found or empty                                          |
+|      78     | inkjet config error (i.e. markdown is invalid)                             |
 
 ## Running inkjet with a different inkfile
 
