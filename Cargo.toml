@@ -1,6 +1,6 @@
 [package]
 name = "inkjet"
-version = "2.0.0"
+version = "2.0.1"
 description = "Create interactive CLIs and execute Markdown with Inkjet"
 authors = ["Brandon Kalinowski <brandon@brandonkalinowski.com>"]
 repository = "https://github.com/brandonkal/inkjet"

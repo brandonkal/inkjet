@@ -1,4 +1,4 @@
-% inkjet(1) Version 2.0.0 | Create interactive CLIs and execute Markdown with inkjet
+% inkjet(1) Version 2.0.1 | Create interactive CLIs and execute Markdown with inkjet
 
 <p align="center">
   <img height="180" width="180" src="https://user-images.githubusercontent.com/4714862/80295323-cf9e8180-8726-11ea-9919-2bbe1de7f5e5.png">
@@ -445,7 +445,7 @@ Start a service.
 Usage: inkjet services start [OPTIONS] <service_name>
 
 Arguments:
-  <service_name>  
+  <service_name>
 
 Options:
   -v, --verbose  Sets the level of verbosity
