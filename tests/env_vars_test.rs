@@ -80,7 +80,7 @@ echo "inkjet = $INKJET"
             .assert()
             // Absolute inkfile path starts with /
             .stdout(contains(pattern1))
-            .stdout(contains(pattern2.as_str()))
+            .stdout(contains(pattern2))
             // And ends with inkjet.md
             .stdout(contains("inkjet.md"))
             .success();
@@ -116,7 +116,7 @@ echo "inkfile_dir = $INKJET_DIR"
             .command("run")
             .assert()
             // Absolute inkfile path starts with /
-            .stdout(contains(pattern.as_str()))
+            .stdout(contains(pattern))
             .success();
     }
 }

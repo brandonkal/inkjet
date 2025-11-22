@@ -729,16 +729,7 @@ echo "This should not run"
         "#;
         let args = svec!("inkjet", "--inkfile", contents);
         let rc = run(args, false);
-        // TEMP: error text no longer returned
         assert_eq!(rc, 5);
-
-        #[cfg(windows)]
-        let no_file_error = "program not found";
-
-        // #[cfg(not(windows))]
-        // let no_file_error = "No such file or directory (os error 2)";
-        // TEMP: error text no longer returned
-        // assert_eq!(err_str, no_file_error);
     }
 
     #[test]
@@ -787,8 +778,6 @@ echo "Hello $extra"
         );
         let rc = run(args, false);
         assert_eq!(rc, 0);
-        // TEMP: error text no longer returned
-        // assert_eq!(err_str, "");
     }
 
     #[test]
