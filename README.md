@@ -467,54 +467,6 @@ they are defined in the Markdown file. Users can decide to instead have subcomma
 
 When you run an inkjet command from a project subdirectory, inkjet will by default search up the tree to find an `inkjet.md` file. In order for commands to work as expected, scripts execute as if their working directory was the same as the location of the `inkjet.md` file that defined them. Similarly, if you call Inkjet with `--inkfile tests/inkjet.md`, your commands will execute as if the working directory was `tests`. If this is not desired, simply include the `inkjet_fixed_dir: false` directive in the file to have the working directory match your current directory.
 
-### inkjet_import: all
-
-It's often the case that large projects will have multiple `inkjet.md` files.
-For instance, each service may have its own `inkjet.md` file to define how to build and test that component. To enable the import feature, include the text directive `inkjet_import: all` somewhere within your main `inkjet.md` file. If Inkjet discovers this directive in the text, it will find all other `inkjet.md` files within the current folder and merge them together before parsing and building out the command tree. If the imported file has a H1 heading, its commands will appear as a subcommand of that heading. If only H2 and below headings are available in the imported file, those commands will become sibling commands for the parent. See [a merged example here](tests/merged-example.md).
-
-The merge behavior is as follows:
-
-1. Locate `inkjet.md` files and files ending in `.inkjet.md` within the current folder.
-2. Found `inkjet.md` files are first sorted by directory depth and then alphabetically.
-3. Merged definitions can override previously defined definitions.
-
-The override behavior is useful as it enables you to share generic commands, and then override the generic on a project-by-project basis.
-
-All imported `inkjet.md` files are run as if they were called directly. Namely, if `inkjet_fixed_dir` is not set to false, imported commands will run with their working directory set to the parent directory of its `inkjet.md` file.
-
-**Example:**
-
-````bash
-$ tree
-.
-├── frontend
-│   ├── Dockerfile
-│   └── inkjet.md
-└── inkjet.md
-$ cat inkjet.md
-inkjet_import: all
-# main service
-## release
-```
-echo "Release"
-```
-$ cat frontend/inkjet.md
-# frontend
-## build
-```
-echo "Building frontend"
-docker build . -t frontend
-```
-$ inkjet frontend build
-Building frontend...
-...successful docker build output here...
-$ inkjet release
-Release
-```
-````
-
-Note that in the above example `.` (period) works because the docker build is executed from frontend directory.
-
 ## Running Inkjet from within a script
 
 You can easily call `inkjet` within scripts if you need to chain commands together. However, if you plan on [running inkjet with a different inkfile](#), you should consider using the `$INK` utility (documented below) instead which allows your scripts to be location-agnostic.
@@ -563,7 +515,7 @@ Normally, inkjet transparently returns the exit code of your command. However if
 | Status Code | Cause                                                                      |
 |-------------|----------------------------------------------------------------------------|
 |      2      | Invalid command line args                                                  |
-|      5      | I/O error (i.e. unable to merge inkjet.md files, executer cannot be found) |
+|      5      | I/O error (i.e. executor cannot be found)                                  |
 |      66     | inkjet.md file not found or empty                                          |
 |      78     | inkjet config error (i.e. markdown is invalid)                             |
 
@@ -601,21 +553,9 @@ Inside each script's execution environment, `inkjet` injects a few environment v
 
 This is useful when [running inkjet within a script](#running-inkjet-from-within-a-script "Running Inkjet from within a script"). This variable allows us to call `$INK command` instead of `inkjet --inkfile <path> command` inside scripts so that they can be location-agnostic (not care where they are called from). This is especially handy for global inkfiles which you may call from anywhere.
 
-**`$INKJET`**
-
-This is similar to `INK` above, except it always resolves to the original `inkjet.md` file. For instance, You may have some common scripts in the project's main `inkjet.md` file and call those scripts in imported `inkjet.md` files throughout the project. Note that if you call the imported inkfile directly, it will resolve the same as `$INK` above. For this reason, you will see different behavior depending on where you call the script.
-
 **`$INK_DIR`**
 
 This variable is an absolute path to the inkfile's parent directory. Having the parent directory available allows us to load files relative to the inkfile itself, which can be useful when you have commands that depend on other external files.
-
-**`$INKJET_DIR`**
-
-This is much like `INK_DIR` except it always resolves to the main `inkjet.md` file's parent directory.
-
-**`$INKET_IMPORTED`**
-
-A helper utility that is set to "true" if the script was imported by another `inkjet.md` file.
 
 **`$NO_COLOR`**
 

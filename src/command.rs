@@ -25,10 +25,6 @@ pub struct CommandBlock {
     pub start: usize,
     /// end represents the end location of this CommandBlock in the source markdown document.
     pub end: usize,
-    /// inkjet_file holds the filepath of the source where this CommandBlock was created.
-    /// It is typically an empty string but can contain a value if this CommandBlock was imported.
-    /// from this value, the working directory is derived if required.
-    pub inkjet_file: String,
     /// validation_error_msg is typically empty. When it contains a value, it typically means that the user tried to provide
     /// an incorrect type to an named flag.
     pub validation_error_msg: String,
@@ -55,7 +51,6 @@ impl CommandBlock {
             named_flags: vec![],
             start: 0,
             end: 0,
-            inkjet_file: "".to_string(),
             validation_error_msg: "".to_string(),
         }
     }

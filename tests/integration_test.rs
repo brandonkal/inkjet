@@ -4,6 +4,7 @@
 use std::path::PathBuf;
 
 use assert_cmd::prelude::*;
+use predicates::prelude::PredicateBooleanExt;
 use predicates::str::contains;
 
 mod common;
@@ -201,41 +202,29 @@ fn last_arg_recognized_when_optionals_omitted() {
 }
 
 #[test]
-fn merge() {
-    let part1 = r#"> This is the main info
-
-# main
-
-## echo
-
-```
-echo "Hello"
-```"#;
-    let part2 = r#"# second
-
+fn duplicate_command_info_respects_no_color() {
+    let (_temp, inkfile_path) = common::inkfile(
+        r#"
 ## list
-
 ```
-echo "Should not run as this is replaced"
+echo "first"
 ```
 
 ## list
-
 ```
-ls -1 ls-test
-```"#;
-    common::run_binary()
-        .current_dir("tests/merge")
-        .arg("--inkjet-print-all")
+echo "second"
+```
+"#,
+    );
+    common::run_inkjet(&inkfile_path)
+        .command("list")
+        .env("NO_COLOR", "1")
         .assert()
-        .stdout(contains(part1))
-        .stdout(contains(part2))
-        .success();
-    common::run_binary()
-        .current_dir("tests/merge")
-        .cli("second list")
-        .assert()
-        .stdout(contains("1\n2\n3"))
+        .stderr(contains(
+            "INFO (inkjet): Duplicate command overwritten: list",
+        ))
+        .stderr(contains("\x1b[").not())
+        .stdout(contains("second"))
         .success();
 }
 
@@ -250,6 +239,19 @@ mod when_no_inkfile_found_in_current_directory {
             .command("-V")
             .assert()
             .stderr(contains("no inkjet.md found"))
+            .stdout(contains("inkjet"))
+            .code(0);
+    }
+
+    #[test]
+    fn logs_plain_warning_about_missing_inkfile_when_no_color_is_set() {
+        common::run_inkjet(&PathBuf::from(""))
+            .current_dir(common::temp_path())
+            .command("-V")
+            .env("NO_COLOR", "1")
+            .assert()
+            .stderr(contains("WARNING (inkjet): no inkjet.md found"))
+            .stderr(contains("\x1b[").not())
             .stdout(contains("inkjet"))
             .code(0);
     }
@@ -348,7 +350,7 @@ mod builds_command_tree {
     use super::*;
 
     #[test]
-    fn works_with_second_h1() {
+    fn ignores_second_h1_as_a_root_command() {
         let (_temp, inkfile_path) = common::inkfile(
             r#"
 #!/usr/bin/env inkjet
@@ -376,7 +378,7 @@ echo "Second"
             .command("--help")
             .assert()
             .stdout(contains("echo"))
-            .stdout(contains("second"))
+            .stdout(predicates::str::contains("second").not())
             .success();
     }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "inkjet"
-version = "2.0.1"
+version = "3.0.0"
 description = "Create interactive CLIs and execute Markdown with Inkjet"
 authors = ["Brandon Kalinowski <brandon@brandonkalinowski.com>"]
 repository = "https://github.com/brandonkal/inkjet"
@@ -39,31 +39,30 @@ panic = 'abort'
 strip = true
 
 [dependencies]
-pulldown-cmark = { version = "0.12.2", default-features = false }      # https://github.com/raphlinus/pulldown-cmark
-dialoguer = { git = "https://github.com/brandonkal/dialoguer" }
-regex = "1.10.6"
-walkdir = "2"
-pulldown-cmark-mdcat = { version = "2.7.1", default-features = false }
-url = "2.5.4"
-clap = { version = "4.5", features = ["string"] }
-clap_complete = "4.5"
+pulldown-cmark = { version = "0.13.4", default-features = false }      # https://github.com/raphlinus/pulldown-cmark
+regex = "1.12.3"
+url = "2.5.8"
+clap = { version = "4.6", features = ["string"] }
+clap_complete = "4.6"
 color-print = "0.3.7"
+demand = "2.0.2"
+tempfile = "3.23.0"
 
 [dependencies.syntect]
-version = "5.2.0"
+version = "5.3.0"
 default-features = false
-features = ["default-syntaxes"]
+features = ["default-syntaxes", "default-themes", "regex-onig"]
 
 [dev-dependencies]
-assert_cmd = "2.0.16" # https://github.com/assert-rs/assert_cmd
-assert_fs = "1.0.0"   # https://github.com/assert-rs/assert_fs
-predicates = "3.1.2"  # https://github.com/assert-rs/predicates-rs
+assert_cmd = "2.2.2" # https://github.com/assert-rs/assert_cmd
+assert_fs = "1.1.4"   # https://github.com/assert-rs/assert_fs
+predicates = "3.1.4"  # https://github.com/assert-rs/predicates-rs
 
 [target.'cfg(not(windows))'.dev-dependencies]
-rexpect = "0.6.2"
+rexpect = "0.7.1"
 
 [target.'cfg(windows)'.build-dependencies]
-tauri-winres = "0.3.1"
+tauri-winres = "0.3.6"
 
 [build-dependencies]
-tauri-winres = "0.3.1"
+tauri-winres = "0.3.6"

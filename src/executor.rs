@@ -1,70 +1,18 @@
 // Copyright 2020 Brandon Kalinowski (brandonkal)
 // SPDX-License-Identifier: MIT
 
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
+use std::env;
 use std::io;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process;
-use std::{env, fs};
-use walkdir::WalkDir;
 
 use crate::command::CommandBlock;
 use crate::utils;
 
-/// takes a source string and generates a temporary hash for the filename.
-fn hash_source(s: &str) -> String {
-    let mut hasher = DefaultHasher::new();
-    s.hash(&mut hasher);
-    format!("{:x}", hasher.finish())
-}
-
 /// we append  `set -e` to these shells as a sensible default
 fn needs_set_e(s: &str) -> bool {
     s == "sh" || s == "bash" || s.is_empty() || s == "dash" || s == "zsh"
-}
-
-/// Executes a shell function that finds all inkjet.md files in a directory and
-/// merges them together. Useful for projects with several inkjet.md files.
-/// returns the output of the merge operation: a new inkfile content String
-pub fn execute_merge_command(inkfile_path: &str) -> Result<String, String> {
-    let parent_dir = get_parent_dir(inkfile_path);
-    // Collect paths that match the criteria
-    let mut inkjet_files: Vec<PathBuf> = vec![];
-
-    // Traverse the directory and find matching files
-    for entry in WalkDir::new(parent_dir) {
-        match entry {
-            Ok(path) => {
-                let filename = path.file_name().to_string_lossy();
-
-                if filename == "inkjet.md" || filename.ends_with(".inkjet.md") {
-                    inkjet_files.push(path.into_path());
-                }
-            }
-            _ => continue,
-        }
-    }
-
-    // Sort files by the number of directories in their path
-    inkjet_files.sort_by_key(|path| path.components().count());
-
-    // Prepare a String to collect the combined text
-    let mut combined_text = String::new();
-
-    // Append the content of each file with the required format
-    for file in inkjet_files {
-        let file_str = file.to_string_lossy();
-        combined_text.push_str(&format!("<!-- inkfile: {file_str} -->\n"));
-
-        match fs::read_to_string(&file) {
-            Ok(content) => combined_text.push_str(&content),
-            Err(e) => return Err(format!("Error reading file {file_str}: {e}")),
-        }
-    }
-
-    Ok(combined_text)
 }
 
 fn run_bat(source: String, lang: &str) -> io::Result<process::Child> {
@@ -120,88 +68,117 @@ pub fn execute_command(
             }
         }
     } else {
-        let mut local_inkfile = cmd.inkjet_file.trim();
-        if local_inkfile.is_empty() {
-            local_inkfile = inkfile_path
-        }
-        let parent_dir = get_parent_dir(local_inkfile);
-        let mut tempfile = String::new();
-        let (mut child, mut executor) = prepare_command(&cmd, &parent_dir, &mut tempfile);
-        child = add_utility_variables(child, inkfile_path, local_inkfile);
+        let parent_dir = get_parent_dir(inkfile_path);
+        let (mut child, executor, tempfile) = prepare_command(&cmd);
+        child = add_utility_variables(child, inkfile_path);
         child = add_flag_variables(child, &cmd);
         if fixed_dir {
             child.current_dir(parent_dir);
         }
-        let spawned_child = child.spawn();
-        match spawned_child {
-            Err(err) => {
-                if err.kind() == io::ErrorKind::NotFound {
-                    if executor.is_empty() {
-                        executor = String::from("the executor")
-                    }
-                    eprintln!(
-                        "{} Please check if {} is installed to run the command.",
-                        utils::ERROR_MSG,
-                        executor
-                    );
-                }
-                delete_file(&tempfile); // cov:include (unusual)
-                Some(io::Result::Err(err)) // cov:include
-            }
-            Ok(mut child) => {
-                let r = child.wait();
-                delete_file(&tempfile);
-                Some(r)
-            }
-        }
+        execute_prepared_command(child, executor, tempfile, color)
     }
 }
 
-fn delete_file(file: &str) {
-    if !file.is_empty() && std::fs::remove_file(file).is_err() {
+#[cfg(unix)]
+fn execute_prepared_command(
+    mut child: process::Command,
+    mut executor: String,
+    tempfile: Option<tempfile::TempPath>,
+    color: bool,
+) -> Option<io::Result<process::ExitStatus>> {
+    use std::os::unix::process::CommandExt;
+
+    // On successful exec, this process is replaced and Rust destructors do not run.
+    // This is intentional for better signal handling; shebang temp files may remain.
+    let err = child.exec();
+    if err.kind() == io::ErrorKind::NotFound {
+        if executor.is_empty() {
+            executor = String::from("the executor")
+        }
         eprintln!(
-            "{} Failed to delete temporary file {}",
-            utils::ERROR_MSG,
-            file
-        ); // cov:ignore (unusual)
+            "{} Please check if {} is installed to run the command.",
+            utils::error_msg(color),
+            executor
+        );
+    }
+    drop(tempfile);
+    Some(io::Result::Err(err))
+}
+
+#[cfg(windows)]
+fn execute_prepared_command(
+    mut child: process::Command,
+    mut executor: String,
+    tempfile: Option<tempfile::TempPath>,
+    color: bool,
+) -> Option<io::Result<process::ExitStatus>> {
+    use std::os::windows::process::CommandExt;
+
+    // Keep the child attached to the same console/process group so console control
+    // events such as Ctrl-C are delivered to both inkjet and the child process.
+    child.creation_flags(0);
+    let spawned_child = child.spawn();
+    match spawned_child {
+        Err(err) => {
+            if err.kind() == io::ErrorKind::NotFound {
+                if executor.is_empty() {
+                    executor = String::from("the executor")
+                }
+                eprintln!(
+                    "{} Please check if {} is installed to run the command.",
+                    utils::error_msg(color),
+                    executor
+                );
+            }
+            drop(tempfile);
+            Some(io::Result::Err(err))
+        }
+        Ok(mut child) => {
+            let r = child.wait();
+            drop(tempfile);
+            Some(r)
+        }
     }
 }
 
 /// `prepare_command` takes a CommandBlock struct and builds a `process::Command` that can then be executed as a child process.
-fn prepare_command(
-    cmd: &CommandBlock,
-    parent_dir: &str,
-    tempfile: &mut String,
-) -> (process::Command, String) {
+fn prepare_command(cmd: &CommandBlock) -> (process::Command, String, Option<tempfile::TempPath>) {
     let mut executor = cmd.script.executor.clone();
     let source = cmd.script.source.trim();
     if source.starts_with("#!") {
-        let hash = hash_source(source);
-        *tempfile = format!("{parent_dir}/.inkjet-order.{hash}");
-        std::fs::write(&tempfile, source)
-            .unwrap_or_else(|_| panic!("Inkjet: Unable to write file {}", &tempfile));
+        let mut tempfile = tempfile::Builder::new()
+            .prefix("inkjet-order-")
+            .tempfile()
+            .expect("Inkjet: Unable to create temporary file");
+        tempfile
+            .write_all(source.as_bytes())
+            .expect("Inkjet: Unable to write temporary file");
 
         #[cfg(not(windows))]
         {
             use std::os::unix::fs::PermissionsExt;
-            let meta =
-                std::fs::metadata(&tempfile).expect("Inkjet: Unable to read file permissions");
-            let mut perms = meta.permissions();
+            let mut perms = tempfile
+                .as_file()
+                .metadata()
+                .expect("Inkjet: Unable to read file permissions")
+                .permissions();
             perms.set_mode(0o775);
-            std::fs::set_permissions(&tempfile, perms).expect("Inkjet: Could not set permissions");
+            tempfile
+                .as_file()
+                .set_permissions(perms)
+                .expect("Inkjet: Could not set permissions");
         }
 
-        (
-            process::Command::new(tempfile),
-            String::from("the executor"),
-        )
+        let temp_path = tempfile.into_temp_path();
+        let child = process::Command::new(&temp_path);
+        (child, String::from("the executor"), Some(temp_path))
     } else {
         match executor.as_ref() {
             "js" | "javascript" => {
                 let mut child;
                 child = process::Command::new("node");
                 child.arg("-e").arg(source);
-                (child, String::from("node"))
+                (child, String::from("node"), None)
             }
             "py" | "python" | "python3" => {
                 #[cfg(not(windows))]
@@ -212,27 +189,27 @@ fn prepare_command(
 
                 let mut child = process::Command::new(the_executor);
                 child.arg("-c").arg(source);
-                (child, String::from(the_executor))
+                (child, String::from(the_executor), None)
             }
             "rb" | "ruby" => {
                 let mut child = process::Command::new("ruby");
                 child.arg("-e").arg(source);
-                (child, String::from("ruby"))
+                (child, String::from("ruby"), None)
             }
             "php" => {
                 let mut child = process::Command::new("php");
                 child.arg("-r").arg(source);
-                (child, String::from("php"))
+                (child, String::from("php"), None)
             }
             "ts" | "typescript" => {
                 let mut child = process::Command::new("deno");
                 child.arg("eval").arg("--ext=ts").arg(source);
-                (child, String::from("deno"))
+                (child, String::from("deno"), None)
             }
             "go" => {
                 let mut child = process::Command::new("yaegi");
                 child.arg("-e").arg(source);
-                (child, String::from("yaegi"))
+                (child, String::from("yaegi"), None)
             }
             // If no language is specified, we use the default shell
             "" | "sh" | "bash" | "zsh" | "dash" => {
@@ -243,25 +220,25 @@ fn prepare_command(
                 let top = "set -e"; // a sane default for scripts
                 let src = format!("{top}\n{source}");
                 child.arg("-c").arg(src);
-                (child, executor)
+                (child, executor, None)
             }
             #[cfg(windows)]
             "cmd" | "batch" => {
                 let mut child = process::Command::new("cmd.exe");
                 child.arg("/c").arg(source);
-                (child, "cmd.exe".to_string())
+                (child, "cmd.exe".to_string(), None)
             }
             #[cfg(windows)]
             "powershell" => {
                 let mut child = process::Command::new("powershell.exe");
                 child.arg("-c").arg(source);
-                (child, "powershell.exe".to_string())
+                (child, "powershell.exe".to_string(), None)
             }
             // Any other executor that supports -c (fish, etc...)
             _ => {
                 let mut child = process::Command::new(&executor); // cov:ignore
                 child.arg("-c").arg(source); // cov:ignore
-                (child, executor) // cov:ignore
+                (child, executor, None) // cov:ignore
             }
         }
     }
@@ -278,32 +255,18 @@ fn get_parent_dir(inkfile_path: &str) -> String {
 }
 
 /// Add some useful environment variables that scripts can use
-fn add_utility_variables(
-    mut child: process::Command,
-    inkfile_path: &str,
-    local_inkfile_path: &str,
-) -> process::Command {
+fn add_utility_variables(mut child: process::Command, inkfile_path: &str) -> process::Command {
     let exe_path = match env::current_exe() {
         Ok(path) => path.to_string_lossy().into_owned(),
         _ => "inkjet".to_owned(),
     };
-    // This allows us to call "$INKJET command" instead of "inkjet --inkfile <path> command"
+    // This allows us to call "$INK command" instead of "inkjet --inkfile <path> command"
     // inside scripts so that they can be location-agnostic (not care where they are
     // called from). This is useful for global inkfiles especially.
-    // $INKJET always refers to the root inkjet script
-    child.env("INKJET", format!("{exe_path} --inkfile {inkfile_path}"));
-    // $INK is shorthand for "$INKJET command". The difference here is that it resolves to the local inkjet.md which
-    // could differ from $INKJET if the file was imported.
-    child.env("INK", format!("{exe_path} --inkfile {local_inkfile_path}"));
+    child.env("INK", format!("{exe_path} --inkfile {inkfile_path}"));
     // This allows us to refer to the directory the inkfile lives in which can be handy
     // for loading relative files to it.
-    child.env("INKJET_DIR", get_parent_dir(inkfile_path));
-    // This is the same as INKJET_DIR, but could differ for imported inkjet.md files.
-    child.env("INK_DIR", get_parent_dir(local_inkfile_path));
-    // Environment variable is set if this file was imported from another.
-    if local_inkfile_path != inkfile_path {
-        child.env("INKJET_IMPORTED", "true");
-    }
+    child.env("INK_DIR", get_parent_dir(inkfile_path));
 
     child
 }
@@ -311,10 +274,8 @@ fn add_utility_variables(
 fn add_flag_variables(mut child: process::Command, cmd: &CommandBlock) -> process::Command {
     // Add all required args as environment variables
     for arg in &cmd.args {
-        let val = if arg.val.is_empty() && arg.default.is_some() {
-            arg.default // cov:include (tested by default_args integration)
-                .as_ref()
-                .expect("Inkjet: unable to ref command default arg")
+        let val = if arg.val.is_empty() {
+            arg.default.as_deref().unwrap_or("")
         } else {
             arg.val.as_str()
         };

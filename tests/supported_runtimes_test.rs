@@ -254,7 +254,6 @@ console.log(`Hello ${name}!`);
 }
 
 #[test]
-#[ignore]
 #[cfg(not(windows))]
 fn go() {
     let (_temp, inkfile_path) = common::inkfile(

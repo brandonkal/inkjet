@@ -43,3 +43,5 @@ node_modules
 /inkjet
 /inkjet*.gz
 /output
+secrets.sops.yaml
+

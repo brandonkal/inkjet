@@ -11,7 +11,7 @@ pub use common::*;
 // NOTE: This test suite depends on the inkjet binary being available in the current shell
 
 // Using current_dir(common::temp_path()) to make sure the default inkjet.md can't be found
-mod env_var_inkjet {
+mod env_var_ink {
     use super::*;
 
     #[test]
@@ -21,11 +21,11 @@ mod env_var_inkjet {
 ## ci
 
 ~~~bash
-$INKJET test
+$INK test
 ~~~
 
 ~~~powershell
-$path = $env:INKJET.replace("\\?\", "")
+$path = $env:INK.replace("\\?\", "")
 $pos = $path.IndexOf(" ");
 $arglist = $path.Substring($pos + 1);
 
@@ -59,12 +59,12 @@ Write-Output "tests passed"
 ## run
 
 ~~~bash
-echo "inkjet = $INKJET"
+echo "ink = $INK"
 ~~~
 "#,
         );
 
-        let pattern1 = "inkjet = ";
+        let pattern1 = "ink = ";
 
         #[cfg(not(windows))]
         let pattern2 = "inkjet --inkfile /";
@@ -88,7 +88,7 @@ echo "inkjet = $INKJET"
 }
 
 // Using current_dir(common::temp_path()) to make sure the default inkjet.md can't be found
-mod env_var_inkfile_dir {
+mod env_var_ink_dir {
     use super::*;
 
     #[test]
@@ -98,19 +98,17 @@ mod env_var_inkfile_dir {
 ## run
 
 ~~~bash
-echo "inkfile_dir = $INKJET_DIR"
+echo "ink_dir = $INK_DIR"
 ~~~
 "#,
         );
 
         #[cfg(not(windows))]
-        let pattern = "inkfile_dir = /";
-
+        let pattern = "ink_dir = /";
         #[cfg(windows)]
         let temp_path = common::temp_path();
         #[cfg(windows)]
-        let pattern = format!("inkfile_dir = \\\\?\\{}", temp_path);
-
+        let pattern = format!("ink_dir = \\\\?\\{}", temp_path);
         common::run_inkjet(&inkfile_path)
             .current_dir(common::temp_path())
             .command("run")

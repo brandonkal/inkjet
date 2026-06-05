@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use clap::error::ErrorKind;
-use dialoguer::theme::ColoredTheme;
-use dialoguer::{Confirmation, Input, KeyPrompt};
+use demand::{Confirm, DemandOption, Dialog, DialogButton, Input, Select};
 use std::collections::HashSet;
 use std::env;
 use std::path::Path;
@@ -12,7 +11,7 @@ use clap::{Arg, ArgMatches, ColorChoice, Command, builder::styling};
 use clap_complete::{Shell, generate};
 
 use crate::command::CommandBlock;
-use crate::executor::{execute_command, execute_merge_command};
+use crate::executor::execute_command;
 use crate::{utils, view};
 
 /// Parse and execute the chosen command.
@@ -47,7 +46,7 @@ pub fn run(args: Vec<String>, color: bool) -> i32 {
         .trailing_var_arg(true)
         .version(env!("CARGO_PKG_VERSION"))
         .about("Inkjet parser created by Brandon Kalinowski\nInkjet is a tool to build interactive CLIs with executable markdown documents.\nSee: https://github.com/brandonkal/inkjet")
-        .after_help("Run 'inkjet --inkjet-print-all' if you wish to view the complete merged inkjet definition.\nRun 'inkjet --inkjet-dynamic-completions fish/bash/zsh/powershell' to generate shell completions.\nThis is called dynamically by the global shell completion scripts.\nRun 'inkjet COMMAND --help' for more information on a command.")
+        .after_help("Run 'inkjet --inkjet-print-all' if you wish to view the complete inkjet definition.\nRun 'inkjet inkjet-dynamic-completions fish/bash/zsh/powershell' to generate shell completions.\nThis is called dynamically by the global shell completion scripts.\nRun 'inkjet COMMAND --help' for more information on a command.")
         .arg(custom_inkfile_path_arg())
         .arg(
             Arg::new("interactive")
@@ -77,11 +76,7 @@ pub fn run(args: Vec<String>, color: bool) -> i32 {
             // Just log a warning and let the process continue
             // we use an if statement here because clap is not printing this as we want
             // it to be printed even if a valid match is found (such as help or version)
-            if color {
-                eprintln!("{} no inkjet.md found", utils::WARNING_MSG);
-            } else {
-                eprintln!("WARNING (inkjet): no inkjet.md found");
-            }
+            eprintln!("{} no inkjet.md found", utils::warning_msg(color));
 
             // If the inkfile can't be found, at least parse for --version or --help
             if let Err(err) = cli_app.clone().try_get_matches_from(args) {
@@ -92,36 +87,23 @@ pub fn run(args: Vec<String>, color: bool) -> i32 {
             };
             return 66; // cov:ignore (won't be called if help is parsed)
         } else {
-            let red_inkjet: &'static str =
-                color_print::cstr!("<bold><underline><red>INKJET</red></underline></bold>");
+            let inkjet = if color {
+                color_print::cstr!("<bold><underline><red>INKJET</red></underline></bold>")
+            } else {
+                "INKJET"
+            };
             let err = cli_app.error(
                 ErrorKind::ValueValidation,
                 format!(
                     "{} specified inkfile \"{}\" not found",
-                    red_inkjet, opts.inkfile_opt
+                    inkjet, opts.inkfile_opt
                 ),
             );
             let _ = err.print();
             return 66; // won't be called if help is parsed
         }
     }
-    let mut mdtxt = inkfile.unwrap();
-
-    // If import directive is included,
-    // merge all files first and then parse resulting text output
-    if mdtxt.contains("inkjet_import: all") {
-        match execute_merge_command(&inkfile_path) {
-            Ok(txt) => {
-                mdtxt = txt;
-            }
-
-            Err(err_string) /* cov:include */ => {
-                let err = cli_app.error(ErrorKind::Io, format!("{} {}", utils::INVALID_MSG, err_string));
-                let _ = err.print();
-                return 5;
-            }
-        };
-    }
+    let mdtxt = inkfile.unwrap();
     if opts.print_all {
         println!("{mdtxt}");
         return 0;
@@ -131,17 +113,15 @@ pub fn run(args: Vec<String>, color: bool) -> i32 {
     // for alphabetical sort.
     let alphabetical_sort = mdtxt.contains("inkjet_sort: true");
 
-    let in_completions_mode =
-        args.len() > 2 && args.get(1).unwrap_or(&String::from("")) == "inkjet-dynamic-completions";
+    let in_completions_mode = args.len() > 2
+        && matches!(
+            args.get(1).map(String::as_str),
+            Some("inkjet-dynamic-completions" | "--inkjet-dynamic-completions")
+        );
     let root_command = match crate::parser::build_command_structure(&mdtxt, !in_completions_mode) {
         Ok(cmd) => cmd,
         Err(err_string) => {
-            let prefix = if color {
-                utils::ERROR_MSG
-            } else {
-                "ERROR (inkjet):"
-            };
-            eprintln!("{prefix} {err_string}");
+            eprintln!("{} {err_string}", utils::error_msg(color));
             return 78;
         }
     };
@@ -192,25 +172,40 @@ pub fn run(args: Vec<String>, color: bool) -> i32 {
                 .collect::<Vec<&str>>()
                 .join("\n")
         }
-        eprintln!("{output}");
+        println!("{output}");
         return 0; // Exit after generating completion
     }
 
-    let matches = match cli_app.clone().try_get_matches_from(args) {
-        Ok(m) => m,
-        Err(err) => {
+    let mut chosen_cmd = if opts.interactive && !has_explicit_command(&args) {
+        match select_interactive_command(&root_command.subcommands) {
+            Ok(cmd) => cmd,
+            Err(err) => {
+                let err = cli_app.error(
+                    ErrorKind::Io,
+                    format!("{} selecting command: {}", utils::error_msg(color), err),
+                );
+                let _ = err.print();
+                return 5;
+            }
+        }
+    } else {
+        let matches = match cli_app.clone().try_get_matches_from(args) {
+            Ok(m) => m,
+            Err(err) => {
+                let _ = err.print();
+                return err.exit_code();
+            }
+        };
+
+        let chosen_cmd = find_command(&matches, &root_command.subcommands)
+            .expect("Inkjet: SubcommandRequired failed to work");
+        if !chosen_cmd.validation_error_msg.is_empty() {
+            let err = cli_app.error(ErrorKind::ValueValidation, chosen_cmd.validation_error_msg);
             let _ = err.print();
             return err.exit_code();
         }
+        chosen_cmd
     };
-
-    let mut chosen_cmd = find_command(&matches, &root_command.subcommands)
-        .expect("Inkjet: SubcommandRequired failed to work");
-    if !chosen_cmd.validation_error_msg.is_empty() {
-        let err = cli_app.error(ErrorKind::ValueValidation, chosen_cmd.validation_error_msg);
-        let _ = err.print();
-        return err.exit_code();
-    }
     let fixed_pwd = !mdtxt.contains("inkjet_fixed_dir: false");
 
     if opts.interactive {
@@ -223,12 +218,11 @@ pub fn run(args: Vec<String>, color: bool) -> i32 {
         if let Err(err_box) = print_result {
             let err = cli_app.error(
                 ErrorKind::Io,
-                format!("{} printing markdown: {}", utils::ERROR_MSG, err_box),
+                format!("{} printing markdown: {}", utils::error_msg(color), err_box),
             );
             let _ = err.print();
             return 5; // cov:include (unusual error)
         }
-        eprintln!();
         let (picked_cmd, exit_code, err_str) =
             interactive_params(chosen_cmd, &inkfile_path, color, fixed_pwd);
         if picked_cmd.is_none() {
@@ -249,6 +243,70 @@ pub fn run(args: Vec<String>, color: bool) -> i32 {
     }
 }
 
+fn has_explicit_command(args: &[String]) -> bool {
+    let mut skip_next = false;
+    for arg in args.iter().skip(1) {
+        if skip_next {
+            skip_next = false;
+            continue;
+        }
+        if matches!(
+            arg.as_str(),
+            "-i" | "--interactive" | "-p" | "--preview" | "--inkjet-print-all"
+        ) || arg.starts_with("--inkfile=")
+            || arg.starts_with("-c=")
+        {
+            continue;
+        }
+        if matches!(arg.as_str(), "-c" | "--inkfile") {
+            skip_next = true;
+            continue;
+        }
+        if arg.starts_with('-') {
+            continue;
+        }
+        return true;
+    }
+    false
+}
+
+fn collect_selectable_commands(
+    commands: &[CommandBlock],
+    options: &mut Vec<DemandOption<CommandBlock>>,
+) {
+    for command in commands {
+        if !command.script.source.is_empty() {
+            let mut option = DemandOption::with_label(command.name.clone(), command.clone());
+            if !command.desc.is_empty() {
+                option = option.description(&command.desc);
+            }
+            options.push(option);
+        }
+        collect_selectable_commands(&command.subcommands, options);
+    }
+}
+
+fn select_interactive_command(commands: &[CommandBlock]) -> std::io::Result<CommandBlock> {
+    let mut options = Vec::new();
+    collect_selectable_commands(commands, &mut options);
+    Select::new("Select a command")
+        .description("Choose the Inkjet command to run interactively")
+        .filterable(true)
+        .filtering(true)
+        .options(options)
+        .run()
+}
+
+fn required_marker(color: bool, required: bool) -> String {
+    if !required {
+        String::new()
+    } else if color {
+        color_print::cformat!(" <red>*</red>")
+    } else {
+        " *".to_string()
+    }
+}
+
 /// Prompt for missing parameters interactively.
 fn interactive_params(
     mut chosen_cmd: CommandBlock,
@@ -258,15 +316,17 @@ fn interactive_params(
 ) -> (Option<CommandBlock>, i32, String) {
     // cov:begin-include
     loop {
-        let rv = KeyPrompt::with_theme(&ColoredTheme::default())
-            .with_text(&format!("Execute step {}?", chosen_cmd.name))
-            .items(&['y', 'n', 'p'])
-            .default(0)
-            .interact()
+        let rv = Dialog::new(format!("Execute step {}?", chosen_cmd.name))
+            .buttons(vec![
+                DialogButton::with_key("Yes", 'y'),
+                DialogButton::with_key("No", 'n'),
+                DialogButton::with_key("Preview", 'p'),
+            ])
+            .run()
             .expect("Inkjet: unable to read response");
-        if rv == 'y' {
+        if rv == "Yes" {
             break;
-        } else if rv == 'p' {
+        } else if rv == "Preview" {
             match execute_command(chosen_cmd.clone(), inkfile_path, true, color, fixed_dir) {
                 Some(result) => {
                     match result {
@@ -298,11 +358,11 @@ fn interactive_params(
                 continue;
             }
             if flag.val != "true" {
-                let rv: bool = Confirmation::with_theme(&ColoredTheme::default())
-                    .with_text(&format!("{}: Set {} option?", chosen_cmd.name, flag.name))
-                    .default(false)
-                    .interact()
-                    .expect("Inkjet: unable to confirm option");
+                let rv: bool =
+                    Confirm::new(format!("{}: Set {} option?", chosen_cmd.name, flag.name))
+                        .selected(false)
+                        .run()
+                        .expect("Inkjet: unable to confirm option");
                 if rv {
                     flag.val = "true".to_string();
                 }
@@ -311,21 +371,27 @@ fn interactive_params(
             let mut rv: String;
             loop {
                 let name = flag.name.clone();
-                rv = Input::with_theme(&ColoredTheme::default())
-                    .with_prompt(&format!(
-                        "{}: Enter option for {}{}",
-                        chosen_cmd.name,
-                        name,
-                        if flag.required { " *" } else { "" }
-                    ))
-                    .allow_empty(!flag.required)
-                    .interact()
-                    .expect("Inkjet: unable to read option");
+                let required = flag.required;
+                rv = Input::new(format!(
+                    "{}: Enter option for {}{}",
+                    chosen_cmd.name,
+                    name,
+                    required_marker(color, required)
+                ))
+                .validator(move |input: &str| {
+                    if required && input.is_empty() {
+                        Err("required")
+                    } else {
+                        Ok(())
+                    }
+                })
+                .run()
+                .expect("Inkjet: unable to read option");
                 if !flag.choices.is_empty() && !flag.choices.contains(&rv) {
                     if color {
                         eprintln!(
                             "{} {} flag expects one of {:?}",
-                            utils::INVALID_MSG,
+                            utils::invalid_msg(color),
                             flag.name,
                             flag.choices
                         );
@@ -339,7 +405,11 @@ fn interactive_params(
                 }
                 if is_invalid_number(flag.validate_as_number, &rv) {
                     if color {
-                        eprintln!("{} {}", utils::INVALID_MSG, not_number_err_msg(&name));
+                        eprintln!(
+                            "{} {}",
+                            utils::invalid_msg(color),
+                            not_number_err_msg(&name)
+                        );
                     } else {
                         eprintln!("INVALID: {}", not_number_err_msg(&name));
                     }
@@ -353,16 +423,25 @@ fn interactive_params(
     }
     for arg in chosen_cmd.args.iter_mut() {
         if arg.val.is_empty() {
-            let rv: String = Input::with_theme(&ColoredTheme::default())
-                .with_prompt(&format!(
-                    "{}: Enter value for {}{}",
-                    chosen_cmd.name,
-                    arg.name,
-                    if arg.required { " *" } else { "" },
-                ))
-                .allow_empty(!arg.required)
-                .default(arg.default.clone())
-                .interact()
+            let required = arg.required;
+            let mut input = Input::new(format!(
+                "{}: Enter value for {}{}",
+                chosen_cmd.name,
+                arg.name,
+                required_marker(color, required),
+            ));
+            if let Some(default) = arg.default.clone() {
+                input = input.default_value(default);
+            }
+            let rv: String = input
+                .validator(move |input: &str| {
+                    if required && input.is_empty() {
+                        Err("required")
+                    } else {
+                        Ok(())
+                    }
+                })
+                .run()
                 .expect("Inkjet: unable to read input");
             arg.val = rv
         }
@@ -466,7 +545,7 @@ fn pre_parse(mut args: Vec<String>) -> (CustomOpts, Vec<String>) {
             break;
         }
     }
-    if default_index <= args.len() {
+    if !opts.interactive && default_index <= args.len() {
         if default_index == 0 {
             args.push("default".to_string());
         } else {
@@ -677,7 +756,7 @@ fn embed_arg_values(mut cmd: CommandBlock, matches: &ArgMatches) -> CommandBlock
             {
                 cmd.validation_error_msg = format!(
                     "{}: {} flag expects one of {:?}",
-                    utils::INVALID_MSG,
+                    utils::invalid_msg(std::env::var_os("NO_COLOR").is_none()),
                     flag.name,
                     flag.choices
                 );

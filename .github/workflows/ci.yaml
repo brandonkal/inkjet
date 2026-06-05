@@ -5,22 +5,22 @@ on: [push, pull_request]
 jobs:
   test:
     name: windows-test
-    runs-on: windows-11
+    runs-on: windows-latest
     env:
       NO_COLOR: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Fetch dependencies
         run: cargo fetch
       - name: Run tests
         run: cargo test --frozen
   build:
     name: windows-build
-    runs-on: windows-11
+    runs-on: windows-latest
     env:
       NO_COLOR: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Fetch dependencies
         run: cargo fetch
       - name: Build in release mode
@@ -37,17 +37,16 @@ jobs:
     env:
       FORCE_COLOR: 1
       EARTHLY_CI: true
-      EARTHLY_TOKEN: "${{ secrets.EARTHLY_TOKEN }}"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Earthly build
         run: earthly --ci +all
 
   macos:
     name: macos
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build
         run: inkjet build mac
       - uses: actions/upload-artifact@v3

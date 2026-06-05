@@ -17,6 +17,20 @@ mod interactive {
         panic!("Could not locate cargo_bin {path:?}")
     }
 
+    fn do_interactive_select() -> Result<(), Error> {
+        unsafe { env::set_var("NO_COLOR", "1") };
+        let exec = format!("{} --inkfile tests/simple_case/inkjet.md -i", cargo_bin());
+        let mut p = spawn(&exec, Some(6_000))?;
+        p.exp_string("Select a command")?;
+        p.exp_string("A test to check implicit execution of default")?;
+        p.send_line("")?;
+        p.exp_string("Execute step build?")?;
+        p.send("y")?;
+        p.flush()?;
+        p.exp_string("expected output")?;
+        Ok(())
+    }
+
     fn do_interactive() -> Result<(), Error> {
         unsafe { env::set_var("NO_COLOR", "1") };
         let exec = format!(
@@ -35,7 +49,7 @@ mod interactive {
         p.send_line("any_value")?;
         p.exp_string("Enter value for name *")?;
         p.send_line("Brandon")?;
-        p.exp_string("Enter value for optional (default)")?;
+        p.exp_string("Enter value for optional")?;
         p.send_line("")?;
         p.exp_string("Enter value for not_required")?;
         p.send_line("")?;
@@ -67,9 +81,9 @@ mod interactive {
         p.exp_string("Execute step echo?")?;
         p.send("n")?;
         p.flush()?;
-        match p.process.status() {
+        match p.process().status() {
             Some(s) => match s {
-                rexpect::process::wait::WaitStatus::Exited(_, code) => {
+                rexpect::process::WaitStatus::Exited(_, code) => {
                     if code == 0 {
                         return Ok(());
                     }
@@ -79,6 +93,11 @@ mod interactive {
             },
             _ => panic!("wait failed"),
         }
+    }
+
+    #[test]
+    fn interactive_select() {
+        do_interactive_select().unwrap_or_else(|e| panic!("inkjet job failed with {e}"));
     }
 
     #[test]

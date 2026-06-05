@@ -4,7 +4,7 @@
 use crate::utils;
 use pulldown_cmark::CodeBlockKind::Fenced;
 use pulldown_cmark::{
-    Event::{Code, End, Html, Start, Text},
+    Event::{Code, End, Start, Text},
     Options, Parser, Tag, TagEnd,
 };
 use regex::Regex;
@@ -31,7 +31,6 @@ pub fn build_command_structure(
     let mut current_lc = "".to_string();
     let mut list_level = 0;
     let mut first_was_pushed = false;
-    let mut current_file = "".to_string();
     let mut in_block_quote = false;
 
     for (event, range) in parser.into_offset_iter() {
@@ -47,7 +46,6 @@ pub fn build_command_structure(
                             commands.push(current_command.build());
                         }
                         current_command = CommandBlock::new(heading_level);
-                        current_command.inkjet_file = current_file.clone();
                         current_command.start = range.start;
                     }
                     #[cfg(not(windows))]
@@ -84,12 +82,7 @@ pub fn build_command_structure(
             End(tag) => match tag {
                 TagEnd::Heading(level) => {
                     let heading_level = level as u8;
-                    let mut virtual_heading_level = heading_level;
-                    if first_was_pushed && heading_level == 1 {
-                        virtual_heading_level = 2; // This case occurs during a merge
-                    }
-                    let (name, aliases, args) =
-                        parse_heading_to_cmd(virtual_heading_level, text.clone());
+                    let (name, aliases, args) = parse_heading_to_cmd(heading_level, text.clone());
                     if name.is_empty() {
                         return Err("unexpected empty heading name".to_string());
                     }
@@ -239,17 +232,6 @@ pub fn build_command_structure(
                     };
                 }
             }
-            Html(html) => {
-                // **Note:** Internally, inkjet uses a special comment in the form of
-                // `<!-- inkfile: imported/inkjet.md -->` to set the working directory.
-                // Users should consider not using this implementation detail directly
-                // as it's not self documenting (comments are hidden when rendered).
-                let s = "<!-- inkfile: ";
-                if html.starts_with(s) {
-                    current_file = html.replace(s, "").replace(" -->", "");
-                }
-                text += html.as_ref();
-            }
             Code(inline_code) => {
                 text += &format!("`{inline_code}`");
                 if in_block_quote {
@@ -278,28 +260,32 @@ pub fn build_command_structure(
 
 fn validate_no_duplicate_aliases(cmd: CommandBlock) -> bool {
     let mut duplicates_found = false;
+    let mut seen_names: HashSet<String> = HashSet::new();
     let mut seen_aliases: HashSet<String> = HashSet::new();
-    let mut errors: Vec<String> = Vec::new();
 
-    if !cmd.subcommands.is_empty() {
-        for subcommand in cmd.subcommands {
-            let aliases = subcommand.aliases.split("//");
-            for alias in aliases {
-                if seen_aliases.contains(alias) {
-                    duplicates_found = true;
-                    errors.push(alias.to_string());
-                    eprintln!(
-                        "{} Duplicate command alias found: {}",
-                        utils::ERROR_MSG,
-                        alias
-                    );
-                } else if !alias.is_empty() {
-                    seen_aliases.insert(alias.to_string());
-                }
+    for subcommand in &cmd.subcommands {
+        seen_names.insert(subcommand.name.clone());
+    }
+
+    for subcommand in cmd.subcommands {
+        for alias in subcommand
+            .aliases
+            .split("//")
+            .filter(|alias| !alias.is_empty())
+        {
+            if seen_aliases.contains(alias) || seen_names.contains(alias) {
+                duplicates_found = true;
+                eprintln!(
+                    "{} Duplicate command alias found: {}",
+                    utils::error_msg_from_env(),
+                    alias
+                );
+            } else {
+                seen_aliases.insert(alias.to_string());
             }
-            if !subcommand.subcommands.is_empty() {
-                duplicates_found = validate_no_duplicate_aliases(subcommand)
-            }
+        }
+        if !subcommand.subcommands.is_empty() {
+            duplicates_found |= validate_no_duplicate_aliases(subcommand)
         }
     }
     duplicates_found
@@ -314,7 +300,7 @@ fn remove_duplicates(mut cmds: Vec<CommandBlock>, log_warnings: bool) -> Vec<Com
                 if log_warnings {
                     eprintln!(
                         "{} Duplicate command overwritten: {}",
-                        utils::INFO_MSG,
+                        utils::info_msg_from_env(),
                         item.name
                     );
                 }
@@ -362,24 +348,11 @@ fn treeify_commands(commands: Vec<CommandBlock>) -> Vec<CommandBlock> {
     let mut command_tree = vec![];
     let mut current_command = commands.first().expect("command should exist").clone();
     let num_commands = commands.len();
-    let mut add = 0;
-    let mut allow_increment = false;
-
     for i in 0..num_commands {
         let mut c = commands.get(i).unwrap().clone();
         let is_last_cmd = i == num_commands - 1;
 
         c.desc = trim_and_remove_options(&c.desc);
-
-        // We allow virtually increasing the command level if multiple h1s are found with subcommands
-        // This enables us to cat multiple inkjet.md files together and have it function as a larger CLI
-        if c.cmd_level > 1 {
-            allow_increment = true;
-        }
-        if allow_increment && c.cmd_level == 1 {
-            add = 1;
-        }
-        c.cmd_level += add;
 
         // This must be a subcommand
         if c.cmd_level > current_command.cmd_level {
@@ -669,6 +642,40 @@ echo "the string is $str"
     }
 
     #[test]
+    fn errors_on_duplicate_alias_in_earlier_nested_branch() {
+        let result = build_command_structure(
+            r#"
+## db
+
+### db migrate//m
+```
+echo "migrate"
+```
+
+### db rollback//m
+```
+echo "rollback"
+```
+
+## app
+
+### app build
+```
+echo "build"
+```
+        "#,
+            true,
+        );
+        assert!(result.is_err());
+        if let Err(ref message) = result {
+            assert_eq!(
+                message,
+                "Please update inkjet files to remove duplicate aliases"
+            );
+        }
+    }
+
+    #[test]
     fn parses_serve_command_description() {
         let tree = build_command_structure(TEST_INKJETFILE, true).expect("build tree failed");
         let serve_command = &tree
@@ -860,33 +867,6 @@ echo something
         if docs_cmd.is_some() {
             panic!("docs command should not exist")
         }
-    }
-
-    #[test]
-    fn errors_if_merged_h1_has_spaces() {
-        let contents = r#"
-<!-- inkfile: /home/ubuntu/code/github.com/brandonkal/inkjet/tests/spaces/inkjet.md -->
-# Tests for Spaces
-
-inkjet_import: all
-
-## before
-
-```
-echo "This has spaces"
-```
-<!-- inkfile: /home/ubuntu/code/github.com/brandonkal/inkjet/tests/spaces/merged.inkjet.md -->
-# Tests for Spaces
-
-## merged
-
-```
-echo "This has spaces"
-```
-```
-    "#;
-        let tree = build_command_structure(contents, true);
-        tree.expect_err("Command names cannot contain spaces. Found 'tests for spaces'. Did you forget to wrap args in ()?");
     }
 
     #[test]

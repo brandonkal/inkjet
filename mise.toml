@@ -1,0 +1,8 @@
+[tools]
+rust = { version = "1.96.0", targets = "x86_64-apple-darwin,aarch64-apple-darwin" }
+node = "26.3.0"
+python = "3.14.5"
+ruby = "4.0.5"
+deno = "2.8.2"
+"aqua:traefik/yaegi" = { version = "0.16.1", os = ["linux", "macos"] }
+"github:chrismatix/grog" = "latest"

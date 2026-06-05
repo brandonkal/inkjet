@@ -5,13 +5,14 @@ VERSION 0.8
 IMPORT github.com/earthly/lib/rust:3.0.1 AS rust
 
 source:
-    FROM rust:1.91.1-slim-bullseye
+    FROM --platform=linux/amd64 rust:1.96.0-slim-trixie
     RUN apt-get update && apt-get install -y binutils pkg-config openssl libssl-dev \
         && apt-get install -y --no-install-recommends sudo php python3 ruby curl lcov unzip zip p7zip-full && apt-get clean
     # Install cross-compilation tools
     RUN apt-get update && apt-get install -y \
         gcc-aarch64-linux-gnu \
         libc6-dev-arm64-cross \
+        musl-tools \
         && apt-get clean
     RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && apt-get install -y nodejs
     RUN curl -fsSL https://deno.land/install.sh | sh
@@ -32,6 +33,8 @@ source:
     RUN cargo install grcov
     RUN rustup component add clippy && rustup component add rustfmt # for lint checks
     # Configure cross-compilation for both GNU and musl targets
+    ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=x86_64-linux-musl-gcc
+    ENV CC_x86_64_unknown_linux_musl=x86_64-linux-musl-gcc
     ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
     ENV CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
     ENV AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-ar
@@ -117,9 +120,10 @@ coverage:
     RUN grcov . -s . --binary-path ./target/debug/ -t html --branch --ignore-not-existing -o ./target/debug/coverage/
     RUN zip -9 /output/inkjet-coverage-$EARTHLY_GIT_SHORT_HASH.zip /build/target/debug/coverage/*
     SAVE ARTIFACT /output
-# man builds the man page
+# man builds the generated man page from README.md.
+# Regenerate the checked-in file with: earthly +man
 man:
-    FROM pandoc/core:3.7-alpine
+    FROM pandoc/core:latest-alpine
     RUN apk add groff util-linux
     COPY README.md man-filter.lua .
     RUN pandoc README.md -s -t man --lua-filter=man-filter.lua -V adjusting=l > inkjet.1
@@ -159,7 +163,7 @@ gather-release:
     RUN mv ./output/deb/*.deb ./output/zips
     COPY +debian-arm64/output ./output/deb
     RUN mv ./output/deb/*.deb ./output/zips
-    RUN cp ./output/*.7z ./output/zips/
+    RUN cp ./output/*.zip ./output/zips/
     RUN cp ./output/linux*/*.tar.gz ./output/zips/ && rm ./output/zips/*.sha256.txt || true && cd ./output/zips && shasum -a 256 * > checksums.sha256.txt
 # all runs all targets in parallel
 all:

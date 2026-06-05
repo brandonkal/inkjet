@@ -2,8 +2,6 @@
 
 > Development tasks for inkjet
 
-inkjet_import: all
-
 ## echo (name) (optional=default)
 
 > Echo something
@@ -75,6 +73,9 @@ tar -czf inkjet-${platform}.tar.gz inkjet
 
 ```bash
 set -x
+: "${MACOS_CODESIGN_IDENTITY:?must be defined. Exiting.}"
+: "${APPLE_NOTARYTOOL_PROFILE:?must be defined. Exiting.}"
+
 zips_dir=$INKJET_DIR/output/zips
 mkdir -p $zips_dir
 rm -r $zips_dir/* || true
@@ -87,7 +88,34 @@ _build() {
   cp $INKJET_DIR/generated/inkjet.1 $target_dir # regenerate with `earthly --artifact +man/inkjet.1 ./output/inkjet.1`
   cd $target_dir
   strip inkjet
-  tar -czf $zips_dir/inkjet-v$version-$arch.tar.gz inkjet inkjet.1 completions README.md
+
+  tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/inkjet-archive.XXXXXX")"
+  cleanup() {
+    rc=$?
+    trap - EXIT HUP INT TERM
+    rm -rf "$tmpdir"
+    exit "$rc"
+  }
+  trap cleanup EXIT HUP INT TERM
+
+  signed_binary="$tmpdir/inkjet"
+  package_dir="$tmpdir/package"
+  notary_zip="$tmpdir/inkjet-v$version-$arch.zip"
+
+  install -m 0755 inkjet "$signed_binary"
+  codesign --force --timestamp --options runtime --sign "$MACOS_CODESIGN_IDENTITY" "$signed_binary"
+  codesign --verify --strict --verbose=2 "$signed_binary"
+  cp "$signed_binary" inkjet
+
+  mkdir -p "$package_dir"
+  cp inkjet inkjet.1 README.md "$package_dir"
+  cp -r completions "$package_dir"
+  (cd "$package_dir" && ditto -c -k . "$notary_zip")
+  xcrun notarytool submit "$notary_zip" --keychain-profile "$APPLE_NOTARYTOOL_PROFILE" --wait
+
+  cp "$notary_zip" "$zips_dir/inkjet-v$version-$arch.zip"
+  trap - EXIT HUP INT TERM
+  rm -rf "$tmpdir"
 }
 
 arch=aarch64-apple-darwin
